@@ -8,8 +8,10 @@ import fse from 'fs-extra'
 import { slug as githubSlug } from 'github-slugger'
 import os from 'node:os'
 import path from 'node:path'
+import type { ExportViaAppleScriptGuiOptions } from '../../engines/applescript-gui'
 import type { ImageMimeType } from './mime'
 import type { ProcessImageOptions } from './process'
+import { exportViaAppleScriptGui } from '../../engines/applescript-gui'
 import { normalizeExtension } from '../file'
 import { escapeRegExp } from '../general'
 import { hasAlpha } from './image'
@@ -71,82 +73,6 @@ export function getAlbumIdFromPhotoInfo(albumName: string, photoInfo: PhotoInfo)
 	throw new Error(`Album "${albumName}" not found`)
 }
 
-type ExportViaPhotosGuiOptions = {
-	colorProfile?: 'AdobeRGB' | 'Display P3' | 'Most Compatible' | 'Original' | 'sRGB'
-	fileName?: 'Album Name With Number' | 'Sequential' | 'Use File Name' | 'Use Title'
-	includeLocation?: boolean
-	includeMetadata?: boolean
-	jpegQuality?: 'High' | 'Low (smallest Size)' | 'Maximum' | 'Medium'
-	maxSizeType?: 'Dimension' | 'Height' | 'Width'
-	maxSizeValue?: number
-	photoKind?: 'HEIC' | 'JPEG' | 'PNG' | 'TIFF'
-	photoSize?: 'Custom' | 'Full Size' | 'Large' | 'Medium' | 'Small'
-	sequentialPrefix?: string
-	subfolderFormat?: 'Moment Name' | 'None'
-	tiffBitDepth?: 8 | 16
-}
-
-export async function exportViaPhotosGui(
-	uuid: string,
-	exportDirectory: string,
-	options?: ExportViaPhotosGuiOptions,
-): Promise<string[]> {
-	const {
-		colorProfile = 'Most Compatible',
-		fileName = 'Use File Name',
-		includeLocation = true,
-		includeMetadata = true,
-		jpegQuality = 'High',
-		maxSizeType = 'Dimension',
-		maxSizeValue = 2048,
-		photoKind = 'JPEG',
-		photoSize = 'Large',
-		sequentialPrefix = '',
-		subfolderFormat = 'None',
-		tiffBitDepth = 8,
-	} = options ?? {}
-
-	// Passed in order of appearance in the UI
-	// Due to the nature of the implementation, there's no streaming output, just
-	// a report at the end
-
-	const appleScriptPath = path.join(import.meta.dirname, './apple-photos-export.applescript')
-
-	const { failed, stderr } = await execa('osascript', [
-		appleScriptPath,
-		uuid,
-		exportDirectory,
-		photoKind,
-		jpegQuality,
-		tiffBitDepth.toString(),
-		colorProfile,
-		photoSize,
-		maxSizeType,
-		maxSizeValue.toString(),
-		includeMetadata.toString(),
-		includeLocation.toString(),
-		fileName,
-		sequentialPrefix,
-		subfolderFormat,
-	])
-
-	if (failed) {
-		throw new Error(`Error exporting album "${uuid}": ${stderr}`)
-	}
-
-	// Osascript logs to stderr...
-	const results = stderr.split('\n').filter((line) => line.trim() !== '')
-	if (results.length === 0) {
-		throw new Error(`No photos exported for album "${uuid}"`)
-	}
-
-	if (typeof results[0] !== 'string') {
-		throw new TypeError(`Unexpected export results for album "${uuid}": ${JSON.stringify(results)}`)
-	}
-
-	return results
-}
-
 export type ExportEngine = 'osxphotos' | 'photos-gui'
 export type ExportedPhoto = {
 	exportEngine: ExportEngine
@@ -157,11 +83,11 @@ export type ExportedPhoto = {
 export type ExportEngineOptions = ExportEngine | Partial<Record<ImageMimeType, ExportEngine>>
 
 export type ExportPhotoAlbumOptions = {
+	appleScriptGuiOptions?: ExportViaAppleScriptGuiOptions
 	engineEdited: ExportEngineOptions
 	engineEditedAlpha: ExportEngineOptions
 	engineOriginal: ExportEngineOptions
 	engineOriginalAlpha: ExportEngineOptions
-	photosGuiOptions?: ExportViaPhotosGuiOptions
 	preserveTags?: boolean
 }
 
@@ -191,11 +117,11 @@ export async function exportPhotoAlbum(
 	console.log(`Exporting from "${albumName}" to "${exportDirectory}"...`)
 
 	const {
+		appleScriptGuiOptions,
 		engineEdited,
 		engineEditedAlpha,
 		engineOriginal,
 		engineOriginalAlpha,
-		photosGuiOptions,
 		preserveTags,
 	} = options
 	const exportedPhotos: ExportedPhoto[] = []
@@ -387,10 +313,10 @@ export async function exportPhotoAlbum(
 		if (photosGuiExports.length <= 3 && photosGuiExports.length !== albumPhotoCount) {
 			const exportedPaths: string[] = []
 			for (const photoInfo of photosGuiExports) {
-				const exportedPath = await exportViaPhotosGui(
+				const exportedPath = await exportViaAppleScriptGui(
 					photoInfo.uuid,
 					exportDirectory,
-					photosGuiOptions,
+					appleScriptGuiOptions,
 				)
 				exportedPaths.push(...exportedPath)
 			}
@@ -410,7 +336,11 @@ export async function exportPhotoAlbum(
 				path.join(os.tmpdir(), `com.ericmika.${githubSlug(albumName)}.photos-gui-album-export.`),
 			)
 
-			const exportedPaths = await exportViaPhotosGui(albumId, tempDirectory, photosGuiOptions)
+			const exportedPaths = await exportViaAppleScriptGui(
+				albumId,
+				tempDirectory,
+				appleScriptGuiOptions,
+			)
 
 			for (const exportPath of exportedPaths) {
 				// Delete photos that weren't schedule for export with the photos-gui engine

@@ -9,8 +9,6 @@
 //     and quality metrics
 //  3. Summarize and condense the data into a Markdown table
 
-import { assert } from '@sindresorhus/is'
-import { execa } from 'execa'
 import { exiftool } from 'exiftool-vendored'
 import fse from 'fs-extra'
 import { markdownTable } from 'markdown-table'
@@ -19,8 +17,14 @@ import path from 'node:path'
 import type { ColorProfile } from '../src/utilities/image/color'
 import type { ImageInfo } from '../src/utilities/image/image'
 import type { ImageMimeType } from '../src/utilities/image/mime'
+import { exportViaAppleScriptGui } from '../src/engines/applescript-gui'
+import { exportViaFileSystem } from '../src/engines/file-system'
+import { exportViaOsxphotosExport } from '../src/engines/osxphotos-export'
+import { exportViaOsxphotosPhotoKit } from '../src/engines/osxphotos-photokit'
+import { exportViaOsxphotosPhotosExport } from '../src/engines/osxphotos-photos-export'
+import { exportViaSwiftPhotoKit } from '../src/engines/swift-photokit-export'
+import { exportViaSwiftPhotoKitOrientation } from '../src/engines/swift-photokit-export-orientation'
 import { sipsTempCleanup } from '../src/utilities/general'
-import { exportViaPhotosGui } from '../src/utilities/image/apple-photos'
 import { assertValidColorProfile } from '../src/utilities/image/color'
 import { calculateSimilarity } from '../src/utilities/image/compare'
 import { getImageInfo } from '../src/utilities/image/image'
@@ -28,60 +32,7 @@ import { getTagCount } from '../src/utilities/image/tags'
 
 // # Export Functions
 
-async function exportOriginalViaOsxphotos(
-	photoUuid: string,
-	destinationDirectory: string,
-): Promise<string> {
-	await fse.mkdir(destinationDirectory, { recursive: true })
-	const { stdout } = await execa('osxphotos', [
-		'export',
-		destinationDirectory,
-		'--only-photos',
-		'--skip-edited',
-		'--no-exportdb',
-		'--no-progress',
-		'--post-command',
-		'exported',
-		'echo Export Filepath: {filepath|shell_quote}',
-		'--jpeg-ext',
-		'jpeg',
-		'--uuid',
-		photoUuid,
-		'--filename',
-		photoUuid,
-	])
-	return /^export filepath: (.+)$/im.exec(stdout)![1]
-}
-
-async function exportViaOsxphotos(
-	photoUuid: string,
-	destinationDirectory: string,
-): Promise<string> {
-	await fse.mkdir(destinationDirectory, { recursive: true })
-	const { stdout } = await execa('osxphotos', [
-		'export',
-		destinationDirectory,
-		'--only-photos',
-		'--no-exportdb',
-		'--no-progress',
-		'--post-command',
-		'exported',
-		'echo Export Filepath: {filepath|shell_quote}',
-		'--jpeg-ext',
-		'jpeg',
-		'--skip-original-if-edited',
-		'--edited-suffix',
-		'',
-		'--uuid',
-		photoUuid,
-		'--filename',
-		photoUuid,
-	])
-
-	return /^export filepath: (.+)$/im.exec(stdout)![1]
-}
-
-async function exportViaPhotosGuiWrapped(
+async function exportViaAppleScriptGuiWrapped(
 	photoUuid: string,
 	destinationDirectory: string,
 	format: 'jpeg-high' | 'jpeg-max' | 'png',
@@ -93,7 +44,7 @@ async function exportViaPhotosGuiWrapped(
 		path.join(os.tmpdir(), `com.ericmika.audit.${photoUuid}.`),
 	)
 
-	const result = await exportViaPhotosGui(photoUuid, tempDirectory, {
+	const result = await exportViaAppleScriptGui(photoUuid, tempDirectory, {
 		colorProfile: 'Original',
 		fileName: 'Use Title',
 		includeLocation: true,
@@ -111,167 +62,6 @@ async function exportViaPhotosGuiWrapped(
 	return destinationPath
 }
 
-async function exportViaOsxphotosPhotosExport(
-	photoUuid: string,
-	destinationDirectory: string,
-): Promise<string> {
-	await fse.mkdir(destinationDirectory, { recursive: true })
-	const { stdout } = await execa('osxphotos', [
-		'export',
-		destinationDirectory,
-		'--only-photos',
-		'--no-exportdb',
-		'--no-progress',
-		'--post-command',
-		'exported',
-		'echo Export Filepath: {filepath|shell_quote}',
-		'--jpeg-ext',
-		'jpeg',
-		'--uuid',
-		photoUuid,
-		'--filename',
-		photoUuid,
-		'--use-photos-export',
-		'--skip-original-if-edited',
-		'--edited-suffix',
-		'',
-	])
-
-	return /^export filepath: (.+)$/im.exec(stdout)![1]
-}
-
-async function exportViaOsxphotosPhotoKit(
-	photoUuid: string,
-	destinationDirectory: string,
-): Promise<string> {
-	await fse.mkdir(destinationDirectory, { recursive: true })
-	const { stdout } = await execa('osxphotos', [
-		'export',
-		destinationDirectory,
-		'--only-photos',
-		'--no-exportdb',
-		'--no-progress',
-		'--post-command',
-		'exported',
-		'echo Export Filepath: {filepath|shell_quote}',
-		'--jpeg-ext',
-		'jpeg',
-		'--uuid',
-		photoUuid,
-		'--filename',
-		photoUuid,
-		'--use-photos-export',
-		'--use-photokit',
-		'--skip-original-if-edited',
-		'--edited-suffix',
-		'',
-	])
-
-	return /^export filepath: (.+)$/im.exec(stdout)![1]
-}
-
-async function exportViaFileSystem(
-	photoUuid: string,
-	destinationDirectory: string,
-): Promise<string> {
-	await fse.mkdir(destinationDirectory, { recursive: true })
-
-	const { stdout: json } = await execa('osxphotos', [
-		'query',
-		'--only-photos',
-		'--uuid',
-		photoUuid,
-		'--json',
-	])
-
-	const jsonOutput: unknown = JSON.parse(json)
-	assert.array(jsonOutput)
-
-	const photoInfo = jsonOutput[0]
-	assert.plainObject(photoInfo)
-
-	// Fall back to original path if edited path is not available
-	const editedPath = photoInfo.path_edited ?? photoInfo.path
-	assert.string(editedPath)
-
-	const destinationPath = path.join(destinationDirectory, `${photoUuid}${path.extname(editedPath)}`)
-	await fse.copyFile(editedPath, destinationPath)
-	return destinationPath
-}
-
-async function exportOriginalViaFileSystem(
-	photoUuid: string,
-	destinationDirectory: string,
-): Promise<string> {
-	await fse.mkdir(destinationDirectory, { recursive: true })
-
-	const { stdout: originalJson } = await execa('osxphotos', [
-		'query',
-		'--only-photos',
-		'--uuid',
-		photoUuid,
-		'--json',
-	])
-
-	const parsedJson: unknown = JSON.parse(originalJson)
-	assert.nonEmptyArray(parsedJson)
-
-	const photoInfo = parsedJson[0]
-	assert.plainObject(photoInfo)
-
-	const originalPath = photoInfo.path
-	assert.string(originalPath)
-
-	const destinationPath = path.join(
-		destinationDirectory,
-		`${photoUuid}${path.extname(originalPath)}`,
-	)
-	await fse.copyFile(originalPath, destinationPath)
-	return destinationPath
-}
-
-async function exportViaPhotoKitRequestImage(
-	photoUuid: string,
-	destinationDirectory: string,
-): Promise<string> {
-	await fse.mkdir(destinationDirectory, { recursive: true })
-
-	await execa('photos-album-exporter', [
-		'--photo-uuid',
-		photoUuid,
-		'--destination-directory',
-		destinationDirectory,
-		'--filename',
-		photoUuid,
-		'--mode',
-		'requestimage',
-	])
-
-	// Assuming output in PNG format
-	return `${destinationDirectory}/${photoUuid}.png`
-}
-
-async function exportViaPhotoKitRequestImageDataAndOrientation(
-	photoUuid: string,
-	destinationDirectory: string,
-): Promise<string> {
-	await fse.mkdir(destinationDirectory, { recursive: true })
-
-	await execa('photos-album-exporter', [
-		'--photo-uuid',
-		photoUuid,
-		'--destination-directory',
-		destinationDirectory,
-		'--filename',
-		photoUuid,
-		'--mode',
-		'requestimagedataandorientation',
-	])
-
-	// Assuming output in PNG format
-	return `${destinationDirectory}/${photoUuid}.png`
-}
-
 async function exportPhotos(destination: string, photoUuid: string): Promise<string[]> {
 	// Create the destination directory
 	await fse.mkdir(destination, { recursive: true })
@@ -281,30 +71,54 @@ async function exportPhotos(destination: string, photoUuid: string): Promise<str
 
 	exportedFiles.push(
 		// Originals
-		await exportOriginalViaOsxphotos(
+		await exportViaOsxphotosExport(
 			photoUuid, //
 			path.join(destination, 'original-osxphotos'),
+			{
+				original: true,
+			},
 		),
 
-		await exportOriginalViaFileSystem(
+		// TODO relevant? Working?
+		// await exportViaOsxphotosPhotosExport(
+		// 	photoUuid, //
+		// 	path.join(destination, 'original-osxphotos-photos-export'),
+		// 	{
+		// 		original: true,
+		// 	},
+		// ),
+
+		// TODO relevant? Working?
+		// await exportViaOsxphotosPhotoKit(
+		// 	photoUuid, //
+		// 	path.join(destination, 'original-osxphotos-photo-kit'),
+		// 	{
+		// 		original: true,
+		// 	},
+		// ),
+
+		await exportViaFileSystem(
 			photoUuid, //
 			path.join(destination, 'original-file-system'),
+			{
+				original: true,
+			},
 		),
 
 		// Edited
-		await exportViaPhotosGuiWrapped(
+		await exportViaAppleScriptGuiWrapped(
 			photoUuid, //
 			path.join(destination, 'photos-gui-png'),
 			'png',
 		),
 
-		await exportViaPhotosGuiWrapped(
+		await exportViaAppleScriptGuiWrapped(
 			photoUuid, //
 			path.join(destination, 'photos-gui-jpeg-max'),
 			'jpeg-max',
 		),
 
-		await exportViaPhotosGuiWrapped(
+		await exportViaAppleScriptGuiWrapped(
 			photoUuid, //
 			path.join(destination, 'photos-gui-jpeg-high'),
 			'jpeg-high',
@@ -313,31 +127,49 @@ async function exportPhotos(destination: string, photoUuid: string): Promise<str
 		await exportViaFileSystem(
 			photoUuid, //
 			path.join(destination, 'file-system'),
+			{
+				original: false,
+			},
 		),
 
-		await exportViaPhotoKitRequestImage(
+		await exportViaSwiftPhotoKit(
 			photoUuid, //
 			path.join(destination, 'swift-photo-kit-request-image'),
+			{
+				original: false,
+			},
 		),
 
-		await exportViaPhotoKitRequestImageDataAndOrientation(
+		await exportViaSwiftPhotoKitOrientation(
 			photoUuid, //
 			path.join(destination, 'swift-photo-kit-request-image-data-and-orientation'),
+			{
+				original: false,
+			},
 		),
 
-		await exportViaOsxphotos(
+		await exportViaOsxphotosExport(
 			photoUuid, //
 			path.join(destination, 'osxphotos'),
+			{
+				original: false,
+			},
 		),
 
 		await exportViaOsxphotosPhotoKit(
 			photoUuid, //
 			path.join(destination, 'osxphotos-photo-kit'),
+			{
+				original: false,
+			},
 		),
 
 		await exportViaOsxphotosPhotosExport(
 			photoUuid, //
 			path.join(destination, 'osxphotos-photos-export'),
+			{
+				original: false,
+			},
 		),
 	)
 

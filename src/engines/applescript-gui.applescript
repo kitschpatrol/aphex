@@ -93,7 +93,7 @@ on run { uuid, exportDirectory, photoKind, jpegQuality, tiffBitDepth, colorProfi
 					
 					if photoKind is "TIFF" then
 						tell checkbox "16 Bit"
-							if (value as boolean) ­ (tiffBitDepth is 16) then
+							if (value as boolean) is not (tiffBitDepth is 16) then
 								click
 							end if
 						end tell

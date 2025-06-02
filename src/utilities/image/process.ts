@@ -118,7 +118,7 @@ export async function processPhotoAlbum(
 		},
 		// Photos-gui does not preserve alpha channels, so we need to always use osxphotos
 		engineOriginalAlpha: 'osxphotos',
-		photosGuiOptions: {
+		appleScriptGuiOptions: {
 			colorProfile: 'sRGB',
 			fileName: 'Use Title',
 			includeLocation: false,
