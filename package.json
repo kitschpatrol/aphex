@@ -1,13 +1,19 @@
 {
 	"name": "apple-photos-export",
 	"version": "0.0.0",
-	"description": "Export images from your macOS Photos.app library.",
+	"description": "TypeScript library to export images and albums from your macOS Photos.app library.",
 	"keywords": [
 		"apple",
 		"photokit",
 		"osxphotos",
 		"photos"
 	],
+	"homepage": "https://github.com/kitschpatrol/apple-photos-export",
+	"bugs": "https://github.com/kitschpatrol/apple-photos-export/issues",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/kitschpatrol/apple-photos-export.git"
+	},
 	"license": "MIT",
 	"author": {
 		"name": "Eric Mika",
@@ -15,6 +21,18 @@
 		"url": "https://ericmika.com"
 	},
 	"type": "module",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist/*"
+	],
 	"scripts": {
 		"build": "tsdown",
 		"clean": "git rm -f pnpm-lock.yaml ; git clean -fdX",
