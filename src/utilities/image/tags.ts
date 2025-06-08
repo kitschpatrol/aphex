@@ -84,9 +84,7 @@ export async function validateTags(
 
 	// Check all keys if no "and" or "or" keys are specified
 	if (orKeys === undefined && andKeys === undefined) {
-		const allKeys = ['creator', 'credit', 'label', 'preservedFileName', 'processMetadata'] as Array<
-			keyof ImageTags
-		>
+		const allKeys = ['creator', 'credit', 'label', 'preservedFileName'] as Array<keyof ImageTags>
 		const keysUnseen = allKeys.filter((key) => tags[key] === undefined)
 
 		if (keysUnseen.length > 0) {

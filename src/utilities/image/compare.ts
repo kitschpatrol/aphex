@@ -9,6 +9,7 @@ import { lookupImageMimeType } from './mime'
 
 /**
  * Get two identically sized PNGs from two images.
+ * Uses the smaller image size as the target size.
  * Remember to clean up temp
  */
 export async function getTwoIdenticallySizedPng(
@@ -25,13 +26,13 @@ export async function getTwoIdenticallySizedPng(
 	const tempDirectory1 = await fse.mkdtemp(
 		path.join(
 			os.tmpdir(),
-			`com.ericmika.get-two-identically-sized-png.${getSlugFilename(image1)}.`,
+			`com.ericmika.apple-photos-export..get-two-identically-sized-png.${getSlugFilename(image1)}.`,
 		),
 	)
 	const tempDirectory2 = await fse.mkdtemp(
 		path.join(
 			os.tmpdir(),
-			`com.ericmika.get-two-identically-sized-png.${getSlugFilename(image2)}.`,
+			`com.ericmika.apple-photos-export..get-two-identically-sized-png.${getSlugFilename(image2)}.`,
 		),
 	)
 

@@ -74,11 +74,24 @@ export async function processPhotoAlbum(
 
 	// Prep temp
 	const backupDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.ericmika.${getSlugFilename(albumName)}.backup.`),
+		path.join(
+			os.tmpdir(),
+			`com.ericmika.apple-photos-export..${getSlugFilename(albumName)}.backup.`,
+		),
 	)
 	await fse.copy(outputDirectory, backupDirectory)
 
 	const exportPhotoAlbumOptions: ExportPhotoAlbumOptions = {
+		appleScriptGuiOptions: {
+			colorProfile: 'sRGB',
+			fileName: 'Use Title',
+			includeLocation: false,
+			includeMetadata: false,
+			maxSizeType: 'Dimension',
+			maxSizeValue: 6016, // Pro Display XDR res is 6016x3384
+			photoKind: 'PNG',
+			photoSize: 'Custom',
+		},
 		// If a single engine is passed, it's used for all cases regardless of the
 		// '.[].path'` to find all original image formats in your library.
 		engineEdited: 'photos-gui',
@@ -118,16 +131,6 @@ export async function processPhotoAlbum(
 		},
 		// Photos-gui does not preserve alpha channels, so we need to always use osxphotos
 		engineOriginalAlpha: 'osxphotos',
-		appleScriptGuiOptions: {
-			colorProfile: 'sRGB',
-			fileName: 'Use Title',
-			includeLocation: false,
-			includeMetadata: false,
-			maxSizeType: 'Dimension',
-			maxSizeValue: 6016, // Pro Display XDR res is 6016x3384
-			photoKind: 'PNG',
-			photoSize: 'Custom',
-		},
 		preserveTags: false, // We handle this ourselves later
 	}
 
@@ -172,7 +175,10 @@ export async function processPhotoAlbum(
 
 	// Process images in parallel
 	const tempProcessOutputDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.ericmika.${getSlugFilename(albumName)}.process.`),
+		path.join(
+			os.tmpdir(),
+			`com.ericmika.apple-photos-export..${getSlugFilename(albumName)}.process.`,
+		),
 	)
 
 	const processImageResults = await Promise.all<ProcessImageResult>(
@@ -335,7 +341,10 @@ export async function processImage(
 	const input = await getImageInfo(sourceImagePath)
 
 	const tempDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.ericmika.${getSlugFilename(sourceImagePath)}.`),
+		path.join(
+			os.tmpdir(),
+			`com.ericmika.apple-photos-export..${getSlugFilename(sourceImagePath)}.`,
+		),
 	)
 
 	// Result will be updated as we go
@@ -428,7 +437,12 @@ export async function processImage(
 	await assignColorProfile(workingImagePath, normalizedColorProfile)
 
 	if (options.preserveTags) {
-		await cloneTags(sourceImagePath, workingImagePath, ['credit', 'creator', 'preservedFileName'])
+		await cloneTags(sourceImagePath, workingImagePath, [
+			'creator',
+			'credit',
+			'label',
+			'preservedFileName',
+		])
 	}
 	// Who cares
 	// await cloneFileCreationTime(sourceImagePath, destinationImagePath)

@@ -333,7 +333,10 @@ export async function exportPhotoAlbum(
 			const albumId = getAlbumIdFromPhotoInfo(albumName, albumPhotoInfo[0])
 
 			const tempDirectory = await fse.mkdtemp(
-				path.join(os.tmpdir(), `com.ericmika.${githubSlug(albumName)}.photos-gui-album-export.`),
+				path.join(
+					os.tmpdir(),
+					`com.ericmika.apple-photos-export..${githubSlug(albumName)}.photos-gui-album-export.`,
+				),
 			)
 
 			const exportedPaths = await exportViaAppleScriptGui(

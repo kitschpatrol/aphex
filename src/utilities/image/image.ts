@@ -55,10 +55,13 @@ export async function hasAlpha(imagePath: string): Promise<boolean> {
 		return false
 	}
 
-	// Medium path, check for alpha channel
-	const { stdout: channelOutput } = await execa('identify', ['-format', '%[channels]', imagePath])
-	if (!channelOutput.includes('rgba')) {
-		return false
+	// Medium path, check for alpha channel, not accurate for PSDs and TIFFs which might have multiple layers
+	// (TODO tiff layer behavior not confirmed)
+	if (mime !== 'psd' && mime !== 'tiff') {
+		const { stdout: channelOutput } = await execa('identify', ['-format', '%[channels]', imagePath])
+		if (!channelOutput.includes('rgba')) {
+			return false
+		}
 	}
 
 	// Slow path, check for transparency in the alpha channel
@@ -68,18 +71,23 @@ export async function hasAlpha(imagePath: string): Promise<boolean> {
 		// const { stdout } = await execa('identify', ['-format', '%[opaque]', imagePath])
 
 		// Alternate...
-		const { stdout } = await execa('convert', [
+		// Flatten image onto a transparent background, then check alpha values
+		const { stdout } = await execa('magick', [
 			imagePath,
+			'-background',
+			'transparent',
+			'-flatten',
 			'-channel',
 			'A',
 			'-separate',
 			'+channel',
 			'-format',
-			'%[fx:mean]',
+			'%[fx:minima]',
 			'info:',
 		])
 
-		return stdout !== '1'
+		const minAlpha = Number(stdout)
+		return minAlpha < 1
 	} catch (error) {
 		throw new Error(`Error checking file: ${String(error)}`)
 	}

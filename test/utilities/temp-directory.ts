@@ -15,7 +15,7 @@ async function createTempDirectory() {
 	return fs.mkdtemp(tempDirectory)
 }
 
-export const itTempDirectory = test.extend<TempDirectoryFixture>({
+export const tempDirectoryFixture = test.extend<TempDirectoryFixture>({
 	// eslint-disable-next-line no-empty-pattern
 	async tempDirectory({}, use) {
 		const directory = await createTempDirectory()

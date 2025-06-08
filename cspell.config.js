@@ -1,5 +1,5 @@
 import { cspellConfig } from '@kitschpatrol/cspell-config'
 
 export default cspellConfig({
-	words: ['requestimagedataandorientation', 'requestimage', 'Turnbull'],
+	words: ['defu', 'requestimagedataandorientation', 'requestimage', 'Turnbull', 'magick'],
 })

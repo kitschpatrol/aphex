@@ -106,7 +106,10 @@ export async function convertToJpeg(
 			case 'mozjpeg': {
 				// Special case, only takes bmp...
 				const tgaTempDirectory = await fse.mkdtemp(
-					path.join(os.tmpdir(), `com.ericmika.${getSlugFilename(sourceImagePath)}.${engine}.`),
+					path.join(
+						os.tmpdir(),
+						`com.ericmika.apple-photos-export..${getSlugFilename(sourceImagePath)}.${engine}.`,
+					),
 				)
 				const tgaImagePath = await convertToTga(sourceImagePath, tgaTempDirectory)
 
@@ -417,7 +420,10 @@ export async function compressImage(
 	// Compress
 	let workingImagePath: string
 	const tempDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.ericmika.${getSlugFilename(sourceImagePath)}.compress.`),
+		path.join(
+			os.tmpdir(),
+			`com.ericmika.apple-photos-export..${getSlugFilename(sourceImagePath)}.compress.`,
+		),
 	)
 
 	// First try lossless

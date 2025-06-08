@@ -41,7 +41,7 @@ async function exportViaAppleScriptGuiWrapped(
 
 	// No control over exact file name in the gui, so we copy to temp first
 	const tempDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.ericmika.audit.${photoUuid}.`),
+		path.join(os.tmpdir(), `com.ericmika.apple-photos-export..audit.${photoUuid}.`),
 	)
 
 	const result = await exportViaAppleScriptGui(photoUuid, tempDirectory, {
