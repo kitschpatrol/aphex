@@ -2,7 +2,7 @@ import { defu } from 'defu'
 import { execa } from 'execa'
 import path from 'node:path'
 
-export type Options = {
+export type ExportViaAppleScriptGuiOptions = {
 	colorProfile?: 'AdobeRGB' | 'Display P3' | 'Most Compatible' | 'Original' | 'sRGB'
 	fileName?: 'Album Name With Number' | 'Sequential' | 'Use File Name' | 'Use Title'
 	includeLocation?: boolean
@@ -17,7 +17,7 @@ export type Options = {
 	tiffBitDepth?: 8 | 16
 }
 
-const defaultOptions: Required<Options> = {
+const defaultExportViaAppleScriptGuiOptions: Required<ExportViaAppleScriptGuiOptions> = {
 	colorProfile: 'Most Compatible',
 	fileName: 'Use File Name',
 	includeLocation: true,
@@ -38,7 +38,7 @@ const defaultOptions: Required<Options> = {
 export async function exportViaAppleScriptGui(
 	uuid: string,
 	exportDirectory: string,
-	options?: Options,
+	options?: ExportViaAppleScriptGuiOptions,
 ): Promise<string[]> {
 	const {
 		colorProfile,
@@ -53,7 +53,7 @@ export async function exportViaAppleScriptGui(
 		sequentialPrefix,
 		subfolderFormat,
 		tiffBitDepth,
-	} = defu(options, defaultOptions)
+	} = defu(options, defaultExportViaAppleScriptGuiOptions)
 
 	// Passed in order of appearance in the UI
 	// Due to the nature of the implementation, there's no streaming output, just

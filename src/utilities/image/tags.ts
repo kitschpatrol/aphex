@@ -1,8 +1,8 @@
 /* eslint-disable ts/no-unnecessary-condition */
 import type { Tags } from 'exiftool-vendored'
 import { exiftool } from 'exiftool-vendored'
+import type { ProcessMetadata } from '../../pipeline/process-photo'
 import type { PhotoInfo } from './apple-photos'
-import type { ProcessMetadata } from './process'
 import { lookupImageMimeType } from './mime'
 
 export const VALID_LABELS = [

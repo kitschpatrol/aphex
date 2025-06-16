@@ -1,71 +1,104 @@
-/* eslint-disable complexity */
-
 import fse from 'fs-extra'
-import { slug as githubSlug } from 'github-slugger'
 import os from 'node:os'
 import path from 'node:path'
 import { Piscina } from 'piscina'
-import type { ExportEngine, ExportPhotoAlbumOptions } from './apple-photos'
-import type { ColorProfile } from './color'
+import type { ColorProfile } from '../utilities/image/color'
 import type {
 	CompressImageOptions,
 	LosslessFormat,
 	LossyFormat,
 	NearLosslessFormat,
-} from './convert'
-import type { ImageInfo } from './image'
-import type { ImageMimeType } from './mime'
-import { getSlugFilename } from '../file'
-import { sipsTempCleanup } from '../general'
-import { exportPhotoAlbum } from './apple-photos'
+} from '../utilities/image/convert'
+import type { ImageInfo } from '../utilities/image/image'
+import type { ImageMimeType } from '../utilities/image/mime'
+import type { ExportedPhoto, ExportEngine, ExportPhotoOptions } from './export-photo'
+import { getSlugFilename } from '../utilities/file'
+import { sipsTempCleanup } from '../utilities/general'
 import {
 	assignColorProfile,
 	getColorProfile,
 	needsColorConversion,
 	normalizeColorProfile,
-} from './color'
-import { calculateSimilarity, identicalImageExistsInDirectory } from './compare'
-import { compressImage, convertToPng, optimizePng, resizePngToFit } from './convert'
-import { getImageInfo } from './image'
-import { cloneTags, getTags, setTags, stripTags, validateTags } from './tags'
+} from '../utilities/image/color'
+import { calculateSimilarity, identicalImageExistsInDirectory } from '../utilities/image/compare'
+import {
+	compressImage,
+	convertToPng,
+	optimizePng,
+	resizePngToFit,
+} from '../utilities/image/convert'
+import { getImageInfo } from '../utilities/image/image'
+import { cloneTags, getTags, setTags, stripTags, validateTags } from '../utilities/image/tags'
 
-// Kinda slow
-// async function validateAlbum(albumName: string) {
-// 	try {
-// 		const result = await execa('osxphotos', ['albums', '--json'])
-// 		if (result.exitCode !== 0) {
-// 			throw new Error(`Error getting album "${albumName}": ${result.stderr}`)
-// 		}
+export type ProcessImageOptions = CompressImageOptions & {
+	defaultColorProfile: ColorProfile
+	logSimilarity: boolean
+	losslessFormatAlpha: LosslessFormat
+	lossyFormatAlpha: LossyFormat
+	maxDimensionsPixels: {
+		height: number
+		width: number
+	}
+	nearLosslessFormatAlpha: NearLosslessFormat
+	passthroughFormats: ImageMimeType[]
+	preserveColorProfiles: ColorProfile[]
+	preserveTags: boolean
+}
 
-// 		const { albums } = JSON.parse(result.stdout) as { albums: string[] }
-
-// 		if (!Object.keys(albums).includes(albumName)) {
-// 			throw new Error(`Album "${albumName}" not found`)
-// 		}
-// 	} catch (error) {
-// 		throw new Error(`Error validating album "${albumName}": ${String(error)}`)
-// 	}
-// }
+export type ProcessImageResult = {
+	input: ImageInfo
+	output: ImageInfo
+	report: {
+		color: Awaited<ReturnType<typeof normalizeColorProfile>>
+		compression: Awaited<ReturnType<typeof compressImage>>['compression']
+		date: Date
+		durationMs: number
+		similarity?: {
+			dssim: number
+			psnr: number
+			ssim: number
+		}
+	}
+}
 
 export type ProcessMetadata = ProcessImageResult & {
 	dateModified: string | undefined // From photos
 	edited: boolean // From photos
 	exportEngine: ExportEngine
-	options: { export: ExportPhotoAlbumOptions; process: ProcessImageOptions }
+	options: { export: ExportPhotoOptions; process: ProcessImageOptions }
 	uuid: string // From photos
+}
+
+export const defaultProcessImageOptions: ProcessImageOptions = {
+	defaultColorProfile: 'sRGB IEC61966-2.1',
+	forceCompression: true,
+	logSimilarity: true,
+	losslessFormat: 'webp',
+	losslessFormatAlpha: 'png', // Webp's lossless compression screws up alpha areas
+	lossyFormat: 'jpeg', // Toss up with webp
+	lossyFormatAlpha: 'webp', // Webp's lossy compression seems ok for alpha areas
+	lossyQuality: 95, // See Compression Analysis.numbers
+	maxDimensionsPixels: {
+		width: 6016, // Pro Display XDR res is 6016x3384
+		height: 6016, // Pro Display XDR res is 6016x3384
+	},
+	maxFileSizeBytes: 15_000_000,
+	nearLosslessFormat: 'none', // 'webp'... Meh
+	nearLosslessFormatAlpha: 'none', // Webp's near lossless compression screws up alpha areas
+	passthroughFormats: ['webp', 'jpeg'],
+	preserveColorProfiles: ['sRGB IEC61966-2.1'],
+	preserveTags: false, // We handle this ourselves later
 }
 
 /**
  * Export and process a single Photos.app album by name
  */
 export async function processPhotoAlbum(
-	albumName: string,
+	exportedPhotos: ExportedPhoto[],
 	outputDirectory: string,
+	options: ProcessImageOptions,
 	forceUpdate = false,
-) {
-	// Kinda too slow
-	// await validateAlbum(albumName)
-
+): Promise<ProcessImageResult[]> {
 	if (forceUpdate) {
 		await fse.rm(outputDirectory, { force: true, recursive: true })
 	}
@@ -73,96 +106,12 @@ export async function processPhotoAlbum(
 	await fse.ensureDir(outputDirectory)
 
 	// Prep temp
+	// eslint-disable-next-line node/no-unsupported-features/node-builtins
+	const id = crypto.randomUUID()
 	const backupDirectory = await fse.mkdtemp(
-		path.join(
-			os.tmpdir(),
-			`com.ericmika.apple-photos-export..${getSlugFilename(albumName)}.backup.`,
-		),
+		path.join(os.tmpdir(), `com.ericmika.apple-photos-export..${getSlugFilename(id)}.backup.`),
 	)
 	await fse.copy(outputDirectory, backupDirectory)
-
-	const exportPhotoAlbumOptions: ExportPhotoAlbumOptions = {
-		appleScriptGuiOptions: {
-			colorProfile: 'sRGB',
-			fileName: 'Use Title',
-			includeLocation: false,
-			includeMetadata: false,
-			maxSizeType: 'Dimension',
-			maxSizeValue: 6016, // Pro Display XDR res is 6016x3384
-			photoKind: 'PNG',
-			photoSize: 'Custom',
-		},
-		// If a single engine is passed, it's used for all cases regardless of the
-		// '.[].path'` to find all original image formats in your library.
-		engineEdited: 'photos-gui',
-		// Photos-gui does not preserve alpha channels, so we need to always use osxphotos
-		engineEditedAlpha: 'osxphotos',
-		// This is tricky but important:
-		// If an object mapping file formats to engines is passed, the image source
-		// is lossless, and likely to end up as a PNG, then we can pass that to
-		// photos-gui instead to take care of resizing and color profile assignment
-		// during export instead of processing, possibly saving quality. (But note
-		// that the resulting PNG might be bigger than the original.)
-		//
-		// For compressed formats like JPEG, we want to keep them in that format,
-		// which means osxphotos is preferred in case there's a chance that they
-		// won't need further processing.
-		//
-		// If an original image is found that doesn't match these mime types, it
-		// will trigger an error. Run `osxphotos query --only-photos --json | jq
-		// In those cases...
-		engineOriginal: {
-			arw: 'photos-gui',
-			avif: 'osxphotos',
-			cr2: 'photos-gui',
-			cr3: 'photos-gui',
-			crw: 'photos-gui',
-			dng: 'photos-gui',
-			gif: 'osxphotos',
-			heic: 'osxphotos',
-			heif: 'osxphotos',
-			jpeg: 'osxphotos',
-			nef: 'photos-gui',
-			pef: 'photos-gui',
-			png: 'photos-gui',
-			psd: 'photos-gui',
-			tiff: 'photos-gui',
-			webp: 'osxphotos',
-		},
-		// Photos-gui does not preserve alpha channels, so we need to always use osxphotos
-		engineOriginalAlpha: 'osxphotos',
-		preserveTags: false, // We handle this ourselves later
-	}
-
-	const processImageOptions: ProcessImageOptions = {
-		defaultColorProfile: 'sRGB IEC61966-2.1',
-		forceCompression: true,
-		logSimilarity: true,
-		losslessFormat: 'webp',
-		losslessFormatAlpha: 'png', // Webp's lossless compression screws up alpha areas
-		lossyFormat: 'jpeg', // Toss up with webp
-		lossyFormatAlpha: 'webp', // Webp's lossy compression seems ok for alpha areas
-		lossyQuality: 95, // See Compression Analysis.numbers
-		maxDimensionsPixels: {
-			width: 6016, // Pro Display XDR res is 6016x3384
-			height: 6016, // Pro Display XDR res is 6016x3384
-		},
-		maxFileSizeBytes: 15_000_000,
-		nearLosslessFormat: 'none', // 'webp'... Meh
-		nearLosslessFormatAlpha: 'none', // Webp's near lossless compression screws up alpha areas
-		passthroughFormats: ['webp', 'jpeg'],
-		preserveColorProfiles: ['sRGB IEC61966-2.1'],
-		preserveTags: false, // We handle this ourselves later
-	}
-
-	// Note that changes specified in options can also happen in processing, and don't apply to the osxphotos engine
-	// but probably better to do it here since the edited assets are already being re-rendered
-	const exportedPhotos = await exportPhotoAlbum(
-		albumName,
-		outputDirectory,
-		exportPhotoAlbumOptions,
-		processImageOptions,
-	)
 
 	// Higher crashes the machine? Default 1.5x
 	const threads = Math.floor(os.availableParallelism() * 0.5)
@@ -175,10 +124,7 @@ export async function processPhotoAlbum(
 
 	// Process images in parallel
 	const tempProcessOutputDirectory = await fse.mkdtemp(
-		path.join(
-			os.tmpdir(),
-			`com.ericmika.apple-photos-export..${getSlugFilename(albumName)}.process.`,
-		),
+		path.join(os.tmpdir(), `com.ericmika.apple-photos-export..${getSlugFilename(id)}.process.`),
 	)
 
 	const processImageResults = await Promise.all<ProcessImageResult>(
@@ -186,7 +132,7 @@ export async function processPhotoAlbum(
 			// eslint-disable-next-line ts/no-unsafe-return
 			piscina.run({
 				destinationDirectory: tempProcessOutputDirectory,
-				options: processImageOptions,
+				options,
 				sourceImagePath: path,
 			}),
 		),
@@ -208,7 +154,7 @@ export async function processPhotoAlbum(
 		// Write tags, pulling from the original image
 		const processingOutputPath = result.output.path
 		const finalOutputPath = path.join(outputDirectory, path.basename(result.output.path))
-		const { exportEngine, photoInfo } = exportedPhoto
+		const { exportEngine, exportOptions, photoInfo } = exportedPhoto
 		const tags = await getTags(photoInfo.path)
 		result.output.path = finalOutputPath
 		tags.processMetadata = {
@@ -216,8 +162,8 @@ export async function processPhotoAlbum(
 			edited: photoInfo.pathEdited !== null,
 			exportEngine,
 			options: {
-				export: exportPhotoAlbumOptions,
-				process: processImageOptions,
+				export: exportOptions,
+				process: options,
 			},
 			uuid: photoInfo.uuid,
 			...result,
@@ -270,61 +216,8 @@ export async function processPhotoAlbum(
 
 	const sipsTempFileCount = await sipsTempCleanup()
 	console.log(`Cleaned up ${sipsTempFileCount} probable SIPS temp files from "${os.tmpdir()}"`)
-}
 
-/**
- * Process albums
- *
- * One project can reference multiple albums. Will attempt to update existing assets unless forceUpdate is true.
- */
-export async function processPhotoAlbums(
-	albums: string[],
-	outputDirectory: string,
-	forceUpdate = false,
-) {
-	if (forceUpdate) {
-		await fse.rm(outputDirectory, { force: true, recursive: true })
-	}
-
-	await fse.ensureDir(outputDirectory)
-
-	for (const album of albums) {
-		await processPhotoAlbum(album, path.join(outputDirectory, githubSlug(path.basename(album))))
-	}
-}
-
-export type ProcessImageOptions = CompressImageOptions & {
-	defaultColorProfile: ColorProfile
-	logSimilarity: boolean
-	losslessFormatAlpha: LosslessFormat
-	lossyFormatAlpha: LossyFormat
-	maxDimensionsPixels: {
-		height: number
-		width: number
-	}
-	nearLosslessFormatAlpha: NearLosslessFormat
-	passthroughFormats: ImageMimeType[]
-	preserveColorProfiles: ColorProfile[]
-	preserveTags: boolean
-}
-
-// Always better not to touch the image, but don't get ridiculous...
-// Note some PSD features are not supported
-
-export type ProcessImageResult = {
-	input: ImageInfo
-	output: ImageInfo
-	report: {
-		color: Awaited<ReturnType<typeof normalizeColorProfile>>
-		compression: Awaited<ReturnType<typeof compressImage>>['compression']
-		date: Date
-		durationMs: number
-		similarity?: {
-			dssim: number
-			psnr: number
-			ssim: number
-		}
-	}
+	return processImageResults
 }
 
 /**
@@ -332,6 +225,7 @@ export type ProcessImageResult = {
  *
  * Run in parallel through a worker for album processing
  */
+// eslint-disable-next-line complexity
 export async function processImage(
 	sourceImagePath: string,
 	destinationDirectory: string,
