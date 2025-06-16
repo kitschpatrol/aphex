@@ -21,8 +21,8 @@ import { exportViaAppleScriptGui } from '../src/engines/applescript-gui'
 import { exportViaFileSystem } from '../src/engines/file-system'
 import { exportViaOsxphotosExport } from '../src/engines/osxphotos-export'
 import { exportViaOsxphotosPhotoKit } from '../src/engines/osxphotos-photokit'
-import { exportViaOsxphotosPhotosExport } from '../src/engines/osxphotos-photos-export'
-import { exportViaSwiftPhotoKit } from '../src/engines/swift-photokit-export'
+import { exportViaOsxphotosPhotosExport } from '../src/engines/osxphotos-photos'
+import { exportViaSwiftPhotoKit } from '../src/engines/swift-photokit'
 import { exportViaSwiftPhotoKitOrientation } from '../src/engines/swift-photokit-export-orientation'
 import { sipsTempCleanup } from '../src/utilities/general'
 import { assertValidColorProfile } from '../src/utilities/image/color'
@@ -82,7 +82,7 @@ async function exportPhotos(destination: string, photoUuid: string): Promise<str
 		// TODO relevant? Working?
 		// await exportViaOsxphotosPhotosExport(
 		// 	photoUuid, //
-		// 	path.join(destination, 'original-osxphotos-photos-export'),
+		// 	path.join(destination, 'original-osxphotos-photos'),
 		// 	{
 		// 		original: true,
 		// 	},
@@ -166,7 +166,7 @@ async function exportPhotos(destination: string, photoUuid: string): Promise<str
 
 		await exportViaOsxphotosPhotosExport(
 			photoUuid, //
-			path.join(destination, 'osxphotos-photos-export'),
+			path.join(destination, 'osxphotos-photos'),
 			{
 				original: false,
 			},
@@ -199,7 +199,7 @@ const methodNameAndOrderMap = {
 	'original-file-system': 'File system copy',
 	osxphotos: '`osxphotos export`',
 	'osxphotos-photo-kit': '`osxphotos export --photo-kit`',
-	'osxphotos-photos-export': '`osxphotos export --use-photos-export`',
+	'osxphotos-photos': '`osxphotos export --use-photos-export`',
 	'photos-gui-jpeg-high': 'Photos GUI Export JPEG High',
 	'photos-gui-jpeg-max': 'Photos GUI Export JPEG Max',
 	'photos-gui-png': 'Photos GUI Export PNG',

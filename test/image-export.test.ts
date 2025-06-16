@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
 import { describe, expect } from 'vitest'
-import { exportViaSwiftPhotoKit } from '../src/engines/swift-photokit-export'
+import { exportViaSwiftPhotoKit } from '../src/engines/swift-photokit'
 import { tempDirectoryFixture } from './utilities/temp-directory'
 
 describe('photo library export', () => {

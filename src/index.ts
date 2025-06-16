@@ -1,5 +1,20 @@
 /* eslint-disable ts/no-unused-vars */
 
+import { exportViaFileSystem } from './engines/file-system'
+import { exportViaOsxphotos } from './engines/osxphotos'
+import { exportViaSwiftPhotoKit } from './engines/swift-photokit'
+
+type ExportOptions = {
+	engine?:
+		| 'applescript-gui'
+		| 'file-system'
+		| 'osxphotos'
+		| 'osxphotos-photokit'
+		| 'osxphotos-photos'
+		| 'swift-photokit'
+		| 'swift-photokit-orientation'
+}
+
 /**
  * Export an album to a directory.
  * @param album - The album to export.
