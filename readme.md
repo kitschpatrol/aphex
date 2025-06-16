@@ -23,13 +23,15 @@
 
 `apple-photos-export` is a TypeScript library for exporting images and albums from your local macOS Photos.app library via a Node-compatible runtime.
 
-I created this library for integration in static website content management asset pipelines, and to attempt to work around some issues related to [exporting high-quality versions of edited images](https://github.com/RhetTbull/osxphotos/discussions/1522).
+I created this library for integration in static website content management asset pipelines, and to attempt to work around some issues related to [exporting high-quality versions of edited images](https://github.com/RhetTbull/osxphotos/discussions/1522) from the Photos.app library.
 
 If you are looking for an industrial-strength Photos.app mass-export solution, I highly recommend using [osxphotos](https://github.com/RhetTbull/osxphotos) instead.
 
 ## Getting started
 
 ### Dependencies
+
+Requires macOS with Photos.app installed.
 
 Install [Node 21](https://nodejs.org/en/download/) or newer.
 
