@@ -1,8 +1,14 @@
 import { defu } from 'defu'
 import { execa } from 'execa'
 import fse from 'fs-extra'
-import type { ExportOptions } from '.'
-import { defaultExportOptions } from '.'
+
+export type ExportOptions = {
+	original?: boolean
+}
+
+const defaultExportOptions: Required<ExportOptions> = {
+	original: false,
+}
 
 /**
  * Export a photo by using the `osxphotos export --use-photokit` command.

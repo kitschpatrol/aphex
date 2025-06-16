@@ -3,8 +3,14 @@ import { defu } from 'defu'
 import { execa } from 'execa'
 import fse from 'fs-extra'
 import path from 'node:path'
-import type { ExportOptions } from '.'
-import { defaultExportOptions } from '.'
+
+export type ExportOptions = {
+	original?: boolean
+}
+
+const defaultExportOptions: Required<ExportOptions> = {
+	original: false,
+}
 
 /**
  * Export a photo by copying it directly from the Photos.app library file system to the destination directory.
@@ -14,8 +20,9 @@ export async function exportViaFileSystem(
 	destinationDirectory: string,
 	options?: ExportOptions,
 ): Promise<string> {
-	await fse.mkdir(destinationDirectory, { recursive: true })
 	const { original } = defu(options, defaultExportOptions)
+
+	await fse.mkdir(destinationDirectory, { recursive: true })
 
 	const { stdout: json } = await execa('osxphotos', [
 		'query',

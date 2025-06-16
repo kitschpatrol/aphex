@@ -1,8 +1,16 @@
 import { defu } from 'defu'
 import { execa } from 'execa'
 import fse from 'fs-extra'
-import type { ExportOptions } from '.'
-import { defaultExportOptions } from '.'
+import path from 'node:path'
+import { packageDirectory } from 'package-directory'
+
+export type ExportOptions = {
+	mode?: 'requestimage' | 'requestimagedataandorientation'
+}
+
+const defaultExportOptions: Required<ExportOptions> = {
+	mode: 'requestimage',
+}
 
 /**
  * Export a photo via a bespoke Swift script that uses the `requestimage` mode.
@@ -12,24 +20,32 @@ export async function exportViaSwiftPhotoKit(
 	destinationDirectory: string,
 	options?: ExportOptions,
 ): Promise<string> {
-	const { original } = defu(options, defaultExportOptions)
-
-	if (original !== defaultExportOptions.original) {
-		console.warn("'original' option is not supported by 'exportViaSwiftPhotoKit'")
-	}
+	const { mode } = defu(options, defaultExportOptions)
 
 	await fse.mkdir(destinationDirectory, { recursive: true })
 
-	await execa('photos-album-exporter', [
-		'--photo-uuid',
-		photoUuid,
-		'--destination-directory',
-		destinationDirectory,
-		'--filename',
-		photoUuid,
-		'--mode',
-		'requestimage',
-	])
+	const packageRoot = await packageDirectory()
+
+	if (!packageRoot) {
+		throw new Error('Package root not found')
+	}
+
+	await execa(
+		'./photokit-export',
+		[
+			'--photo-uuid',
+			photoUuid,
+			'--destination-directory',
+			destinationDirectory,
+			'--filename',
+			photoUuid,
+			'--mode',
+			mode,
+		],
+		{
+			cwd: path.join(packageRoot, 'dist'),
+		},
+	)
 
 	// Assuming output in PNG format
 	return `${destinationDirectory}/${photoUuid}.png`
