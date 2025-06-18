@@ -1,26 +1,29 @@
 import { assert } from '@sindresorhus/is'
 import camelcaseKeys from 'camelcase-keys'
-import { execa } from 'execa'
+import { defu } from 'defu'
 import fse from 'fs-extra'
 import { slug as githubSlug } from 'github-slugger'
 import os from 'node:os'
 import path from 'node:path'
-import type { ExportViaAppleScriptGuiOptions } from '../engines/applescript-gui'
 import type { OsxphotosExportReport, PhotoInfo } from '../utilities/image/apple-photos'
 import type { ImageMimeType } from '../utilities/image/mime'
+import type { ExportViaAppleScriptGuiOptions } from './engines/applescript-gui'
+import type { ExportViaOsxphotosOptions } from './engines/osxphotos'
 import type { ProcessImageOptions } from './process-photo'
-import { exportViaAppleScriptGui } from '../engines/applescript-gui'
 import { normalizeExtension } from '../utilities/file'
 import {
 	findPhotoInfoByTitleFilename,
 	getAlbumIdFromPhotoInfo,
 	getPhotoInfoForAlbum,
+	getPhotoInfoForUuid,
 } from '../utilities/image/apple-photos'
 import { hasAlpha } from '../utilities/image/image'
 import { lookupImageMimeType } from '../utilities/image/mime'
 import { cloneTags, getTags } from '../utilities/image/tags'
+import { exportViaAppleScriptGui } from './engines/applescript-gui'
+import { exportViaOsxphotos } from './engines/osxphotos'
 
-export type ExportEngine = 'osxphotos' | 'photos-gui' // TODO: Add more?
+export type ExportEngine = 'osxphotos' | 'photos-gui'
 export type ExportEngineOptions = ExportEngine | Partial<Record<ImageMimeType, ExportEngine>>
 
 export type ExportPhotoOptions = {
@@ -29,6 +32,7 @@ export type ExportPhotoOptions = {
 	engineEditedAlpha: ExportEngineOptions
 	engineOriginal: ExportEngineOptions
 	engineOriginalAlpha: ExportEngineOptions
+	osxphotosOptions?: ExportViaOsxphotosOptions
 	preserveTags?: boolean
 }
 
@@ -89,42 +93,169 @@ export const defaultExportPhotoOptions: ExportPhotoOptions = {
 	},
 	// Photos-gui does not preserve alpha channels, so we need to always use osxphotos
 	engineOriginalAlpha: 'osxphotos',
+	osxphotosOptions: {
+		filename: '{title}',
+		mode: 'export',
+		original: false,
+	},
 	preserveTags: false, // We handle this ourselves later
 }
 
 // ------------------------------
 
-// export async function exportPhoto(
-// 	uuid: string,
-// 	destinationDirectory: string,
-// 	exportOptions?: ExportPhotoOptions,
-// 	processOptions?: ProcessImageOptions,
-// ): Promise<ExportedPhoto> {
+/**
+ * Export a single photo
+ */
+export async function exportPhoto(
+	uuid: string,
+	destinationDirectory: string,
+	options?: ExportPhotoOptions,
+): Promise<ExportedPhoto> {
+	const resolvedOptions = defu(options, defaultExportPhotoOptions)
 
-// 	return ''
-// }
+	const photoInfo = await getPhotoInfoForUuid(uuid)
+	const engine = await getEngineForPhoto(photoInfo, resolvedOptions)
+
+	if (engine === undefined) {
+		throw new Error(`No export engine found for photo "${photoInfo.title}"`)
+	}
+
+	const exportedPhoto: ExportedPhoto = {
+		exportEngine: engine,
+		exportOptions: resolvedOptions,
+		path: '', // Will be set later
+		photoInfo,
+	}
+
+	switch (engine) {
+		case 'osxphotos': {
+			const exportedPaths = await exportViaOsxphotos(
+				photoInfo.uuid,
+				destinationDirectory,
+				resolvedOptions.osxphotosOptions,
+			)
+
+			exportedPhoto.path = exportedPaths[0]
+
+			break
+		}
+		case 'photos-gui': {
+			const [exportedPath] = await exportViaAppleScriptGui(
+				photoInfo.uuid,
+				destinationDirectory,
+				resolvedOptions.appleScriptGuiOptions,
+			)
+
+			// Normalize filename, doesn't touch the directory paths
+			const cleanPath = normalizeExtension(exportedPath)
+			await fse.rename(exportedPath, cleanPath)
+			exportedPhoto.path = cleanPath
+
+			// Copy relevant metadata from the original photo since photos-gui doesn't preserve it
+			if (resolvedOptions.preserveTags) {
+				// Copy relevant metadata from the original photo
+				const clonedKeys = await cloneTags(exportedPhoto.photoInfo.path, exportedPhoto.path, [
+					'credit',
+					'creator',
+					'preservedFileName',
+				])
+
+				console.log(`Cloned metadata keys for "${exportedPhoto.path}": ${clonedKeys.join(', ')}`)
+			}
+
+			break
+		}
+	}
+
+	return exportedPhoto
+}
 
 /**
- * Export a single album
+ * Process albums
+ *
+ * One project can reference multiple albums. Will attempt to update existing assets unless forceUpdate is true.
+ */
+// export async function processPhotoAlbums(
+// 	albums: string[],
+// 	outputDirectory: string,
+// 	forceUpdate = false,
+// ) {
+// 	if (forceUpdate) {
+// 		await fse.rm(outputDirectory, { force: true, recursive: true })
+// 	}
+
+// 	await fse.ensureDir(outputDirectory)
+
+// 	for (const album of albums) {
+// 		await processPhotoAlbum(album, path.join(outputDirectory, githubSlug(path.basename(album))))
+// 	}
+// }
+
+// Always better not to touch the image, but don't get ridiculous...
+// Note some PSD features are not supported
+
+async function getEngineForPhoto(
+	photoInfo: PhotoInfo,
+	options: ExportPhotoOptions,
+): Promise<ExportEngine | undefined> {
+	const { engineEdited, engineEditedAlpha, engineOriginal, engineOriginalAlpha } = defu(
+		options,
+		defaultExportPhotoOptions,
+	)
+
+	// Original only
+	if (photoInfo.pathEdited === null) {
+		const alpha = await hasAlpha(photoInfo.path)
+		// Checks for actual transparency, not just the presence of a channel
+		const type = lookupImageMimeType(photoInfo.path, true)
+		return alpha
+			? typeof engineOriginalAlpha === 'string'
+				? engineOriginalAlpha
+				: engineOriginalAlpha[type]
+			: typeof engineOriginal === 'string'
+				? engineOriginal
+				: engineOriginal[type]
+	}
+
+	// Has edits
+	const alpha = await hasAlpha(photoInfo.pathEdited)
+
+	if (alpha) {
+		console.warn(
+			`Edited photo "${photoInfo.title}" has true transparency, it probably won't export correctly. Only un-edited files preserve transparency on export.`,
+		)
+	}
+
+	const type = lookupImageMimeType(photoInfo.pathEdited, true)
+	return alpha
+		? typeof engineEditedAlpha === 'string'
+			? engineEditedAlpha
+			: engineEditedAlpha[type]
+		: typeof engineEdited === 'string'
+			? engineEdited
+			: engineEdited[type]
+}
+
+/**
+ * Export a single album to a folder
+ * Optionally sync the output directory with the album, deleting any images that are no longer in the album
+ * Optionally audit the album for duplicate titles
+ * Does NOT further process the images
  */
 // eslint-disable-next-line complexity
 export async function exportPhotoAlbum(
 	albumName: string,
 	exportDirectory: string,
-	options: ExportPhotoOptions,
+	options?: ExportPhotoOptions,
 	/** Used for change detection only */
 	processOptions?: ProcessImageOptions,
+	sync = false,
+	audit = false,
 ): Promise<ExportedPhoto[]> {
 	console.log(`Exporting from "${albumName}" to "${exportDirectory}"...`)
 
-	const {
-		appleScriptGuiOptions,
-		engineEdited,
-		engineEditedAlpha,
-		engineOriginal,
-		engineOriginalAlpha,
-		preserveTags,
-	} = options
+	const resolvedOptions = defu(options, defaultExportPhotoOptions)
+
 	const exportedPhotos: ExportedPhoto[] = []
 
 	// Needed for the metadata provided in the function's return value, and
@@ -136,161 +267,75 @@ export async function exportPhotoAlbum(
 		throw new Error(`No photos found in album "${albumName}"`)
 	}
 
-	// Audit title uniqueness
-	const titleSet = new Set<string>()
-	for (const photoInfo of albumPhotoInfo) {
-		if (
-			photoInfo.title === undefined ||
-			photoInfo.title === null ||
-			photoInfo.title.trim() === ''
-		) {
-			throw new Error(`Photo missing title in album "${albumName}"`)
-		}
+	if (audit) {
+		// Audit title uniqueness
+		const titleSet = new Set<string>()
+		for (const photoInfo of albumPhotoInfo) {
+			if (
+				photoInfo.title === undefined ||
+				photoInfo.title === null ||
+				photoInfo.title.trim() === ''
+			) {
+				throw new Error(`Photo missing title in album "${albumName}"`)
+			}
 
-		if (titleSet.has(photoInfo.title)) {
-			throw new Error(`Duplicate title "${photoInfo.title}" in album "${albumName}"`)
-		}
+			if (titleSet.has(photoInfo.title)) {
+				throw new Error(`Duplicate title "${photoInfo.title}" in album "${albumName}"`)
+			}
 
-		titleSet.add(photoInfo.title)
+			titleSet.add(photoInfo.title)
+		}
 	}
 
-	// Get existing image metadata
-	const existingFiles = await fse.readdir(exportDirectory)
+	if (sync) {
+		// Get existing image metadata
+		const existingFiles = await fse.readdir(exportDirectory)
 
-	// Delete stale and non-images
-	for (const filename of existingFiles) {
-		if (lookupImageMimeType(filename) === undefined) {
-			console.log(`Deleting non-image file "${filename}"`)
-			await fse.rm(path.join(exportDirectory, filename))
-			continue
+		// Delete stale and non-images
+		for (const filename of existingFiles) {
+			const shouldKeep = await shouldKeepImage(
+				filename,
+				exportDirectory,
+				albumPhotoInfo,
+				options,
+				processOptions,
+			)
+
+			if (shouldKeep) {
+				// Existing image must be identical, so remove from the output schedule
+				const { processMetadata } = await getTags(path.join(exportDirectory, filename))
+				const albumImageInfo = albumPhotoInfo.find(({ uuid }) => uuid === processMetadata?.uuid)
+				albumPhotoInfo.splice(albumPhotoInfo.indexOf(albumImageInfo!), 1)
+			} else {
+				await fse.rm(path.join(exportDirectory, filename))
+			}
 		}
 
-		const existingImageTags = await getTags(path.join(exportDirectory, filename))
-
-		// Delete images that aren't in the album
-		const albumImageInfo = albumPhotoInfo.find(
-			({ uuid }) => uuid === existingImageTags.processMetadata?.uuid,
+		console.log(
+			`Exporting ${albumPhotoInfo.length} new or updated / ${albumPhotoCount} total photos in "${albumName}"`,
 		)
-
-		if (albumImageInfo === undefined) {
-			console.log(`Deleting non-album image: "${filename}"`)
-			await fse.rm(path.join(exportDirectory, filename))
-			continue
-		}
-
-		// Delete images without  process metadata (should never happen, but helps type system)
-		if (existingImageTags.processMetadata === undefined) {
-			console.log(`Deleting unprocessed image: "${filename}"`)
-			await fse.rm(path.join(exportDirectory, filename))
-			continue
-		}
-
-		// Delete images that have been modified or have different export or processing options
-		if (existingImageTags.processMetadata.dateModified !== albumImageInfo.dateModified) {
-			console.log(`Deleting outdated image: "${filename}"`)
-			await fse.rm(path.join(exportDirectory, filename))
-			continue
-		}
-
-		if (existingImageTags.processMetadata.edited !== (albumImageInfo.pathEdited !== null)) {
-			console.log(`Deleting image with change in edit status: "${filename}"`)
-			console.log(existingImageTags.processMetadata.edited)
-			console.log(albumImageInfo.pathEdited)
-			await fse.rm(path.join(exportDirectory, filename))
-			continue
-		}
-
-		if (
-			JSON.stringify(existingImageTags.processMetadata.options.export) !== JSON.stringify(options)
-		) {
-			console.log(`Deleting image with change in export options: "${filename}"`)
-			await fse.rm(path.join(exportDirectory, filename))
-			continue
-		}
-
-		if (
-			processOptions !== undefined &&
-			JSON.stringify(existingImageTags.processMetadata.options.process) !==
-				JSON.stringify(processOptions)
-		) {
-			console.log(`Deleting image with change in processing options: "${filename}"`)
-			await fse.rm(path.join(exportDirectory, filename))
-			continue
-		}
-
-		// Finally, check for new metadata (in the original image)
-		const albumImageTags = await getTags(albumImageInfo.path)
-		if (
-			existingImageTags.credit !== albumImageTags.credit ||
-			existingImageTags.creator !== albumImageTags.creator ||
-			existingImageTags.preservedFileName !== albumImageTags.preservedFileName
-		) {
-			console.log(`Deleting image with updated metadata: "${filename}"`)
-			await fse.rm(path.join(exportDirectory, filename))
-			continue
-		}
-
-		// Existing image must be identical, so remove from the output
-		albumPhotoInfo.splice(albumPhotoInfo.indexOf(albumImageInfo), 1)
 	}
-
-	console.log(
-		`Exporting ${albumPhotoInfo.length} new or updated / ${albumPhotoCount} total photos in "${albumName}"`,
-	)
 
 	// Allocate photos to engines, note nuances around per-type overrides
 	const osxphotosExports: PhotoInfo[] = []
 	const photosGuiExports: PhotoInfo[] = []
-
-	// Temp for validation
 	const enginelessExports: PhotoInfo[] = []
 
 	for (const photoInfo of albumPhotoInfo) {
-		if (photoInfo.pathEdited === null) {
-			// Original only
-			// Checks for actual transparency, not just the presence of a channel
-			const alpha = await hasAlpha(photoInfo.path)
-			const type = lookupImageMimeType(photoInfo.path, true)
-			const engine = alpha
-				? typeof engineOriginalAlpha === 'string'
-					? engineOriginalAlpha
-					: engineOriginalAlpha[type]
-				: typeof engineOriginal === 'string'
-					? engineOriginal
-					: engineOriginal[type]
+		const engine = await getEngineForPhoto(photoInfo, resolvedOptions)
 
-			if (engine === 'osxphotos') {
+		switch (engine) {
+			case 'osxphotos': {
 				osxphotosExports.push(photoInfo)
-			} else if (engine === 'photos-gui') {
-				photosGuiExports.push(photoInfo)
-			} else {
-				enginelessExports.push(photoInfo)
+				break
 			}
-		} else {
-			// Has edits
-			const alpha = await hasAlpha(photoInfo.pathEdited)
-
-			if (alpha) {
-				console.warn(
-					`Edited photo "${photoInfo.title}" has true transparency, it probably won't export correctly. Only un-edited files preserve transparency on export.`,
-				)
-			}
-
-			const type = lookupImageMimeType(photoInfo.pathEdited, true)
-			const engine = alpha
-				? typeof engineEditedAlpha === 'string'
-					? engineEditedAlpha
-					: engineEditedAlpha[type]
-				: typeof engineEdited === 'string'
-					? engineEdited
-					: engineEdited[type]
-
-			if (engine === 'osxphotos') {
-				osxphotosExports.push(photoInfo)
-			} else if (engine === 'photos-gui') {
+			case 'photos-gui': {
 				photosGuiExports.push(photoInfo)
-			} else {
+				break
+			}
+			case undefined: {
 				enginelessExports.push(photoInfo)
+				break
 			}
 		}
 	}
@@ -317,7 +362,7 @@ export async function exportPhotoAlbum(
 				const exportedPath = await exportViaAppleScriptGui(
 					photoInfo.uuid,
 					exportDirectory,
-					appleScriptGuiOptions,
+					resolvedOptions.appleScriptGuiOptions,
 				)
 				exportedPaths.push(...exportedPath)
 			}
@@ -325,7 +370,7 @@ export async function exportPhotoAlbum(
 			for (const exportPath of exportedPaths) {
 				exportedPhotos.push({
 					exportEngine: 'photos-gui',
-					exportOptions: options,
+					exportOptions: resolvedOptions,
 					path: exportPath,
 					photoInfo: findPhotoInfoByTitleFilename(exportPath, albumPhotoInfo),
 				})
@@ -344,7 +389,7 @@ export async function exportPhotoAlbum(
 			const exportedPaths = await exportViaAppleScriptGui(
 				albumId,
 				tempDirectory,
-				appleScriptGuiOptions,
+				resolvedOptions.appleScriptGuiOptions,
 			)
 
 			for (const exportPath of exportedPaths) {
@@ -355,7 +400,7 @@ export async function exportPhotoAlbum(
 
 					exportedPhotos.push({
 						exportEngine: 'photos-gui',
-						exportOptions: options,
+						exportOptions: resolvedOptions,
 						path: destinationPath,
 						photoInfo: findPhotoInfoByTitleFilename(exportPath, albumPhotoInfo),
 					})
@@ -373,52 +418,27 @@ export async function exportPhotoAlbum(
 
 	// Osxphotos
 	if (osxphotosExports.length > 0) {
-		// Parsing the stdout is a mess, so we write a report to a file and read that
-		const osxphotosExportReportPath = path.join(exportDirectory, 'osxphotos-report.json')
-		const osxphotosUuids = osxphotosExports.map(({ uuid }) => ['--uuid', uuid])
+		const osxphotosUuids = osxphotosExports.map(({ uuid }) => uuid)
 
-		await execa('osxphotos', [
-			'export',
+		const exportedPaths = await exportViaOsxphotos(
+			osxphotosUuids,
 			exportDirectory,
-			'--library',
-			'/Users/mika/Pictures/Photos Library.photoslibrary',
-			'--only-photos',
-			'--jpeg-ext',
-			'jpeg',
-			'--skip-original-if-edited',
-			'--no-exportdb',
-			'--no-progress',
-			'--edited-suffix',
-			'',
-			'--filename',
-			'{title}',
-			...osxphotosUuids.flat(),
-			'--report',
-			osxphotosExportReportPath,
-		])
+			resolvedOptions.osxphotosOptions,
+		)
 
-		const exportReportJson: unknown = await fse.readJSON(osxphotosExportReportPath)
-		assert.plainObject(exportReportJson)
-		// eslint-disable-next-line ts/no-unsafe-type-assertion
-		const exportReport = camelcaseKeys(exportReportJson, {
-			deep: true,
-		}) as unknown as OsxphotosExportReport[]
-
-		for (const { filename } of exportReport) {
+		for (const filename of exportedPaths) {
 			exportedPhotos.push({
 				exportEngine: 'osxphotos',
-				exportOptions: options,
+				exportOptions: resolvedOptions,
 				path: filename,
 				photoInfo: findPhotoInfoByTitleFilename(filename, albumPhotoInfo),
 			})
 		}
-
-		await fse.rm(osxphotosExportReportPath)
 	}
 
 	// Repair metadata in photos-gui exports, which loses the original filename
 	for (const exportedPhoto of exportedPhotos) {
-		if (exportedPhoto.exportEngine === 'photos-gui' && preserveTags) {
+		if (exportedPhoto.exportEngine === 'photos-gui' && resolvedOptions.preserveTags) {
 			// Copy relevant metadata from the original photo
 			const clonedKeys = await cloneTags(exportedPhoto.photoInfo.path, exportedPhoto.path, [
 				'credit',
@@ -440,25 +460,81 @@ export async function exportPhotoAlbum(
 }
 
 /**
- * Process albums
- *
- * One project can reference multiple albums. Will attempt to update existing assets unless forceUpdate is true.
+ * Sync a single album to a folder, deleting any images that are no longer in the album
  */
-// export async function processPhotoAlbums(
-// 	albums: string[],
-// 	outputDirectory: string,
-// 	forceUpdate = false,
-// ) {
-// 	if (forceUpdate) {
-// 		await fse.rm(outputDirectory, { force: true, recursive: true })
-// 	}
 
-// 	await fse.ensureDir(outputDirectory)
+async function shouldKeepImage(
+	filename: string,
+	exportDirectory: string,
+	albumPhotoInfo: PhotoInfo[],
+	exportOptions?: ExportPhotoOptions,
+	processOptions?: ProcessImageOptions,
+): Promise<boolean> {
+	if (lookupImageMimeType(filename) === undefined) {
+		console.log(`Detected non-image file "${filename}"`)
+		return false
+	}
 
-// 	for (const album of albums) {
-// 		await processPhotoAlbum(album, path.join(outputDirectory, githubSlug(path.basename(album))))
-// 	}
-// }
+	const existingImageTags = await getTags(path.join(exportDirectory, filename))
 
-// Always better not to touch the image, but don't get ridiculous...
-// Note some PSD features are not supported
+	const albumImageInfo = albumPhotoInfo.find(
+		({ uuid }) => uuid === existingImageTags.processMetadata?.uuid,
+	)
+
+	// Delete images that aren't in the album
+	if (albumImageInfo === undefined) {
+		console.log(`Found non-album image: "${filename}"`)
+		return false
+	}
+
+	// Delete images without  process metadata (should never happen, but helps type system)
+	if (existingImageTags.processMetadata === undefined) {
+		console.log(`Found unprocessed image: "${filename}"`)
+		return false
+	}
+
+	// Delete images that have been modified or have different export or processing options
+	if (existingImageTags.processMetadata.dateModified !== albumImageInfo.dateModified) {
+		console.log(`Found outdated image: "${filename}"`)
+		return false
+	}
+
+	if (existingImageTags.processMetadata.edited !== (albumImageInfo.pathEdited !== null)) {
+		console.log(`Found image with change in edit status: "${filename}"`)
+		console.log(existingImageTags.processMetadata.edited)
+		console.log(albumImageInfo.pathEdited)
+		return false
+	}
+
+	if (
+		exportOptions !== undefined &&
+		JSON.stringify(existingImageTags.processMetadata.options.export) !==
+			JSON.stringify(exportOptions)
+	) {
+		console.log(`Found image with change in export options: "${filename}"`)
+		return false
+	}
+
+	if (
+		processOptions !== undefined &&
+		JSON.stringify(existingImageTags.processMetadata.options.process) !==
+			JSON.stringify(processOptions)
+	) {
+		console.log(`Found image with change in processing options: "${filename}"`)
+		return false
+	}
+
+	// Finally, check for new metadata (in the original image)
+	const albumImageTags = await getTags(albumImageInfo.path)
+	if (
+		existingImageTags.credit !== albumImageTags.credit ||
+		existingImageTags.creator !== albumImageTags.creator ||
+		existingImageTags.preservedFileName !== albumImageTags.preservedFileName
+	) {
+		console.log(`Found image with updated metadata: "${filename}"`)
+		return false
+	}
+
+	console.log(`Found unchanged image: "${filename}"`)
+	return true
+}

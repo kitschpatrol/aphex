@@ -22,6 +22,6 @@ export const tempDirectoryFixture = test.extend<TempDirectoryFixture>({
 
 		await use(directory)
 
-		await fs.rm(directory, { recursive: true })
+		// await fs.rm(directory, { recursive: true })
 	},
 })

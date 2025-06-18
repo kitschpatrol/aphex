@@ -36,6 +36,9 @@ const defaultExportViaAppleScriptGuiOptions: Required<ExportViaAppleScriptGuiOpt
  * Export a photo via the Photos.app GUI.
  */
 export async function exportViaAppleScriptGui(
+	/**
+	 * UUID of either a photo or an album
+	 */
 	uuid: string,
 	exportDirectory: string,
 	options?: ExportViaAppleScriptGuiOptions,

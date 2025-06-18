@@ -1,3 +1,7 @@
+/**
+ * Currently unused!
+ */
+
 import { assert } from '@sindresorhus/is'
 import { defu } from 'defu'
 import { execa } from 'execa'

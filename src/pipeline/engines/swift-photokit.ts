@@ -1,3 +1,7 @@
+/**
+ * Currently unused!
+ */
+
 import { defu } from 'defu'
 import { execa } from 'execa'
 import fse from 'fs-extra'

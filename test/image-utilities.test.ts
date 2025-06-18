@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { getPhotoInfoForUuid } from '../src/utilities/image/apple-photos'
 import { getColorProfile } from '../src/utilities/image/color'
 import {
 	calculatePSNR,
@@ -183,6 +184,115 @@ describe('test files are valid', () => {
 			  "./test/assets/images/test-srgb-webp.webp: No",
 			]
 		`)
+	})
+})
+
+describe('photo-info', () => {
+	it('gets photo info for uuid', { timeout: 20_000 }, async () => {
+		const photoInfo = await getPhotoInfoForUuid('77758382-025A-446E-91C6-88A0BCAFDA91')
+
+		/* Spell-checker: disable */
+
+		expect(Object.keys(photoInfo)).toMatchInlineSnapshot(`
+			[
+			  "adjustments",
+			  "albumInfo",
+			  "albums",
+			  "burst",
+			  "burstAlbumInfo",
+			  "burstAlbums",
+			  "burstDefaultPick",
+			  "burstKey",
+			  "burstPhotos",
+			  "burstSelected",
+			  "cloudGuid",
+			  "cloudMetadata",
+			  "cloudOwnerHashedId",
+			  "comments",
+			  "date",
+			  "dateAdded",
+			  "dateModified",
+			  "dateOriginal",
+			  "dateTrashed",
+			  "description",
+			  "exifInfo",
+			  "externalEdit",
+			  "faceInfo",
+			  "favorite",
+			  "filename",
+			  "fingerprint",
+			  "folders",
+			  "hasRaw",
+			  "hasadjustments",
+			  "hdr",
+			  "height",
+			  "hidden",
+			  "importInfo",
+			  "incloud",
+			  "intrash",
+			  "iscloudasset",
+			  "ismissing",
+			  "ismovie",
+			  "isphoto",
+			  "israw",
+			  "isreference",
+			  "keywords",
+			  "labels",
+			  "labelsNormalized",
+			  "latitude",
+			  "library",
+			  "likes",
+			  "livePhoto",
+			  "location",
+			  "longitude",
+			  "orientation",
+			  "originalFilename",
+			  "originalFilesize",
+			  "originalHeight",
+			  "originalOrientation",
+			  "originalWidth",
+			  "owner",
+			  "panorama",
+			  "path",
+			  "pathDerivatives",
+			  "pathEdited",
+			  "pathEditedLivePhoto",
+			  "pathLivePhoto",
+			  "pathRaw",
+			  "personInfo",
+			  "persons",
+			  "place",
+			  "portrait",
+			  "projectInfo",
+			  "rating",
+			  "rawOriginal",
+			  "savedToLibrary",
+			  "score",
+			  "screenRecording",
+			  "screenshot",
+			  "searchInfo",
+			  "searchInfoNormalized",
+			  "selfie",
+			  "shared",
+			  "sharedLibrary",
+			  "sharedMoment",
+			  "slowMo",
+			  "syndicated",
+			  "timeLapse",
+			  "title",
+			  "tzname",
+			  "tzoffset",
+			  "uti",
+			  "utiEdited",
+			  "utiOriginal",
+			  "utiRaw",
+			  "uuid",
+			  "visible",
+			  "width",
+			]
+		`)
+
+		/* Spell-checker: enable */
 	})
 })
 

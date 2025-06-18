@@ -7,16 +7,20 @@ import fse from 'fs-extra'
 import path from 'node:path'
 import { escapeRegExp } from '../general'
 
+function assertPhotoInfoArray(jsonResult: unknown): asserts jsonResult is PhotoInfo[] {
+	assert.array(jsonResult, assert.plainObject)
+	// TODO more rigorous validation...
+}
+
 export async function getMockPhotoInfo(): Promise<PhotoInfo[]> {
 	const result = await fse.readFile(`../../../scratch/results.json`, 'utf8')
 	const jsonResult: unknown = JSON.parse(result.toString())
-	assert.plainObject(jsonResult)
-	// eslint-disable-next-line ts/no-unsafe-type-assertion
-	return camelcaseKeys(jsonResult, { deep: true }) as unknown as PhotoInfo[]
+	assertPhotoInfoArray(jsonResult)
+	return camelcaseKeys(jsonResult, { deep: true })
 }
 
 // Albums or individual photos...
-export async function getPhotoInfoForUuid(uuid: string): Promise<PhotoInfo[]> {
+export async function getPhotoInfoForUuid(uuid: string): Promise<PhotoInfo> {
 	const result = await execa('osxphotos', ['query', '--uuid', uuid, '--json'])
 
 	if (result.exitCode !== 0) {
@@ -24,9 +28,8 @@ export async function getPhotoInfoForUuid(uuid: string): Promise<PhotoInfo[]> {
 	}
 
 	const jsonResult: unknown = JSON.parse(result.stdout.toString())
-	assert.plainObject(jsonResult)
-	// eslint-disable-next-line ts/no-unsafe-type-assertion
-	return camelcaseKeys(jsonResult, { deep: true }) as unknown as PhotoInfo[]
+	assertPhotoInfoArray(jsonResult)
+	return camelcaseKeys(jsonResult[0], { deep: true })
 }
 
 export async function getPhotoInfoForAlbum(albumName: string): Promise<PhotoInfo[]> {
@@ -44,9 +47,8 @@ export async function getPhotoInfoForAlbum(albumName: string): Promise<PhotoInfo
 	}
 
 	const jsonResult: unknown = JSON.parse(result.stdout.toString())
-	assert.plainObject(jsonResult)
-	// eslint-disable-next-line ts/no-unsafe-type-assertion
-	return camelcaseKeys(jsonResult, { deep: true }) as unknown as PhotoInfo[]
+	assertPhotoInfoArray(jsonResult)
+	return camelcaseKeys(jsonResult, { deep: true })
 }
 
 // Assumes folder path in albumName
@@ -261,35 +263,6 @@ export type PhotoInfo = {
 	uuid: string
 	visible: boolean
 	width: number
-}
-
-export type OsxphotosExportReport = {
-	cleanupDeletedDirectory: boolean
-	cleanupDeletedFile: boolean
-	convertedToJpeg: boolean
-	dateTime: string
-	error: string
-	exiftoolError: string
-	exiftoolWarning: string
-	exifUpdated: boolean
-	exported: boolean
-	exportedAlbum: string
-	extendedAttributesSkipped: boolean
-	extendedAttributesWritten: boolean
-	filename: string
-	isNew: boolean
-	missing: boolean
-	sidecarExiftool: boolean
-	sidecarJson: boolean
-	sidecarUser: boolean
-	sidecarUserError: string
-	sidecarXmp: boolean
-	skipped: boolean
-	touched: boolean
-	updated: boolean
-	userError: string
-	userSkipped: boolean
-	userWritten: boolean
 }
 
 // Kinda slow
