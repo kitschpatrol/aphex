@@ -1,6 +1,9 @@
 import { defu } from 'defu'
 import { execa } from 'execa'
+import fse from 'fs-extra'
+import os from 'node:os'
 import path from 'node:path'
+import { normalizeExtension } from '../../utilities/file'
 
 export type ExportViaAppleScriptGuiOptions = {
 	colorProfile?: 'AdobeRGB' | 'Display P3' | 'Most Compatible' | 'Original' | 'sRGB'
@@ -62,12 +65,22 @@ export async function exportViaAppleScriptGui(
 	// Due to the nature of the implementation, there's no streaming output, just
 	// a report at the end
 
+	await fse.ensureDir(exportDirectory)
+
+	// Get temp directory
+	const tempDirectory = await fse.mkdtemp(
+		path.join(os.tmpdir(), `com.kitschpatrol.apple-photos-export.`),
+	)
+
+	console.log('----------------------------------')
+	console.log(tempDirectory)
+
 	const appleScriptPath = path.join(import.meta.dirname, './applescript-gui.applescript')
 
 	const { failed, stderr } = await execa('osascript', [
 		appleScriptPath,
 		uuid,
-		exportDirectory,
+		tempDirectory,
 		photoKind,
 		jpegQuality,
 		tiffBitDepth.toString(),
@@ -96,5 +109,19 @@ export async function exportViaAppleScriptGui(
 		throw new TypeError(`Unexpected export results for album "${uuid}": ${JSON.stringify(results)}`)
 	}
 
-	return results
+	const cleanPaths: string[] = []
+	for (const exportedPath of results) {
+		// Normalize filename and move to destination directory
+		const cleanPath = path.join(exportDirectory, path.basename(normalizeExtension(exportedPath)))
+
+		cleanPaths.push(cleanPath)
+		await fse.move(exportedPath, cleanPath)
+
+		// Copy relevant metadata from the original photo since photos-gui doesn't preserve it?
+		// Can't do this without original image path, which has to come from the osxphotos photo info?
+	}
+
+	await fse.rm(tempDirectory, { force: true, recursive: true })
+
+	return cleanPaths
 }

@@ -37,7 +37,6 @@ describe('image processing', () => {
 						'sRGB IEC61966-2.1',
 						'Adobe RGB (1998)',
 					],
-					preserveTags: true,
 				})
 				filePairs.push([path.basename(file), path.basename(result.output.path)])
 				pathPairs.push([file, result.output.path])

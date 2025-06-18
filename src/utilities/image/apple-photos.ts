@@ -68,13 +68,13 @@ export function getAlbumIdFromPhotoInfo(albumName: string, photoInfo: PhotoInfo)
 export function findPhotoInfoByTitleFilename(
 	titleFilename: string,
 	photoInfoArray: PhotoInfo[],
-): PhotoInfo {
+): PhotoInfo | undefined {
 	const titleFromFilename = path.basename(titleFilename, path.extname(titleFilename))
-	const photoInfo = photoInfoArray.find(({ title }) => title === titleFromFilename)
-
-	if (photoInfo === undefined) {
-		throw new Error(`Photo info not found for title "${titleFilename}"`)
-	}
+	const photoInfo = photoInfoArray.find(
+		({ originalFilename, title }) =>
+			titleFromFilename === title ||
+			titleFromFilename === path.basename(originalFilename, path.extname(originalFilename)),
+	)
 
 	return photoInfo
 }

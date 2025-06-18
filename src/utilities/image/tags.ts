@@ -1,7 +1,7 @@
 /* eslint-disable ts/no-unnecessary-condition */
 import type { Tags } from 'exiftool-vendored'
 import { exiftool } from 'exiftool-vendored'
-import type { ProcessMetadata } from '../../pipeline/process-photo'
+import type { ProcessMetadata } from '../../pipeline/process'
 import type { PhotoInfo } from './apple-photos'
 import { lookupImageMimeType } from './mime'
 

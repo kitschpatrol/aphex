@@ -1,3 +1,4 @@
+import defu from 'defu'
 import fse from 'fs-extra'
 import os from 'node:os'
 import path from 'node:path'
@@ -12,7 +13,6 @@ import type {
 import type { ImageInfo } from '../utilities/image/image'
 import type { ImageMimeType } from '../utilities/image/mime'
 import type { ExportedPhoto, ExportEngine, ExportPhotoOptions } from './export-photo'
-import { getSlugFilename } from '../utilities/file'
 import { sipsTempCleanup } from '../utilities/general'
 import {
 	assignColorProfile,
@@ -28,7 +28,7 @@ import {
 	resizePngToFit,
 } from '../utilities/image/convert'
 import { getImageInfo } from '../utilities/image/image'
-import { cloneTags, getTags, setTags, stripTags, validateTags } from '../utilities/image/tags'
+import { cloneTags, getTags, setTags, stripTags } from '../utilities/image/tags'
 
 export type ProcessImageOptions = CompressImageOptions & {
 	defaultColorProfile: ColorProfile
@@ -42,7 +42,6 @@ export type ProcessImageOptions = CompressImageOptions & {
 	nearLosslessFormatAlpha: NearLosslessFormat
 	passthroughFormats: ImageMimeType[]
 	preserveColorProfiles: ColorProfile[]
-	preserveTags: boolean
 }
 
 export type ProcessImageResult = {
@@ -87,31 +86,17 @@ export const defaultProcessImageOptions: ProcessImageOptions = {
 	nearLosslessFormatAlpha: 'none', // Webp's near lossless compression screws up alpha areas
 	passthroughFormats: ['webp', 'jpeg'],
 	preserveColorProfiles: ['sRGB IEC61966-2.1'],
-	preserveTags: false, // We handle this ourselves later
 }
 
 /**
- * Export and process a single Photos.app album by name
+ * Process one or more exported photos
  */
-export async function processPhotoAlbum(
+export async function processPhotos(
 	exportedPhotos: ExportedPhoto[],
 	outputDirectory: string,
 	options: ProcessImageOptions,
-	forceUpdate = false,
 ): Promise<ProcessImageResult[]> {
-	if (forceUpdate) {
-		await fse.rm(outputDirectory, { force: true, recursive: true })
-	}
-
 	await fse.ensureDir(outputDirectory)
-
-	// Prep temp
-	// eslint-disable-next-line node/no-unsupported-features/node-builtins
-	const id = crypto.randomUUID()
-	const backupDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.ericmika.apple-photos-export..${getSlugFilename(id)}.backup.`),
-	)
-	await fse.copy(outputDirectory, backupDirectory)
 
 	// Higher crashes the machine? Default 1.5x
 	const threads = Math.floor(os.availableParallelism() * 0.5)
@@ -124,7 +109,7 @@ export async function processPhotoAlbum(
 
 	// Process images in parallel
 	const tempProcessOutputDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.ericmika.apple-photos-export..${getSlugFilename(id)}.process.`),
+		path.join(os.tmpdir(), `com.kitschpatrol.apple-photos-export.process.`),
 	)
 
 	const processImageResults = await Promise.all<ProcessImageResult>(
@@ -147,9 +132,6 @@ export async function processPhotoAlbum(
 				`Exported photo info not found for processed image with input "${result.input.path}"`,
 			)
 		}
-
-		// Delete source image (in outputDirectory)
-		await fse.rm(result.input.path, { force: true })
 
 		// Write tags, pulling from the original image
 		const processingOutputPath = result.output.path
@@ -174,7 +156,7 @@ export async function processPhotoAlbum(
 		// See if the processed image is actually different from what we had before
 		const identicalImageExists = await identicalImageExistsInDirectory(
 			processingOutputPath,
-			backupDirectory,
+			outputDirectory,
 		)
 
 		// Use original image if no material change
@@ -182,36 +164,35 @@ export async function processPhotoAlbum(
 			console.log(
 				`Image wasn't changed by processing, keeping original: "${path.basename(result.output.path)}"`,
 			)
-			await fse.move(
-				path.join(backupDirectory, path.basename(result.output.path)),
-				path.join(outputDirectory, path.basename(result.output.path)),
-				{ overwrite: true },
-			)
 			continue
 		}
 
 		// Move to output directory
 		updatedImageCount += 1
 		console.log(`Image updated: "${path.basename(result.output.path)}"`)
+
+		// Delete original
+		await fse.rm(result.input.path, { force: true })
+
 		await fse.move(processingOutputPath, finalOutputPath, { overwrite: true })
 
+		// TODO separate step?
 		// Validate exif data
-		const isValid = await validateTags(
-			result.output.path,
-			['processMetadata', 'preservedFileName', 'label'], // All required ("and")
-			['credit', 'creator'], // One required ("or")
-		)
-		if (!isValid) {
-			throw new Error(`Invalid XMP data for "${result.output.path}"`)
-		}
+		// const isValid = await validateTags(
+		// 	result.output.path,
+		// 	['processMetadata', 'preservedFileName', 'label'], // All required ("and")
+		// 	['credit', 'creator'], // One required ("or")
+		// )
+		// if (!isValid) {
+		// 	throw new Error(`Invalid XMP data for "${result.output.path}"`)
+		// }
 	}
 
 	// Clean up
 	await fse.rm(tempProcessOutputDirectory, { force: true, recursive: true })
-	await fse.rm(backupDirectory, { force: true, recursive: true })
 
 	console.log(
-		`Album export exported ${processImageResults.length} images and actually updated ${updatedImageCount}`,
+		`Processed ${processImageResults.length} images and actually updated ${updatedImageCount}`,
 	)
 
 	const sipsTempFileCount = await sipsTempCleanup()
@@ -235,10 +216,7 @@ export async function processImage(
 	const input = await getImageInfo(sourceImagePath)
 
 	const tempDirectory = await fse.mkdtemp(
-		path.join(
-			os.tmpdir(),
-			`com.ericmika.apple-photos-export..${getSlugFilename(sourceImagePath)}.`,
-		),
+		path.join(os.tmpdir(), `com.kitschpatrol.apple-photos-export.process-image.`),
 	)
 
 	// Result will be updated as we go
@@ -330,14 +308,13 @@ export async function processImage(
 	await stripTags(workingImagePath)
 	await assignColorProfile(workingImagePath, normalizedColorProfile)
 
-	if (options.preserveTags) {
-		await cloneTags(sourceImagePath, workingImagePath, [
-			'creator',
-			'credit',
-			'label',
-			'preservedFileName',
-		])
-	}
+	await cloneTags(sourceImagePath, workingImagePath, [
+		'creator',
+		'credit',
+		'label',
+		'preservedFileName',
+	])
+
 	// Who cares
 	// await cloneFileCreationTime(sourceImagePath, destinationImagePath)
 

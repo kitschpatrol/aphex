@@ -15,9 +15,10 @@ on run { uuid, exportDirectory, photoKind, jpegQuality, tiffBitDepth, colorProfi
 		tell application "System Events"
 			tell process "Photos"
 				repeat until exists menu bar 1
-					delay 0.1
+					delay 0.25
 				end repeat
 				click menu item "Library" of menu 1 of menu item "Photos" of menu 1 of menu bar item "View" of menu bar 1
+				delay 0.1
 				click menu item "Deselect All" of menu 1 of menu bar item "Edit" of menu bar 1
 			end tell
 		end tell
