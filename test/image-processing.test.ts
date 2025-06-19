@@ -22,7 +22,7 @@ describe('image processing', () => {
 					losslessFormatAlpha: 'webp',
 					lossyFormat: 'jpeg', // Toss up with webp
 					lossyFormatAlpha: 'webp',
-					lossyQuality: 96, // See Compression Analysis.numbers
+					lossyQuality: 0.96, // See Compression Analysis.numbers (converted to 0-1 range)
 					maxDimensionsPixels: {
 						width: 6016, // Pro Display XDR res is 6016x3384
 						height: 6016, // Pro Display XDR res is 6016x3384

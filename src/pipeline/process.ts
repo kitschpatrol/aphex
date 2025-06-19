@@ -76,7 +76,7 @@ export const defaultProcessImageOptions: ProcessImageOptions = {
 	losslessFormatAlpha: 'png', // Webp's lossless compression screws up alpha areas
 	lossyFormat: 'jpeg', // Toss up with webp
 	lossyFormatAlpha: 'webp', // Webp's lossy compression seems ok for alpha areas
-	lossyQuality: 95, // See Compression Analysis.numbers
+	lossyQuality: 0.95, // See Compression Analysis.numbers (converted to 0-1 range)
 	maxDimensionsPixels: {
 		width: 6016, // Pro Display XDR res is 6016x3384
 		height: 6016, // Pro Display XDR res is 6016x3384

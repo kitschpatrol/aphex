@@ -31,6 +31,8 @@ export async function optimizePng(
 
 /**
  * Resize a PNG image to fit within a maximum width and height
+ * Copies the image unchanged if it already fits within the target size
+ * @returns The destination image path
  */
 export async function resizePngToFit(
 	imagePath: string,
@@ -50,6 +52,7 @@ export async function resizePngToFit(
 
 	// eslint-disable-next-line unicorn/prefer-ternary
 	if (height <= maxHeight && width <= maxWidth) {
+		// No resize needed
 		await fse.copy(imagePath, destinationImagePath)
 	} else {
 		// Imagemagick
@@ -87,15 +90,18 @@ export async function convertToJpeg(
 	if (!force && mime === 'jpeg') {
 		await fse.copy(sourceImagePath, destinationImagePath)
 	} else {
+		// Convert 0-1 quality to 0-100 range for JPEG tools
+		const jpegQuality = quality === 'lossless' ? 'lossless' : Math.round(quality * 100)
+
 		switch (engine) {
 			case 'guetzli': {
-				if (quality === 'lossless') {
-					throw new Error('Lossless JPEG conversion not supported with sips')
+				if (jpegQuality === 'lossless') {
+					throw new Error('Lossless JPEG conversion not supported with guetzli')
 				}
 
 				await execa('guetzli', [
 					'--quality',
-					quality.toString(),
+					jpegQuality.toString(),
 					sourceImagePath,
 					destinationImagePath,
 				])
@@ -113,7 +119,7 @@ export async function convertToJpeg(
 				)
 				const tgaImagePath = await convertToTga(sourceImagePath, tgaTempDirectory)
 
-				await (quality === 'lossless'
+				await (jpegQuality === 'lossless'
 					? execa('cjpeg', [
 							'--lossless',
 							'-optimize',
@@ -124,7 +130,7 @@ export async function convertToJpeg(
 						])
 					: execa('cjpeg', [
 							'-quality',
-							quality.toString(),
+							jpegQuality.toString(),
 							'-optimize',
 							'-progressive',
 							'-outfile',
@@ -137,7 +143,7 @@ export async function convertToJpeg(
 			}
 
 			case 'sips': {
-				if (quality === 'lossless') {
+				if (jpegQuality === 'lossless') {
 					throw new Error('Lossless JPEG conversion not supported with sips')
 				}
 
@@ -148,7 +154,7 @@ export async function convertToJpeg(
 					'jpeg',
 					'-s',
 					'formatOptions',
-					quality.toString(),
+					jpegQuality.toString(),
 					sourceImagePath,
 					'--out',
 					destinationImagePath,
@@ -181,6 +187,9 @@ export async function convertToWebp(
 	if (!force && mime === 'webp') {
 		await fse.copy(sourceImagePath, destinationImagePath)
 	} else {
+		// Convert 0-1 quality to 0-100 range for WebP
+		const webpQuality = typeof quality === 'number' ? Math.round(quality * 100) : quality
+
 		const qualityArgs =
 			quality === 'lossless'
 				? ['-lossless']
@@ -188,7 +197,7 @@ export async function convertToWebp(
 					? ['-near_lossless', '100']
 					: [
 							'-q',
-							String(quality), // Quality factor (0:small..100:big), default=75
+							String(webpQuality), // Quality factor (0:small..100:big), default=75
 						]
 
 		await execa('cwebp', [
@@ -342,7 +351,7 @@ export async function convertToAvif(
 			quality === 'lossless'
 				? ['--lossless']
 				: typeof quality === 'number'
-					? ['-q', quality.toString()]
+					? ['-q', Math.round(quality * 63).toString()] // Convert 0-1 quality to 0-63 range for AVIF
 					: ['-qcolor', quality.color.toString(), '--qalpha', quality.alpha.toString()]
 
 		// Extra profile shenanigans since we can't change it after the fact
@@ -369,17 +378,66 @@ export type LosslessFormat = 'avif' | 'none' | 'png' | 'webp'
 export type NearLosslessFormat = 'none' | 'webp'
 export type LossyFormat = 'avif' | 'jpeg' | 'none' | 'webp'
 
+/**
+ * Configuration options for image compression.
+ *
+ * The compression process follows a three-tier approach:
+ * 1. First attempts lossless compression if enabled
+ * 2. Falls back to near-lossless compression if lossless exceeds size limit
+ * 3. Finally uses lossy compression if other methods fail to meet size requirements
+ *
+ * Set format to 'none' to disable that compression tier.
+ */
 export type CompressImageOptions = {
+	/**
+	 * Force compression even if the original image is already within the size limit.
+	 * When false, images smaller than maxFileSizeBytes are copied without modification.
+	 */
 	forceCompression: boolean
+
+	/**
+	 * Format to use for lossless compression (first attempt).
+	 * - 'avif': Best compression but slower encoding
+	 * - 'png': Good compatibility, optimized with oxipng
+	 * - 'webp': Good balance of compression and speed
+	 * - 'none': Skip lossless compression
+	 */
 	losslessFormat: LosslessFormat
+
+	/**
+	 * Format to use for lossy compression (final fallback).
+	 * - 'avif': Best compression but very slow encoding
+	 * - 'jpeg': Good compatibility, uses mozjpeg encoder
+	 * - 'webp': Good balance of compression and speed
+	 * - 'none': Skip lossy compression (may result in oversized files)
+	 */
 	lossyFormat: LossyFormat
+
+	/**
+	 * Quality level for lossy compression (0-1 scale).
+	 * - 0: Lowest quality, smallest file size
+	 * - 1: Highest quality, largest file size
+	 * - Recommended range: 0.85-0.96 for high-quality images
+	 */
 	lossyQuality: number
+
+	/**
+	 * Maximum allowed file size in bytes.
+	 * Images exceeding this size will be compressed using the configured formats.
+	 * The compression process stops when this target is met or all options are exhausted.
+	 */
 	maxFileSizeBytes: number
+
+	/**
+	 * Format to use for near-lossless compression (second attempt).
+	 * - 'webp': Only format currently supporting near-lossless mode
+	 * - 'none': Skip near-lossless compression
+	 */
 	nearLosslessFormat: NearLosslessFormat
 }
 
 /**
- * Compress an image using a variety of formats
+ * Compress an image to a target size
  */
 // eslint-disable-next-line complexity
 export async function compressImage(
@@ -503,7 +561,7 @@ export async function compressImage(
 	switch (lossyFormat) {
 		case 'avif': {
 			// Very slow
-			workingImagePath = await convertToAvif(sourceImagePath, tempDirectory, maxFileSizeBytes, true)
+			workingImagePath = await convertToAvif(sourceImagePath, tempDirectory, lossyQuality, true)
 			break
 		}
 

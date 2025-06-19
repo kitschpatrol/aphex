@@ -140,11 +140,10 @@ describe('export via generic abstraction', () => {
 })
 
 describe('export and process via generic abstraction', () => {
-	tempDirectoryFixture.skip(
+	tempDirectoryFixture(
 		'exports and processes a specific photo using generic export abstraction',
 		{ timeout: 40_000 },
 		async ({ tempDirectory }) => {
-			console.log(tempDirectory)
 			const exportedPhoto = await exportPhoto(
 				'77758382-025A-446E-91C6-88A0BCAFDA91',
 				tempDirectory,
@@ -157,7 +156,32 @@ describe('export and process via generic abstraction', () => {
 				},
 			)
 
-			expect(exportedPhoto.processOptions).toMatchInlineSnapshot()
+			expect(exportedPhoto.processOptions).toMatchInlineSnapshot(`
+				{
+				  "defaultColorProfile": "sRGB IEC61966-2.1",
+				  "forceCompression": true,
+				  "logSimilarity": true,
+				  "losslessFormat": "webp",
+				  "losslessFormatAlpha": "png",
+				  "lossyFormat": "jpeg",
+				  "lossyFormatAlpha": "webp",
+				  "lossyQuality": 0.95,
+				  "maxDimensionsPixels": {
+				    "height": 600,
+				    "width": 800,
+				  },
+				  "maxFileSizeBytes": 15000000,
+				  "nearLosslessFormat": "none",
+				  "nearLosslessFormatAlpha": "none",
+				  "passthroughFormats": [
+				    "webp",
+				    "jpeg",
+				  ],
+				  "preserveColorProfiles": [
+				    "sRGB IEC61966-2.1",
+				  ],
+				}
+			`)
 
 			const files = await fs.readdir(tempDirectory)
 			expect(files).toMatchInlineSnapshot(`
@@ -172,7 +196,6 @@ describe('export and process via generic abstraction', () => {
 		'exports and processes a specific album using generic export abstraction',
 		{ timeout: 120_000 },
 		async ({ tempDirectory }) => {
-			console.log(tempDirectory)
 			await exportPhotoAlbum('test-album', tempDirectory, undefined, {
 				maxDimensionsPixels: {
 					width: 800,
@@ -181,7 +204,18 @@ describe('export and process via generic abstraction', () => {
 			})
 
 			const files = await fs.readdir(tempDirectory)
-			expect(files).toMatchInlineSnapshot()
+			expect(files).toMatchInlineSnapshot(`
+				[
+				  "kit-of-parts-render-outline.webp",
+				  "lab-4.webp",
+				  "lab-5.webp",
+				  "overview-2.webp",
+				  "overview.webp",
+				  "pool-4.webp",
+				  "prototype.webp",
+				  "test.webp",
+				]
+			`)
 		},
 	)
 })
