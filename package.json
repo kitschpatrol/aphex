@@ -63,13 +63,13 @@
 		"mrmime": "^2.0.1",
 		"open": "^10.1.2",
 		"package-directory": "^8.1.0",
-		"piscina": "^5.1.0",
+		"piscina": "^5.1.1",
 		"prettier": "^3.5.3",
 		"pretty-bytes": "^7.0.0",
 		"pretty-ms": "^9.2.0",
-		"tsdown": "^0.12.7",
+		"tsdown": "^0.12.8",
 		"tsx": "^4.20.3",
-		"vitest": "^3.2.3"
+		"vitest": "^3.2.4"
 	},
 	"packageManager": "pnpm@10.12.1",
 	"engines": {

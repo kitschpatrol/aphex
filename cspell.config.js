@@ -9,5 +9,6 @@ export default cspellConfig({
 		'magick',
 		'swiftc',
 		'codesign',
+		'importx',
 	],
 })

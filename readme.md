@@ -93,3 +93,29 @@ Regardless, strange things can happen — please back up your Photos.app library
 [MIT](license.txt) © Eric Mika
 
 <!-- /license -->
+
+## Development Notes
+
+Original defaults:
+
+```ts
+export const defaultProcessImageOptions: ProcessImageOptions = {
+  defaultColorProfile: 'sRGB IEC61966-2.1',
+  forceCompression: true,
+  logSimilarity: true,
+  losslessFormat: 'webp',
+  losslessFormatAlpha: 'png', // Webp's lossless compression screws up alpha areas
+  lossyFormat: 'jpeg', // Toss up with webp
+  lossyFormatAlpha: 'webp', // Webp's lossy compression seems ok for alpha areas
+  lossyQuality: 0.95, // See Compression Analysis.numbers (converted to 0-1 range)
+  maxDimensionsPixels: {
+    width: 6016, // Pro Display XDR res is 6016x3384
+    height: 6016, // Pro Display XDR res is 6016x3384
+  },
+  maxFileSizeBytes: 15_000_000,
+  nearLosslessFormat: 'none', // 'webp'... Meh
+  nearLosslessFormatAlpha: 'none', // Webp's near lossless compression screws up alpha areas
+  passthroughFormats: ['webp', 'jpeg'],
+  preserveColorProfiles: ['sRGB IEC61966-2.1'],
+}
+```

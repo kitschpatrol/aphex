@@ -1,4 +1,3 @@
-import defu from 'defu'
 import fse from 'fs-extra'
 import os from 'node:os'
 import path from 'node:path'
@@ -31,16 +30,24 @@ import { getImageInfo } from '../utilities/image/image'
 import { cloneTags, getTags, setTags, stripTags } from '../utilities/image/tags'
 
 export type ProcessImageOptions = CompressImageOptions & {
+	/** Fallback color profile applied when source profile is not in preserve list */
 	defaultColorProfile: ColorProfile
+	/** Calculate SSIM/PSNR/DSSIM metrics comparing original vs processed images */
 	logSimilarity: boolean
+	/** Lossless format used specifically for images with alpha channels */
 	losslessFormatAlpha: LosslessFormat
+	/** Lossy format used specifically for images with alpha channels */
 	lossyFormatAlpha: LossyFormat
+	/** Maximum pixel dimensions before triggering resize (width OR height) */
 	maxDimensionsPixels: {
 		height: number
 		width: number
 	}
+	/** Near-lossless format used specifically for images with alpha channels */
 	nearLosslessFormatAlpha: NearLosslessFormat
+	/** Image formats that bypass conversion and compression entirely */
 	passthroughFormats: ImageMimeType[]
+	/** Color profiles that are kept unchanged instead of being normalized */
 	preserveColorProfiles: ColorProfile[]
 }
 
@@ -70,22 +77,30 @@ export type ProcessMetadata = ProcessImageResult & {
 
 export const defaultProcessImageOptions: ProcessImageOptions = {
 	defaultColorProfile: 'sRGB IEC61966-2.1',
-	forceCompression: true,
-	logSimilarity: true,
+	forceCompression: false,
+	logSimilarity: false,
 	losslessFormat: 'webp',
 	losslessFormatAlpha: 'png', // Webp's lossless compression screws up alpha areas
 	lossyFormat: 'jpeg', // Toss up with webp
 	lossyFormatAlpha: 'webp', // Webp's lossy compression seems ok for alpha areas
 	lossyQuality: 0.95, // See Compression Analysis.numbers (converted to 0-1 range)
 	maxDimensionsPixels: {
-		width: 6016, // Pro Display XDR res is 6016x3384
-		height: 6016, // Pro Display XDR res is 6016x3384
+		width: Number.MAX_SAFE_INTEGER,
+		height: Number.MAX_SAFE_INTEGER,
 	},
-	maxFileSizeBytes: 15_000_000,
+	maxFileSizeBytes: 25_000_000,
 	nearLosslessFormat: 'none', // 'webp'... Meh
 	nearLosslessFormatAlpha: 'none', // Webp's near lossless compression screws up alpha areas
-	passthroughFormats: ['webp', 'jpeg'],
-	preserveColorProfiles: ['sRGB IEC61966-2.1'],
+	passthroughFormats: [],
+	preserveColorProfiles: [
+		// 'Adobe RGB (1998)',
+		// 'Apple Wide Color Sharing Profile',
+		// 'Display P3',
+		// 'None',
+		// 'ProPhoto RGB',
+		'sRGB IEC61966-2.1',
+		// 'Unsupported',
+	],
 }
 
 /**
