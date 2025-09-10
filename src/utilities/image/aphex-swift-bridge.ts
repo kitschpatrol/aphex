@@ -47,6 +47,16 @@ export type PhotoInfo = {
 	title?: string
 }
 
+export type AlbumInfo = {
+	assetCollectionSubtype: number
+	assetCollectionType: number
+	endDate?: Date
+	estimatedAssetCount: number
+	localIdentifier: string
+	localizedTitle?: string
+	startDate?: Date
+}
+
 /**
  * Runtime type guard for PhotoInfo
  */
@@ -104,6 +114,36 @@ export function isPhotoInfoArray(value: unknown): value is PhotoInfo[] {
 }
 
 /**
+ * Runtime type guard for AlbumInfo
+ */
+export function isAlbumInfo(value: unknown): value is AlbumInfo {
+	if (!is.plainObject(value)) {
+		return false
+	}
+
+	const object = value as Record<string, unknown>
+
+	if (
+		!is.string(object.localIdentifier) ||
+		!is.number(object.assetCollectionType) ||
+		!is.number(object.assetCollectionSubtype) ||
+		!is.number(object.estimatedAssetCount)
+	) {
+		return false
+	}
+
+	if (
+		(object.localizedTitle !== undefined && !is.string(object.localizedTitle)) ||
+		(object.startDate !== undefined && !is.date(object.startDate)) ||
+		(object.endDate !== undefined && !is.date(object.endDate))
+	) {
+		return false
+	}
+
+	return true
+}
+
+/**
  * Assert that a value is a PhotoInfo
  */
 export function assertPhotoInfo(value: unknown): asserts value is PhotoInfo {
@@ -118,6 +158,15 @@ export function assertPhotoInfo(value: unknown): asserts value is PhotoInfo {
 export function assertPhotoInfoArray(value: unknown): asserts value is PhotoInfo[] {
 	if (!isPhotoInfoArray(value)) {
 		throw new Error('Invalid PhotoInfo array')
+	}
+}
+
+/**
+ * Assert that a value is an AlbumInfo
+ */
+export function assertAlbumInfo(value: unknown): asserts value is AlbumInfo {
+	if (!isAlbumInfo(value)) {
+		throw new Error('Invalid AlbumInfo object')
 	}
 }
 
@@ -145,6 +194,31 @@ export async function aphexPhotoInfo(
 		return output
 	} catch {
 		throw new Error(`Error fetching albums: ${result.stdout}`)
+	}
+}
+
+/**
+ * Export photos for given identifiers to a destination directory
+ * @throws
+ */
+export async function aphexAlbumInfo(
+	identifier: string,
+	caseSensitive = false,
+): Promise<AlbumInfo> {
+	const result = await execa(
+		'./aphex-swift',
+		['album-info', identifier, caseSensitive ? '--case-sensitive' : ''],
+		{
+			cwd: getDistributionPath(),
+		},
+	)
+
+	try {
+		const output: unknown = JSON.parse(result.stdout, dateReviver)
+		assertAlbumInfo(output)
+		return output
+	} catch {
+		throw new Error(`Error fetching album info: ${result.stdout}`)
 	}
 }
 
@@ -191,7 +265,13 @@ function getDistributionPath(): string {
 }
 
 function dateReviver(key: string, value: unknown) {
-	if ((key === 'creationDate' || key === 'modificationDate') && typeof value === 'string') {
+	if (
+		(key === 'creationDate' ||
+			key === 'modificationDate' ||
+			key === 'startDate' ||
+			key === 'endDate') &&
+		typeof value === 'string'
+	) {
 		return value ? new Date(value) : undefined
 	}
 	return value
