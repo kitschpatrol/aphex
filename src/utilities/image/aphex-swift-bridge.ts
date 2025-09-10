@@ -1,8 +1,8 @@
-import { assert } from '@sindresorhus/is'
+import is, { assert } from '@sindresorhus/is'
 import { execa } from 'execa'
 import path from 'node:path'
 import { packageDirectorySync } from 'package-directory'
-import { ensureArray } from './general'
+import { ensureArray } from '../general'
 
 /**
  * Get full album paths mapped to their UUIDs
@@ -26,7 +26,7 @@ export async function aphexAlbums(): Promise<Record<string, string>> {
  * TypeScript type definition for the JSON representation of a PHAsset
  * from the iOS Photos framework
  */
-type PhotoAsset = {
+export type PhotoInfo = {
 	burstIdentifier?: string
 	creationDate?: Date
 	editedFilename?: string
@@ -48,18 +48,92 @@ type PhotoAsset = {
 }
 
 /**
+ * Runtime type guard for PhotoInfo
+ */
+// eslint-disable-next-line complexity
+export function isPhotoInfo(value: unknown): value is PhotoInfo {
+	if (!is.plainObject(value)) {
+		return false
+	}
+
+	// Required fields
+	if (
+		!is.string((value as Record<string, unknown>).localIdentifier) ||
+		!is.boolean((value as Record<string, unknown>).hasAdjustments) ||
+		!is.boolean((value as Record<string, unknown>).isFavorite) ||
+		!is.boolean((value as Record<string, unknown>).isHidden) ||
+		!is.number((value as Record<string, unknown>).mediaSubtypes) ||
+		!is.number((value as Record<string, unknown>).mediaType) ||
+		!is.number((value as Record<string, unknown>).pixelHeight) ||
+		!is.number((value as Record<string, unknown>).pixelWidth) ||
+		!is.boolean((value as Record<string, unknown>).representsBurst) ||
+		!is.number((value as Record<string, unknown>).sourceType)
+	) {
+		return false
+	}
+
+	// Optional string fields (if present)
+	const object = value as Record<string, unknown>
+	if (
+		(object.burstIdentifier !== undefined && !is.string(object.burstIdentifier)) ||
+		(object.editedFilename !== undefined && !is.string(object.editedFilename)) ||
+		(object.editedFilePath !== undefined && !is.string(object.editedFilePath)) ||
+		(object.originalFilename !== undefined && !is.string(object.originalFilename)) ||
+		(object.originalFilePath !== undefined && !is.string(object.originalFilePath)) ||
+		(object.title !== undefined && !is.string(object.title))
+	) {
+		return false
+	}
+
+	// Optional date fields (if present)
+	if (
+		(object.creationDate !== undefined && !is.date(object.creationDate)) ||
+		(object.modificationDate !== undefined && !is.date(object.modificationDate))
+	) {
+		return false
+	}
+
+	return true
+}
+
+/**
+ * Runtime type guard for PhotoInfo array
+ */
+export function isPhotoInfoArray(value: unknown): value is PhotoInfo[] {
+	return is.array(value) && value.every((element) => isPhotoInfo(element))
+}
+
+/**
+ * Assert that a value is a PhotoInfo
+ */
+export function assertPhotoInfo(value: unknown): asserts value is PhotoInfo {
+	if (!isPhotoInfo(value)) {
+		throw new Error('Invalid PhotoInfo object')
+	}
+}
+
+/**
+ * Assert that a value is an array of PhotoInfo
+ */
+export function assertPhotoInfoArray(value: unknown): asserts value is PhotoInfo[] {
+	if (!isPhotoInfoArray(value)) {
+		throw new Error('Invalid PhotoInfo array')
+	}
+}
+
+/**
  * Get photo asset information for given identifiers (UUID, filename, album name, or photo path)
  * @throws
  */
-export async function aphexInfo(
+export async function aphexPhotoInfo(
 	identifiers: string | string[],
 	caseSensitive = false,
-): Promise<PhotoAsset[]> {
+): Promise<PhotoInfo[]> {
 	const identifiersArray = ensureArray(identifiers)
 
 	const result = await execa(
 		'./aphex-swift',
-		['info', ...identifiersArray, caseSensitive ? '--case-sensitive' : ''],
+		['photo-info', ...identifiersArray, caseSensitive ? '--case-sensitive' : ''],
 		{
 			cwd: getDistributionPath(),
 		},
@@ -67,7 +141,7 @@ export async function aphexInfo(
 
 	try {
 		const output: unknown = JSON.parse(result.stdout, dateReviver)
-		assert.array<PhotoAsset>(output)
+		assertPhotoInfoArray(output)
 		return output
 	} catch {
 		throw new Error(`Error fetching albums: ${result.stdout}`)
