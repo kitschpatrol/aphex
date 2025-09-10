@@ -32,7 +32,9 @@ OPTIONS:
 
 SUBCOMMANDS:
   albums                  Get album paths mapped to their UUIDs as JSON
-  info                    Get photo asset information for given identifiers
+  album-info              Get album information for a given identifier (UUID,
+                          album name, or album path)
+  photo-info              Get photo asset information for given identifiers
                           (UUID, filename, album name, or photo path)
   export                  Export photos for given identifiers to a destination
                           directory
@@ -58,19 +60,40 @@ OPTIONS:
 
 <!-- /cli-help -->
 
-### Subcommand: `aphex-swift info`
+### Subcommand: `aphex-swift photo-info`
 
-<!-- cli-help { cliCommand: "./dist/aphex-swift", helpFlag: "info --help" }  -->
+<!-- cli-help { cliCommand: "./dist/aphex-swift", helpFlag: "photo-info --help" }  -->
 
 ```txt
 OVERVIEW: Get photo asset information for given identifiers (UUID, filename,
 album name, or photo path)
 
-USAGE: aphex info [--case-sensitive] <identifiers> ...
+USAGE: aphex photo-info [--case-sensitive] <identifiers> ...
 
 ARGUMENTS:
   <identifiers>           Photo or album identifiers (UUIDs, filenames, album
                           names, or photo paths)
+
+OPTIONS:
+  -c, --case-sensitive    Case sensitive matching
+  -h, --help              Show help information.
+
+```
+
+<!-- /cli-help -->
+
+### Subcommand: `aphex-swift album-info`
+
+<!-- cli-help { cliCommand: "./dist/aphex-swift", helpFlag: "album-info --help" }  -->
+
+```txt
+OVERVIEW: Get album information for a given identifier (UUID, album name, or
+album path)
+
+USAGE: aphex album-info [--case-sensitive] <identifier>
+
+ARGUMENTS:
+  <identifier>            Album identifier (UUID, album name, or album path)
 
 OPTIONS:
   -c, --case-sensitive    Case sensitive matching

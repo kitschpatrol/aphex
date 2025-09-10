@@ -29,6 +29,8 @@ struct Albums: ParsableCommand {
     )
 
     mutating func run() throws {
+        try checkPhotosAccess()
+        
         let albumPaths = getAlbumPathsToUuidMap()
         let jsonData = try JSONSerialization.data(
             withJSONObject: albumPaths, options: [.prettyPrinted, .withoutEscapingSlashes])
@@ -52,6 +54,8 @@ struct AlbumInfo: ParsableCommand {
     var identifier: String
 
     mutating func run() throws {
+        try checkPhotosAccess()
+        
         guard let album = getAlbum(identifier: identifier, caseSensitive: caseSensitive) else {
             throw ValidationError("No album found for identifier: \(identifier)")
         }
@@ -76,6 +80,7 @@ struct PhotoInfo: ParsableCommand {
     var identifiers: [String]
 
     mutating func run() throws {
+        try checkPhotosAccess()
 
         guard let photos = getPhotos(identifiers: identifiers, caseSensitive: caseSensitive) else {
             throw ValidationError("No photos found for the provided identifiers")
@@ -101,6 +106,8 @@ struct Export: ParsableCommand {
     var identifiers: [String]
 
     mutating func run() throws {
+        try checkPhotosAccess()
+        
         let expandedPath = NSString(string: destination).expandingTildeInPath
         let destinationURL = URL(fileURLWithPath: expandedPath)
 

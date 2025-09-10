@@ -2,6 +2,48 @@ import Cocoa
 import Foundation
 import Photos
 
+// MARK: - Photos Access Permission
+
+/// Check if the app has access to the Photos library
+func checkPhotosAccess() throws {
+  let status = PHPhotoLibrary.authorizationStatus()
+  
+  switch status {
+  case .authorized, .limited:
+    // Access granted
+    return
+  case .denied:
+    throw PhotosAccessError.denied
+  case .restricted:
+    throw PhotosAccessError.restricted
+  case .notDetermined:
+    throw PhotosAccessError.notDetermined
+  @unknown default:
+    throw PhotosAccessError.unknown
+  }
+}
+
+/// Custom error types for Photos access
+enum PhotosAccessError: LocalizedError {
+  case denied
+  case restricted
+  case notDetermined
+  case unknown
+  
+  var errorDescription: String? {
+    switch self {
+    case .denied:
+      return "Photos access denied. Please grant access in System Preferences > Security & Privacy > Privacy > Photos."
+    case .restricted:
+      return "Photos access restricted. This may be due to parental controls or corporate policies."
+    case .notDetermined:
+      return "Photos access not determined. Please grant access when prompted, or check System Preferences > Security & Privacy > Privacy > Photos."
+    case .unknown:
+      return "Unknown Photos access status."
+    }
+  }
+}
+
 // MARK: - Album Discovery
 
 /// Function to get all album paths mapped to their UUIDs
