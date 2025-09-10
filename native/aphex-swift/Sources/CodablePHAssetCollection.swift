@@ -1,0 +1,47 @@
+import Foundation
+import Photos
+
+/// A simplified Codable representation of PHAssetCollection for read-only JSON export
+struct CodablePHAssetCollection: Codable {
+  let localIdentifier: String
+  let localizedTitle: String?
+  let assetCollectionType: Int
+  let assetCollectionSubtype: Int
+  let estimatedAssetCount: Int
+  let startDate: Date?
+  let endDate: Date?
+  
+  init(from collection: PHAssetCollection) {
+    // Clean up the local identifier by removing the trailing /L0/001 part
+    if let range = collection.localIdentifier.range(of: "/L0/") {
+      self.localIdentifier = String(collection.localIdentifier[..<range.lowerBound])
+    } else {
+      self.localIdentifier = collection.localIdentifier
+    }
+    
+    self.localizedTitle = collection.localizedTitle
+    self.assetCollectionType = collection.assetCollectionType.rawValue
+    self.assetCollectionSubtype = collection.assetCollectionSubtype.rawValue
+    self.estimatedAssetCount = collection.estimatedAssetCount
+    self.startDate = collection.startDate
+    self.endDate = collection.endDate
+  }
+  
+  // MARK: - JSON Export
+  /// Encodes the asset collection to a JSON string
+  func toJSONString() throws -> String {
+    let encoder = JSONEncoder()
+    encoder.dateEncodingStrategy = .iso8601
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    
+    let data = try encoder.encode(self)
+    guard let string = String(data: data, encoding: .utf8) else {
+      throw EncodingError.invalidValue(
+        self,
+        EncodingError.Context(
+          codingPath: [], debugDescription: "Failed to convert data to UTF-8 string")
+      )
+    }
+    return string
+  }
+}

@@ -14,6 +14,8 @@ Returns JSON for easy parsing in scripts.
 
 TODO `photos://` or similar URL scheme support?
 
+TODO Flag to force photos only?
+
 ## Usage
 
 ### Command: `aphex-swift`

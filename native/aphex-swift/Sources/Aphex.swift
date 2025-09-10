@@ -19,7 +19,7 @@ func logError(_ message: String) {
 struct aphex: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "A multi-command CLI tool for managing photo albums",
-        subcommands: [Albums.self, Info.self, Export.self]
+        subcommands: [Albums.self, AlbumInfo.self, PhotoInfo.self, Export.self]
     )
 }
 
@@ -39,8 +39,32 @@ struct Albums: ParsableCommand {
     }
 }
 
-struct Info: ParsableCommand {
+struct AlbumInfo: ParsableCommand {
     static let configuration = CommandConfiguration(
+        commandName: "album-info",
+        abstract: "Get album information for a given identifier (UUID, album name, or album path)"
+    )
+
+    @Flag(name: .shortAndLong, help: "Case sensitive matching")
+    var caseSensitive = false
+
+    @Argument(help: "Album identifier (UUID, album name, or album path)")
+    var identifier: String
+
+    mutating func run() throws {
+        guard let album = getAlbum(identifier: identifier, caseSensitive: caseSensitive) else {
+            throw ValidationError("No album found for identifier: \(identifier)")
+        }
+
+        let codableAlbum = CodablePHAssetCollection(from: album)
+        let jsonString = try codableAlbum.toJSONString()
+        print(jsonString)
+    }
+}
+
+struct PhotoInfo: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "photo-info",
         abstract:
             "Get photo asset information for given identifiers (UUID, filename, album name, or photo path)"
     )

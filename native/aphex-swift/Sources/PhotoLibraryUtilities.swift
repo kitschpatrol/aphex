@@ -47,6 +47,47 @@ public func getAlbumPathsToUuidMap() -> [String: String] {
   return albumPaths
 }
 
+// MARK: - Album Info
+
+/// Function to get album information by UUID or name
+public func getAlbum(
+  identifier: String, albumMap: [String: String]? = nil, caseSensitive: Bool = false
+) -> PHAssetCollection? {
+  // Check if identifier looks like a UUID (8-4-4-4-12 pattern)
+  if isUUID(identifier) {
+    return getAlbumByUuid(uuid: identifier)
+  }
+  
+  // Otherwise treat as album name/path
+  let map = albumMap ?? getAlbumPathsToUuidMap()
+  return getAlbumByName(name: identifier, albumMap: map, caseSensitive: caseSensitive)
+}
+
+/// Function to get album by UUID
+func getAlbumByUuid(uuid: String) -> PHAssetCollection? {
+  let fetchResult = PHAssetCollection.fetchAssetCollections(
+    withLocalIdentifiers: [uuid], options: nil)
+  return fetchResult.firstObject
+}
+
+/// Function to get album by name/path
+func getAlbumByName(name: String, albumMap: [String: String], caseSensitive: Bool) -> PHAssetCollection? {
+  let normalizedPath = normalizePath(name)
+  
+  // Find matching album in the map
+  let matchingEntry = albumMap.first { (path, _) in
+    let albumPath = normalizePath(path)
+    return caseSensitive
+      ? (albumPath == normalizedPath) : (albumPath.lowercased() == normalizedPath.lowercased())
+  }
+  
+  guard let (_, albumUUID) = matchingEntry else {
+    return nil
+  }
+  
+  return getAlbumByUuid(uuid: albumUUID)
+}
+
 // MARK: - Album Photos
 
 /// Function to get all PHAssets from an album by UUID or name
