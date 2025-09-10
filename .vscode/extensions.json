@@ -6,6 +6,7 @@
 		"stylelint.vscode-stylelint",
 		"streetsidesoftware.code-spell-checker",
 		"unifiedjs.vscode-mdx",
-		"esbenp.prettier-vscode"
+		"esbenp.prettier-vscode",
+		"swiftlang.swift-vscode"
 	]
 }

@@ -17,6 +17,24 @@
 			"name": "Release aphex-swift (native/aphex-swift)",
 			"program": "${workspaceFolder:aphex}/native/aphex-swift/.build/release/aphex-swift",
 			"preLaunchTask": "swift: Build Release aphex-swift (native/aphex-swift)"
+		},
+		{
+			"type": "swift",
+			"request": "launch",
+			"args": [],
+			"cwd": "${workspaceFolder:aphex}/native/aphex-swift",
+			"name": "Debug aphex (native/aphex-swift)",
+			"program": "${workspaceFolder:aphex}/native/aphex-swift/.build/debug/aphex",
+			"preLaunchTask": "swift: Build Debug aphex (native/aphex-swift)"
+		},
+		{
+			"type": "swift",
+			"request": "launch",
+			"args": [],
+			"cwd": "${workspaceFolder:aphex}/native/aphex-swift",
+			"name": "Release aphex (native/aphex-swift)",
+			"program": "${workspaceFolder:aphex}/native/aphex-swift/.build/release/aphex",
+			"preLaunchTask": "swift: Build Release aphex (native/aphex-swift)"
 		}
 	]
 }
