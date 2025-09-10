@@ -22,8 +22,8 @@ import { exportViaFileSystem } from '../src/pipeline/engines/file-system'
 import { exportViaOsxphotosExport } from '../src/pipeline/engines/osxphotos-export'
 import { exportViaOsxphotosPhotoKit } from '../src/pipeline/engines/osxphotos-photokit'
 import { exportViaOsxphotosPhotosExport } from '../src/pipeline/engines/osxphotos-photos'
+import { exportViaSwiftPhotoKitOrientation } from '../src/pipeline/engines/swift-aphex-swift-orientation'
 import { exportViaSwiftPhotoKit } from '../src/pipeline/engines/swift-photokit'
-import { exportViaSwiftPhotoKitOrientation } from '../src/pipeline/engines/swift-photokit-export-orientation'
 import { sipsTempCleanup } from '../src/utilities/general'
 import { assertValidColorProfile } from '../src/utilities/image/color'
 import { calculateSimilarity } from '../src/utilities/image/compare'
@@ -41,7 +41,7 @@ async function exportViaAppleScriptGuiWrapped(
 
 	// No control over exact file name in the gui, so we copy to temp first
 	const tempDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.ericmika.apple-photos-export..audit.${photoUuid}.`),
+		path.join(os.tmpdir(), `com.kitschpatrol.aphex.audit.${photoUuid}.`),
 	)
 
 	const result = await exportViaAppleScriptGui(photoUuid, tempDirectory, {

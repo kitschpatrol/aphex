@@ -126,6 +126,9 @@ export async function exportViaOsxphotos(
 		args.push('--uuid', photoUuid)
 	}
 
+	console.log('----------------------------------')
+	console.log(args)
+
 	await execa('osxphotos', args)
 
 	// Parsing the stdout is a mess, so we write a report to a file and read that

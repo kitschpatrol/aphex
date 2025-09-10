@@ -34,8 +34,8 @@ export async function exportViaSwiftPhotoKit(
 		throw new Error('Package root not found')
 	}
 
-	await execa(
-		'./photokit-export',
+	const result = await execa(
+		'./aphex-swift',
 		[
 			'--photo-uuid',
 			photoUuid,
@@ -50,6 +50,14 @@ export async function exportViaSwiftPhotoKit(
 			cwd: path.join(packageRoot, 'dist'),
 		},
 	)
+
+	if (result.failed) {
+		throw new Error(`Error exporting photo "${photoUuid}": ${JSON.stringify(result)}`)
+	}
+
+	if (!result.stdout.includes('saved successfully')) {
+		throw new Error(`Error exporting photo "${photoUuid}": ${JSON.stringify(result)}`)
+	}
 
 	// Assuming output in PNG format
 	return `${destinationDirectory}/${photoUuid}.png`

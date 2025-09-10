@@ -20,3 +20,5 @@ node_modules/
 vendor/
 
 # Customizations
+/native/aphex-swift/.build
+__pycache__

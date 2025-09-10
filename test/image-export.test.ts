@@ -10,13 +10,17 @@ describe('photo export via photokit engine', () => {
 	// Skipped since it can only run in an external terminal due to photo library
 	// permission issues
 	tempDirectoryFixture.skip(
-		'exports a specific photo using photokit-export',
+		'exports a specific photo using aphex-swift',
 		{ timeout: 30_000 },
 		async ({ tempDirectory }) => {
+			console.log('----------------------------------')
+			console.log(tempDirectory)
 			await exportViaSwiftPhotoKit('77758382-025A-446E-91C6-88A0BCAFDA91', tempDirectory, {
 				mode: 'requestimage',
 			})
+
 			const files = await fs.readdir(tempDirectory)
+
 			expect(files).toMatchInlineSnapshot(`
 				[
 				  "77758382-025A-446E-91C6-88A0BCAFDA91.png",
@@ -61,14 +65,14 @@ describe('export via applescript-gui engine', () => {
 			const files = await fs.readdir(tempDirectory)
 			expect(files).toMatchInlineSnapshot(`
 				[
-					"20200205_ABB_All_Parts_Wired.jpeg",
-					"A86A2318.jpeg",
-					"A86A2346.jpeg",
-					"A86A2406 copy.jpeg",
-					"IBM Tangibles Prototype Photo.jpeg",
-					"IMG_8938.jpeg",
-					"img_2569.jpeg",
-					"test.jpeg",
+				  "20200205_ABB_All_Parts_Wired.jpeg",
+				  "A86A2318.jpeg",
+				  "A86A2346.jpeg",
+				  "A86A2406 copy.jpeg",
+				  "IBM Tangibles Prototype Photo.jpeg",
+				  "IMG_8938.jpeg",
+				  "img_2569.jpeg",
+				  "test.jpeg",
 				]
 			`)
 		},

@@ -2,52 +2,41 @@
 
 <!-- title -->
 
-# apple-photos-export
+# @kitschpatrol/aphex
 
 <!-- /title -->
 
 <!-- badges -->
 
-[![NPM Package apple-photos-export](https://img.shields.io/npm/v/apple-photos-export.svg)](https://npmjs.com/package/apple-photos-export)
+[![NPM Package @kitschpatrol/aphex](https://img.shields.io/npm/v/@kitschpatrol/aphex.svg)](https://npmjs.com/package/@kitschpatrol/aphex)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 <!-- /badges -->
 
 <!-- short-description -->
 
-**Export images from your macOS Photos.app library.**
+**Apple Photos Export. TypeScript library to export and process images and albums from your macOS Photos.app library.**
 
 <!-- /short-description -->
 
 ## Overview
 
-`apple-photos-export` is a TypeScript library for exporting images and albums from your local macOS Photos.app library via a Node-compatible runtime.
+`aphex` is a TypeScript library for exporting images and albums from your local macOS Photos.app library via a Node-compatible runtime.
 
 I created this library for integration in static website content management asset pipelines, and to attempt to work around some issues related to [exporting high-quality versions of edited images](https://github.com/RhetTbull/osxphotos/discussions/1522) from the Photos.app library.
 
-If you are looking for an industrial-strength Photos.app mass-export solution, I highly recommend using [osxphotos](https://github.com/RhetTbull/osxphotos) instead.
+If you are looking for an industrial-strength Photos.app mass-export or backup solution, **I highly recommend using [osxphotos](https://github.com/RhetTbull/osxphotos) instead**.
 
 ## Getting started
 
 ### Dependencies
 
-Requires macOS with Photos.app installed.
-
-Install [Node 21](https://nodejs.org/en/download/) or newer.
-
-Install [osxphotos](https://github.com/RhetTbull/osxphotos) with [uv](https://docs.astral.sh/uv/):
-
-```sh
-uv tool install --python 3.12 osxphotos
-uv tool upgrade osxphotos
-```
-
-(Alternate installation methods are described in the [osxphotos documentation](https://github.com/RhetTbull/osxphotos?tab=readme-ov-file#installation).)
+Requires macOS with Photos.app installed and [Node 21](https://nodejs.org/en/download/) or newer. Currently, only an arm64 (Apple Silicon) build of requisite binary is provided.
 
 ### Installation
 
 ```sh
-npm install apple-photos-export
+npm install @kitschpatrol/aphex
 ```
 
 ## Usage
@@ -55,7 +44,7 @@ npm install apple-photos-export
 Placeholder...
 
 ```ts
-import { exportAlbum } from 'apple-photos-export'
+import { exportAlbum } from 'aphex'
 
 exportAlbum('My Album', '~/Desktop/my-album')
 ```
@@ -72,13 +61,13 @@ Thank you to [Rhet Turnbull](https://github.com/RhetTbull) for creating [osxphot
 
 ## Contributing
 
-[Issues](https://github.com/kitschpatrol/apple-photos-export/issues) and pull requests are welcome.
+[Issues](https://github.com/kitschpatrol/aphex/issues) and pull requests are welcome.
 
 <!-- /contributing -->
 
 ## Disclaimer
 
-This is an unofficial library and is not affiliated with Apple Inc.
+This is an unofficial library and is not affiliated with or blessed by Apple Inc.
 
 The advanced metadata auditing scripts are the only code paths that should modify the contents of your Photos.app library.
 
@@ -119,3 +108,27 @@ export const defaultProcessImageOptions: ProcessImageOptions = {
   preserveColorProfiles: ['sRGB IEC61966-2.1'],
 }
 ```
+
+Permissions:
+
+<https://errorism.dev/issues/microsoft-vscode-vscode-terminal-doesnt-allowrequest-permissions-to-access-media-devices>
+
+<https://www.rainforestqa.com/blog/macos-tcc-db-deep-dive>
+
+Export....
+
+edited with alpha channel: osxphotos
+edited without alpha channel: photos-gui
+
+original with alpha channel: osxphotos
+original without alpha channel:
+'arw' or 'cr2' or 'cr3' or 'crw' or 'dng' or 'nef' or 'pef' or 'png' or 'psd' or 'tiff': photos-gui
+'avif' or 'gif' or 'heic' or 'heif' or 'jpeg' or 'webp': osxphotos
+
+Editing in Photos.app destroys alpha channels.
+Editing in Pixelmator destroys alpha channels
+Editing in Photoshop destroys alpha channels
+Editing always destroys alpha channels?
+
+Promising integration:
+https://github.com/kabiroberai/node-swift

@@ -14,7 +14,7 @@ function assertPhotoInfoArray(jsonResult: unknown): asserts jsonResult is PhotoI
 
 export async function getMockPhotoInfo(): Promise<PhotoInfo[]> {
 	const result = await fse.readFile(`../../../scratch/results.json`, 'utf8')
-	const jsonResult: unknown = JSON.parse(result.toString())
+	const jsonResult: unknown = JSON.parse(result)
 	assertPhotoInfoArray(jsonResult)
 	return camelcaseKeys(jsonResult, { deep: true })
 }
@@ -27,7 +27,7 @@ export async function getPhotoInfoForUuid(uuid: string): Promise<PhotoInfo> {
 		throw new Error(`Error exporting album or photo data for "${uuid}": ${result.stderr}`)
 	}
 
-	const jsonResult: unknown = JSON.parse(result.stdout.toString())
+	const jsonResult: unknown = JSON.parse(result.stdout)
 	assertPhotoInfoArray(jsonResult)
 	return camelcaseKeys(jsonResult[0], { deep: true })
 }
@@ -46,7 +46,7 @@ export async function getPhotoInfoForAlbum(albumName: string): Promise<PhotoInfo
 		throw new Error(`Error getting data for album "${albumName}": ${result.stderr}`)
 	}
 
-	const jsonResult: unknown = JSON.parse(result.stdout.toString())
+	const jsonResult: unknown = JSON.parse(result.stdout)
 	assertPhotoInfoArray(jsonResult)
 	return camelcaseKeys(jsonResult, { deep: true })
 }

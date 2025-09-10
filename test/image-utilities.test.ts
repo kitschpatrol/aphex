@@ -7,7 +7,7 @@ import {
 	getTwoIdenticallySizedPng,
 	isIdenticalSize,
 } from '../src/utilities/image/compare'
-import { getImageDimensions, hasAlpha } from '../src/utilities/image/image'
+import { hasAlpha } from '../src/utilities/image/image'
 import { validateTags } from '../src/utilities/image/tags'
 import { testFiles, testFiles2 } from './shared'
 import { tempDirectoryFixture } from './utilities/temp-directory'
@@ -297,21 +297,12 @@ describe('photo-info', () => {
 })
 
 describe('resize', () => {
-	tempDirectoryFixture(
-		`matches size correctly`,
-		{ timeout: 600_000 },
-		async ({ tempDirectory }) => {
-			const file1 = './test/assets/size/test.png'
-			const file2 = './test/assets/size/test-small.png'
-			console.log('----------------------------------')
-			console.log(tempDirectory)
-			const { image1Png, image2Png } = await getTwoIdenticallySizedPng(file1, file2)
-			console.log(image1Png)
-			console.log(image2Png)
-			const identical = await isIdenticalSize(image1Png, image2Png)
-			console.log(await getImageDimensions(image1Png))
-			console.log(await getImageDimensions(image2Png))
-			console.log(`identical: ${identical}`)
-		},
-	)
+	tempDirectoryFixture(`matches size correctly`, { timeout: 600_000 }, async () => {
+		const file1 = './test/assets/size/test.png'
+		const file2 = './test/assets/size/test-small.png'
+
+		const { image1Png, image2Png } = await getTwoIdenticallySizedPng(file1, file2)
+		const identical = await isIdenticalSize(image1Png, image2Png)
+		expect(identical).toBe(true)
+	})
 })

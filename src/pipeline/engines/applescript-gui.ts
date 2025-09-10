@@ -68,12 +68,7 @@ export async function exportViaAppleScriptGui(
 	await fse.ensureDir(exportDirectory)
 
 	// Get temp directory
-	const tempDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.kitschpatrol.apple-photos-export.`),
-	)
-
-	console.log('----------------------------------')
-	console.log(tempDirectory)
+	const tempDirectory = await fse.mkdtemp(path.join(os.tmpdir(), `com.kitschpatrol.aphex.`))
 
 	const appleScriptPath = path.join(import.meta.dirname, './applescript-gui.applescript')
 

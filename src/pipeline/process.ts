@@ -124,7 +124,7 @@ export async function processPhotos(
 
 	// Process images in parallel
 	const tempProcessOutputDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.kitschpatrol.apple-photos-export.process.`),
+		path.join(os.tmpdir(), `com.kitschpatrol.aphex.process.`),
 	)
 
 	const processImageResults = await Promise.all<ProcessImageResult>(
@@ -231,7 +231,7 @@ export async function processImage(
 	const input = await getImageInfo(sourceImagePath)
 
 	const tempDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.kitschpatrol.apple-photos-export.process-image.`),
+		path.join(os.tmpdir(), `com.kitschpatrol.aphex.process-image.`),
 	)
 
 	// Result will be updated as we go
