@@ -3,7 +3,7 @@
 /**
  * Interactive metadata sync for images in a Photos.app album
  *
- * The script uses the `osxphotos` CLI to query Photos.app data and the
+ * The script uses the `aphex-swift` CLI to query Photos.app data and the
  * `exiftool` package to read and write metadata programmatically, and
  * MetaImage.app to edit metadata interactively.
  *
@@ -16,11 +16,12 @@
  */
 
 import { confirm, log, select, spinner, text } from '@clack/prompts'
+import { assertString } from '@sindresorhus/is'
 import { exiftool } from 'exiftool-vendored'
 import { globby } from 'globby'
 import open from 'open'
-import type { PhotoInfo } from '../src/utilities/image/apple-photos'
-import { getPhotoInfoForAlbum } from '../src/utilities/image/apple-photos'
+import type { PhotoInfo } from '../src/utilities/image/aphex-swift-bridge'
+import { aphexPhotoInfo } from '../src/utilities/image/aphex-swift-bridge'
 import {
 	cloneTags,
 	// Legacy:
@@ -51,12 +52,10 @@ async function imageCredits() {
 	const s = spinner()
 	s.start('Looking up photos in album...')
 
-	const photos = await getPhotoInfoForAlbum(albumPath)
+	const photos = await aphexPhotoInfo(albumPath)
 
 	const photosWithInvalidTags: PhotoInfo[] = []
 
-	//  Log.warning('Using mock data')
-	// Const photos = await getMockPhotoInfo()
 	if (photos.length === 0) {
 		s.stop(`No photos found in album "${albumPath}"`, 1)
 		return
@@ -69,7 +68,8 @@ async function imageCredits() {
 	log.step('Step 2: Write filename metadata to original files')
 
 	for (const photo of photos) {
-		const { path } = photo
+		const { originalFilePath } = photo
+		assertString(originalFilePath, 'Photo is missing original file path')
 
 		// Temp clean up code...
 		// const legacyTags = await getTags(path)
@@ -100,7 +100,7 @@ async function imageCredits() {
 		// }
 
 		// Keep stuff below -------------------
-		const tags = await getTags(path)
+		const tags = await getTags(originalFilePath)
 		const tagsValid = await validateTags(
 			tags,
 			['preservedFileName', 'label'],
@@ -140,14 +140,18 @@ async function imageCredits() {
 	} else {
 		log.info('Opening:')
 		let logAccumulator = ''
-		for (const { path } of photos) {
-			if (whatToOpen === 'some' && photosWithInvalidTags.every((photo) => photo.path !== path)) {
+		for (const { originalFilePath } of photos) {
+			assertString(originalFilePath, 'Photo is missing original file path')
+			if (
+				whatToOpen === 'some' &&
+				photosWithInvalidTags.every((photo) => photo.originalFilePath !== originalFilePath)
+			) {
 				continue
 			}
 
-			logAccumulator += `${path}\n`
-			// Cspell: disable-next-line
-			await open(path, { app: { name: 'metaimage' } })
+			logAccumulator += `${originalFilePath}\n`
+
+			await open(originalFilePath, { app: { name: 'metaimage' } })
 		}
 
 		log.message(logAccumulator)
@@ -170,18 +174,22 @@ async function imageCredits() {
 	log.step('Step 4: Sync metadata from original files to edited version')
 
 	for (const photo of photos) {
-		const { path, pathEdited } = photo
+		const { editedFilePath, originalFilePath } = photo
+		assertString(originalFilePath, 'Photo is missing original file path')
 
-		if (pathEdited === null) {
-			log.warning(`No edited version found for:\n${path}`)
+		if (editedFilePath === undefined) {
+			log.warning(`No edited version found for:\n${originalFilePath}`)
 			continue
 		}
 
-		log.message(`Syncing metadata from original to edited:\nFrom: ${path}\nTo: ${pathEdited}`, {
-			symbol: '🔄',
-		})
+		log.message(
+			`Syncing metadata from original to edited:\nFrom: ${originalFilePath}\nTo: ${editedFilePath}`,
+			{
+				symbol: '🔄',
+			},
+		)
 
-		const clonedKeys = await cloneTags(path, pathEdited, [
+		const clonedKeys = await cloneTags(originalFilePath, editedFilePath, [
 			'credit',
 			'preservedFileName',
 			'creator',
@@ -243,7 +251,7 @@ async function imageCredits() {
 
 		// Get matching photo
 
-		const photo = photos.find((photo) => photo.uuid === uuid)
+		const photo = photos.find((photo) => photo.localIdentifier === uuid)
 
 		if (photo === undefined) {
 			log.warn(`Could not find photo with UUID ${uuid} in Photos album`)
@@ -252,16 +260,17 @@ async function imageCredits() {
 
 		processedImagesFound += 1
 
-		const { path: originalImagePath } = photo
+		const { originalFilePath } = photo
+		assertString(originalFilePath, 'Photo is missing original file path')
 
 		log.message(
-			`Syncing metadata from original to processed:\nFrom: ${originalImagePath}\nTo: ${processedImagePath}`,
+			`Syncing metadata from original to processed:\nFrom: ${originalFilePath}\nTo: ${processedImagePath}`,
 			{
 				symbol: '🔄',
 			},
 		)
 
-		const clonedKeys = await cloneTags(originalImagePath, processedImagePath, [
+		const clonedKeys = await cloneTags(originalFilePath, processedImagePath, [
 			'credit',
 			'creator',
 			'label',

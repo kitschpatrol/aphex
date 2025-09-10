@@ -10,8 +10,8 @@ import { globby } from 'globby'
 import path from 'node:path'
 import prettyBytes from 'pretty-bytes'
 import prettyMs from 'pretty-ms'
+import type { ProcessMetadata } from '../src/pipeline/process'
 import type { ImageMimeType } from '../src/utilities/image/mime'
-import type { ProcessMetadata } from '../src/utilities/image/process'
 import { getTags } from '../src/utilities/image/tags'
 
 function average(array: number[]): number {
@@ -39,6 +39,8 @@ function prettyPrintDictionaryWithPercentageParenthetical(
 function sortDictionaryByKeys(dictionary: Record<string, number>): Record<string, number> {
 	return (
 		Object.keys(dictionary)
+			// TODO revisit this
+			// eslint-disable-next-line unicorn/no-array-sort
 			.sort()
 			// eslint-disable-next-line unicorn/no-array-reduce
 			.reduce<Record<string, number>>((acc, key) => {

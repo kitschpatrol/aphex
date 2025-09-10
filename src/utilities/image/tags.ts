@@ -1,8 +1,8 @@
-/* eslint-disable ts/no-unnecessary-condition */
 import type { Tags } from 'exiftool-vendored'
+import { assertString } from '@sindresorhus/is'
 import { exiftool } from 'exiftool-vendored'
 import type { ProcessMetadata } from '../../pipeline/process'
-import type { PhotoInfo } from './apple-photos'
+import type { PhotoInfo } from './aphex-swift-bridge'
 import { lookupImageMimeType } from './mime'
 
 export const VALID_LABELS = [
@@ -145,13 +145,15 @@ export type ImageTags = {
  * Get the preserved file name of an image
  */
 export async function getPreservedFileName(photoInfo: PhotoInfo): Promise<string | undefined> {
-	const { originalFilename: filenamePhotos, path } = photoInfo
+	const { originalFilename: filenamePhotos, originalFilePath } = photoInfo
+	assertString(originalFilePath)
 	const {
 		FileName: filenameExif,
 		OriginalFileName: filenameExifOriginal,
 		PreservedFileName: filenameXmpPreserved,
-	} = await exiftool.read(path)
-	const filenamePath = path.split('/').pop()
+	} = await exiftool.read(originalFilePath)
+	const filenamePath = originalFilePath.split('/').pop()
+	assertString(filenamePath)
 
 	console.log(
 		`filenamePhotos:        ${filenamePhotos}\n` +

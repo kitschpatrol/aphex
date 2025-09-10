@@ -26,13 +26,13 @@ export async function getTwoIdenticallySizedPng(
 	const tempDirectory1 = await fse.mkdtemp(
 		path.join(
 			os.tmpdir(),
-			`com.kitschpatrol.aphex.get-two-identically-sized-png.${getSlugFilename(image1)}.`,
+			`com.kitschpatrol.aphex.get-two-identically-sized-png.${getSlugFilename(image1)}`,
 		),
 	)
 	const tempDirectory2 = await fse.mkdtemp(
 		path.join(
 			os.tmpdir(),
-			`com.kitschpatrol.aphex.get-two-identically-sized-png.${getSlugFilename(image2)}.`,
+			`com.kitschpatrol.aphex.get-two-identically-sized-png.${getSlugFilename(image2)}`,
 		),
 	)
 

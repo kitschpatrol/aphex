@@ -40,6 +40,8 @@ export function sortKeys(object: unknown): unknown {
 
 	if (is.plainObject(object)) {
 		const sortedEntries = Object.keys(object)
+			// TODO revisit this
+			// eslint-disable-next-line unicorn/no-array-sort
 			.sort((a, b) => a.localeCompare(b))
 			.map((key) => [key, sortKeys(object[key])])
 		return Object.fromEntries(sortedEntries)
@@ -127,7 +129,7 @@ export async function execaWithTempCleanup(
 	const fileName = typeof file === 'string' ? file : path.basename(file.pathname)
 
 	const tempDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.kitschpatrol.aphex.execa.${getSlugFilename(fileName)}.`),
+		path.join(os.tmpdir(), `com.kitschpatrol.aphex.execa.${getSlugFilename(fileName)}`),
 	)
 
 	const result = await execa(file, args, {

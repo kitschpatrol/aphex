@@ -1,10 +1,11 @@
 import fs from 'node:fs/promises'
 import { describe, expect } from 'vitest'
 import { exportViaAppleScriptGui } from '../src/pipeline/engines/applescript-gui'
-import { exportViaOsxphotos } from '../src/pipeline/engines/osxphotos'
 import { exportViaSwiftPhotoKit } from '../src/pipeline/engines/swift-photokit'
 import { exportPhoto, exportPhotoAlbum } from '../src/pipeline/export-photo'
 import { tempDirectoryFixture } from './utilities/temp-directory'
+
+// TODO exercise new export pipelines
 
 describe('photo export via photokit engine', () => {
 	// Skipped since it can only run in an external terminal due to photo library
@@ -15,9 +16,7 @@ describe('photo export via photokit engine', () => {
 		async ({ tempDirectory }) => {
 			console.log('----------------------------------')
 			console.log(tempDirectory)
-			await exportViaSwiftPhotoKit('77758382-025A-446E-91C6-88A0BCAFDA91', tempDirectory, {
-				mode: 'requestimage',
-			})
+			await exportViaSwiftPhotoKit('77758382-025A-446E-91C6-88A0BCAFDA91', tempDirectory)
 
 			const files = await fs.readdir(tempDirectory)
 
@@ -27,9 +26,7 @@ describe('photo export via photokit engine', () => {
 				]
 			`)
 
-			await exportViaSwiftPhotoKit('77758382-025A-446E-91C6-88A0BCAFDA91', tempDirectory, {
-				mode: 'requestimagedataandorientation',
-			})
+			await exportViaSwiftPhotoKit('77758382-025A-446E-91C6-88A0BCAFDA91', tempDirectory)
 			const files2 = await fs.readdir(tempDirectory)
 			expect(files2).toMatchInlineSnapshot(`
 				[
@@ -77,32 +74,6 @@ describe('export via applescript-gui engine', () => {
 			`)
 		},
 	)
-})
-
-describe('export via osxphotos engine', () => {
-	tempDirectoryFixture(
-		'exports a specific photo using osxphotos',
-		{ timeout: 20_000 },
-		async ({ tempDirectory }) => {
-			const result = await exportViaOsxphotos('77758382-025A-446E-91C6-88A0BCAFDA91', tempDirectory)
-
-			expect(result[0]).toContain('77758382-025A-446E-91C6-88A0BCAFDA91.jpeg')
-		},
-	)
-
-	// TODO
-	// tempDirectoryFixture(
-	// 	'exports a specific album using osxphotos',
-	// 	{ timeout: 20_000 },
-	// 	async ({ tempDirectory }) => {
-	// 		const result = await exportViaOsxphotos(
-	// 			'77758382-025A-446E-91C6-88A0BCAFDA91',
-	// 			tempDirectory,
-	// 		)
-
-	// 		expect(result[0]).toContain('77758382-025A-446E-91C6-88A0BCAFDA91.jpeg')
-	// 	},
-	// )
 })
 
 describe('export via generic abstraction', () => {

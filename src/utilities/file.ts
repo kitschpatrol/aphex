@@ -103,7 +103,7 @@ export function getJsonFilesInDirectory(directory: string): string[] {
 	return fse
 		.readdirSync(directory)
 		.filter((file) => file.endsWith('json'))
-		.map((file) => `${String(directory)}/${file}`)
+		.map((file) => `${directory}/${file}`)
 }
 
 /**

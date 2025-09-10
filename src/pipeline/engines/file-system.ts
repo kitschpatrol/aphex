@@ -1,52 +1,39 @@
-/**
- * Currently unused!
- */
-
 import { assert } from '@sindresorhus/is'
-import { defu } from 'defu'
-import { execa } from 'execa'
 import fse from 'fs-extra'
 import path from 'node:path'
-
-export type ExportOptions = {
-	original?: boolean
-}
-
-const defaultExportOptions: Required<ExportOptions> = {
-	original: false,
-}
+import type { PhotoInfo } from '../../utilities/image/aphex-swift-bridge'
+import { aphexPhotoInfo, isPhotoInfo } from '../../utilities/image/aphex-swift-bridge'
 
 /**
- * Export a photo by copying it directly from the Photos.app library file system to the destination directory.
+ * Export a photo via direct file system copy of the original or edited file
  */
 export async function exportViaFileSystem(
-	photoUuid: string,
+	photoUuid: PhotoInfo | string,
 	destinationDirectory: string,
-	options?: ExportOptions,
+	forceOriginal = false,
 ): Promise<string> {
-	const { original } = defu(options, defaultExportOptions)
-
-	await fse.mkdir(destinationDirectory, { recursive: true })
-
-	const { stdout: json } = await execa('osxphotos', [
-		'query',
-		'--only-photos',
-		'--uuid',
+	const [{ editedFilename, editedFilePath, originalFilename, originalFilePath }] = isPhotoInfo(
 		photoUuid,
-		'--json',
-	])
+	)
+		? [photoUuid]
+		: await aphexPhotoInfo(photoUuid)
 
-	const jsonOutput: unknown = JSON.parse(json)
-	assert.array(jsonOutput)
+	assert.string(originalFilePath)
+	assert.string(originalFilename)
 
-	const photoInfo = jsonOutput[0]
-	assert.plainObject(photoInfo)
+	if (forceOriginal || editedFilePath === undefined || editedFilename === undefined) {
+		const destinationPath = path.join(destinationDirectory, originalFilename)
+		await fse.copy(originalFilePath, destinationPath, {
+			overwrite: true,
+		})
 
-	// Fall back to original path if edited path is not available
-	const filePath = original ? photoInfo.path : (photoInfo.path_edited ?? photoInfo.path)
-	assert.string(filePath)
+		return destinationPath
+	}
 
-	const destinationPath = path.join(destinationDirectory, `${photoUuid}${path.extname(filePath)}`)
-	await fse.copyFile(filePath, destinationPath)
+	const destinationPath = path.join(destinationDirectory, editedFilename)
+	await fse.copy(editedFilePath, destinationPath, {
+		overwrite: true,
+	})
+
 	return destinationPath
 }

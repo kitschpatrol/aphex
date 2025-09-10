@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { describe, expect } from 'vitest'
+import { processImage } from '../src/pipeline/process'
 import { getColorProfile } from '../src/utilities/image/color'
-import { processImage } from '../src/utilities/image/process'
 import { validateTags } from '../src/utilities/image/tags'
 import { testFiles } from './shared'
 import { tempDirectoryFixture } from './utilities/temp-directory'

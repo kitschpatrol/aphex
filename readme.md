@@ -131,4 +131,4 @@ Editing in Photoshop destroys alpha channels
 Editing always destroys alpha channels?
 
 Promising integration:
-https://github.com/kabiroberai/node-swift
+<https://github.com/kabiroberai/node-swift>

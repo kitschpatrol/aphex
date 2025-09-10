@@ -1,3 +1,4 @@
+import { assertString } from '@sindresorhus/is'
 import fse from 'fs-extra'
 import os from 'node:os'
 import path from 'node:path'
@@ -124,7 +125,7 @@ export async function processPhotos(
 
 	// Process images in parallel
 	const tempProcessOutputDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.kitschpatrol.aphex.process.`),
+		path.join(os.tmpdir(), `com.kitschpatrol.aphex.process`),
 	)
 
 	const processImageResults = await Promise.all<ProcessImageResult>(
@@ -152,17 +153,18 @@ export async function processPhotos(
 		const processingOutputPath = result.output.path
 		const finalOutputPath = path.join(outputDirectory, path.basename(result.output.path))
 		const { exportEngine, exportOptions, photoInfo } = exportedPhoto
-		const tags = await getTags(photoInfo.path)
+		assertString(photoInfo.originalFilePath)
+		const tags = await getTags(photoInfo.originalFilePath)
 		result.output.path = finalOutputPath
 		tags.processMetadata = {
-			dateModified: photoInfo.dateModified ?? undefined,
-			edited: photoInfo.pathEdited !== null,
+			dateModified: photoInfo.modificationDate?.toISOString() ?? undefined,
+			edited: photoInfo.editedFilePath !== undefined,
 			exportEngine,
 			options: {
 				export: exportOptions,
 				process: options,
 			},
-			uuid: photoInfo.uuid,
+			uuid: photoInfo.localIdentifier,
 			...result,
 		}
 
@@ -231,7 +233,7 @@ export async function processImage(
 	const input = await getImageInfo(sourceImagePath)
 
 	const tempDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.kitschpatrol.aphex.process-image.`),
+		path.join(os.tmpdir(), `com.kitschpatrol.aphex.process-image`),
 	)
 
 	// Result will be updated as we go

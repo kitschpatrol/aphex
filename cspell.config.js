@@ -3,13 +3,13 @@ import { cspellConfig } from '@kitschpatrol/cspell-config'
 export default cspellConfig({
 	words: [
 		'aphex',
-		'defu',
-		'requestimagedataandorientation',
-		'requestimage',
-		'Turnbull',
-		'magick',
-		'swiftc',
 		'codesign',
+		'defu',
 		'importx',
+		'metaimage',
+		'photolibraryd',
+		'requestimage',
+		'requestimagedataandorientation',
+		'uppercased',
 	],
 })

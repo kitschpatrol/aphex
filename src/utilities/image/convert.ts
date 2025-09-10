@@ -114,7 +114,7 @@ export async function convertToJpeg(
 				const tgaTempDirectory = await fse.mkdtemp(
 					path.join(
 						os.tmpdir(),
-						`com.kitschpatrol.aphex.${getSlugFilename(sourceImagePath)}.${engine}.`,
+						`com.kitschpatrol.aphex.${getSlugFilename(sourceImagePath)}.${engine}`,
 					),
 				)
 				const tgaImagePath = await convertToTga(sourceImagePath, tgaTempDirectory)
@@ -478,7 +478,7 @@ export async function compressImage(
 	// Compress
 	let workingImagePath: string
 	const tempDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.kitschpatrol.aphex.${getSlugFilename(sourceImagePath)}.compress.`),
+		path.join(os.tmpdir(), `com.kitschpatrol.aphex.${getSlugFilename(sourceImagePath)}.compress`),
 	)
 
 	// First try lossless

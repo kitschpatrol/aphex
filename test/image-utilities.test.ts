@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { getPhotoInfoForUuid } from '../src/utilities/image/apple-photos'
+import { aphexPhotoInfo } from '../src/utilities/image/aphex-swift-bridge'
 import { getColorProfile } from '../src/utilities/image/color'
 import {
 	calculatePSNR,
@@ -189,7 +189,7 @@ describe('test files are valid', () => {
 
 describe('photo-info', () => {
 	it('gets photo info for uuid', { timeout: 20_000 }, async () => {
-		const photoInfo = await getPhotoInfoForUuid('77758382-025A-446E-91C6-88A0BCAFDA91')
+		const photoInfo = await aphexPhotoInfo('77758382-025A-446E-91C6-88A0BCAFDA91')
 
 		/* Spell-checker: disable */
 

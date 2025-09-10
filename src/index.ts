@@ -1,3 +1,5 @@
+console.log('I am not an empty file!')
+
 // import { exportViaAppleScriptGui } from './engines/applescript-gui'
 // import { exportViaFileSystem } from './engines/file-system'
 // import { exportViaOsxphotos } from './engines/osxphotos'

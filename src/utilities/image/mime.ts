@@ -35,7 +35,6 @@ mimes.tga = 'image/tga'
 // ASHLAR BRF CIP DEBUG EPS2 EPS3 HISTOGRAM INFO ISOBRL ISOBRL6 JSON KERNEL MATTE PAM PCL PREVIEW PRINT SHTML SPARSE-COLOR UBRL UBRL6 UIL UNIQUE YAML
 
 // The '' prefix is implicit
-// eslint-disable-next-line ts/naming-convention
 const IMAGE_MIME_TYPES = [
 	'arw', // Sony raw
 	'avif', // Noted for high efficiency in compression (Emerging)

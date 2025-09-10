@@ -19,10 +19,6 @@ import type { ImageInfo } from '../src/utilities/image/image'
 import type { ImageMimeType } from '../src/utilities/image/mime'
 import { exportViaAppleScriptGui } from '../src/pipeline/engines/applescript-gui'
 import { exportViaFileSystem } from '../src/pipeline/engines/file-system'
-import { exportViaOsxphotosExport } from '../src/pipeline/engines/osxphotos-export'
-import { exportViaOsxphotosPhotoKit } from '../src/pipeline/engines/osxphotos-photokit'
-import { exportViaOsxphotosPhotosExport } from '../src/pipeline/engines/osxphotos-photos'
-import { exportViaSwiftPhotoKitOrientation } from '../src/pipeline/engines/swift-aphex-swift-orientation'
 import { exportViaSwiftPhotoKit } from '../src/pipeline/engines/swift-photokit'
 import { sipsTempCleanup } from '../src/utilities/general'
 import { assertValidColorProfile } from '../src/utilities/image/color'
@@ -41,7 +37,7 @@ async function exportViaAppleScriptGuiWrapped(
 
 	// No control over exact file name in the gui, so we copy to temp first
 	const tempDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.kitschpatrol.aphex.audit.${photoUuid}.`),
+		path.join(os.tmpdir(), `com.kitschpatrol.aphex.audit.${photoUuid}`),
 	)
 
 	const result = await exportViaAppleScriptGui(photoUuid, tempDirectory, {
@@ -70,46 +66,23 @@ async function exportPhotos(destination: string, photoUuid: string): Promise<str
 	const exportedFiles: string[] = []
 
 	exportedFiles.push(
-		// Originals
-		await exportViaOsxphotosExport(
+		// File System
+		await exportViaFileSystem(
 			photoUuid, //
-			path.join(destination, 'original-osxphotos'),
-			{
-				original: true,
-			},
+			path.join(destination, 'file-system'),
+			false,
 		),
-
-		// TODO relevant? Working?
-		// await exportViaOsxphotosPhotosExport(
-		// 	photoUuid, //
-		// 	path.join(destination, 'original-osxphotos-photos'),
-		// 	{
-		// 		original: true,
-		// 	},
-		// ),
-
-		// TODO relevant? Working?
-		// await exportViaOsxphotosPhotoKit(
-		// 	photoUuid, //
-		// 	path.join(destination, 'original-osxphotos-photo-kit'),
-		// 	{
-		// 		original: true,
-		// 	},
-		// ),
 
 		await exportViaFileSystem(
 			photoUuid, //
 			path.join(destination, 'original-file-system'),
-			{
-				original: true,
-			},
+			true,
 		),
 
-		// Edited
 		await exportViaAppleScriptGuiWrapped(
 			photoUuid, //
-			path.join(destination, 'photos-gui-png'),
-			'png',
+			path.join(destination, 'photos-gui-jpeg-high'),
+			'jpeg-high',
 		),
 
 		await exportViaAppleScriptGuiWrapped(
@@ -120,56 +93,13 @@ async function exportPhotos(destination: string, photoUuid: string): Promise<str
 
 		await exportViaAppleScriptGuiWrapped(
 			photoUuid, //
-			path.join(destination, 'photos-gui-jpeg-high'),
-			'jpeg-high',
-		),
-
-		await exportViaFileSystem(
-			photoUuid, //
-			path.join(destination, 'file-system'),
-			{
-				original: false,
-			},
+			path.join(destination, 'photos-gui-png'),
+			'png',
 		),
 
 		await exportViaSwiftPhotoKit(
 			photoUuid, //
-			path.join(destination, 'swift-photo-kit-request-image'),
-			{
-				original: false,
-			},
-		),
-
-		await exportViaSwiftPhotoKitOrientation(
-			photoUuid, //
-			path.join(destination, 'swift-photo-kit-request-image-data-and-orientation'),
-			{
-				original: false,
-			},
-		),
-
-		await exportViaOsxphotosExport(
-			photoUuid, //
-			path.join(destination, 'osxphotos'),
-			{
-				original: false,
-			},
-		),
-
-		await exportViaOsxphotosPhotoKit(
-			photoUuid, //
-			path.join(destination, 'osxphotos-photo-kit'),
-			{
-				original: false,
-			},
-		),
-
-		await exportViaOsxphotosPhotosExport(
-			photoUuid, //
-			path.join(destination, 'osxphotos-photos'),
-			{
-				original: false,
-			},
+			path.join(destination, 'swift-photo-kit'),
 		),
 	)
 
@@ -197,15 +127,10 @@ function formatColorProfile(profile: ColorProfile): string {
 const methodNameAndOrderMap = {
 	'file-system': 'File system copy',
 	'original-file-system': 'File system copy',
-	osxphotos: '`osxphotos export`',
-	'osxphotos-photo-kit': '`osxphotos export --photo-kit`',
-	'osxphotos-photos': '`osxphotos export --use-photos-export`',
 	'photos-gui-jpeg-high': 'Photos GUI Export JPEG High',
 	'photos-gui-jpeg-max': 'Photos GUI Export JPEG Max',
 	'photos-gui-png': 'Photos GUI Export PNG',
-	'swift-photo-kit-request-image': 'PhotoKit `requestImage...`',
-	'swift-photo-kit-request-image-data-and-orientation':
-		'PhotoKit `requestImageDataAndOrientation...`',
+	'swift-photo-kit': 'PhotoKit `requestImage...`',
 } as const
 
 function assertValidExportMethod(
@@ -293,7 +218,7 @@ async function generateImageReport(exportDirectory: string): Promise<ImageReport
 			imageReport.push({
 				exifTagCount: await getTagCount(filePath),
 				exportMethod,
-				hasEdits: false, // Calculated in next pass, could use an osxphotos query instead
+				hasEdits: false, // Calculated in next pass, could use an aphex-swift query instead?
 				imageInfo: await getImageInfo(filePath),
 				isBenchmark:
 					directory.name === 'original-file-system' || directory.name === 'photos-gui-png',
