@@ -162,3 +162,14 @@ export async function sipsTempCleanup(): Promise<number> {
 
 	return cleanCount
 }
+
+/**
+ * Ensure the value is an array. If it's undefined or null, return an empty array.
+ */
+export function ensureArray<T>(value: T | T[] | undefined): T[] {
+	if (value === undefined || value === null) {
+		return []
+	}
+
+	return Array.isArray(value) ? value : [value]
+}

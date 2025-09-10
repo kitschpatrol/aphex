@@ -63,8 +63,12 @@ struct CodablePHAsset: Codable {
     }
 
     // Get metadata
-    self.title = asset.value(forKey: "title") as? String
-    
+    if let title = asset.value(forKey: "title") as? String, !title.isEmpty {
+      self.title = title
+    } else {
+      self.title = nil
+    }
+
     // Initialize file paths using osxphotos approach
     self.originalFilePath = getOriginalFilePath(for: asset)
     self.editedFilePath = asset.hasAdjustments ? getEditedFilePath(for: asset) : nil
@@ -129,37 +133,40 @@ private func getOriginalFilePath(for asset: PHAsset) -> String? {
   guard let libraryURL = getSystemLibraryPath() else {
     return nil
   }
-  
+
   let cleanUUID = cleanLocalIdentifier(asset.localIdentifier)
   let firstLetter = String(cleanUUID.prefix(1))
-  
+
   // Get original filename from PHAssetResource
   let resources = PHAssetResource.assetResources(for: asset)
   guard let originalResource = resources.first(where: { $0.type == .photo || $0.type == .video }),
-        let pathExtension = originalResource.originalFilename.split(separator: ".").last else {
+    let pathExtension = originalResource.originalFilename.split(separator: ".").last
+  else {
     return nil
   }
-  
+
   // Construct path: libraryURL/originals/FIRST_LETTER/UUID.extension
-  let originalPath = libraryURL
+  let originalPath =
+    libraryURL
     .appendingPathComponent("originals")
     .appendingPathComponent(firstLetter.uppercased())
     .appendingPathComponent("\(cleanUUID).\(pathExtension)")
     .path
-  
+
   return FileManager.default.fileExists(atPath: originalPath) ? originalPath : nil
 }
 
 /// Get the edited file path using osxphotos approach
 private func getEditedFilePath(for asset: PHAsset) -> String? {
   guard asset.hasAdjustments,
-        let libraryURL = getSystemLibraryPath() else {
+    let libraryURL = getSystemLibraryPath()
+  else {
     return nil
   }
-  
+
   let cleanUUID = cleanLocalIdentifier(asset.localIdentifier)
   let firstChar = String(cleanUUID.prefix(1))
-  
+
   var filename: String
   if asset.mediaType == .image {
     // Check if it's HEIC or default to JPEG for edited images
@@ -174,14 +181,14 @@ private func getEditedFilePath(for asset: PHAsset) -> String? {
   } else {
     return nil
   }
-  
-  let editedPath = libraryURL
+
+  let editedPath =
+    libraryURL
     .appendingPathComponent("resources")
     .appendingPathComponent("renders")
     .appendingPathComponent(firstChar)
     .appendingPathComponent(filename)
     .path
-  
+
   return FileManager.default.fileExists(atPath: editedPath) ? editedPath : nil
 }
-
