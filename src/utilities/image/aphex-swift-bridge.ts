@@ -23,81 +23,87 @@ export async function aphexAlbums(): Promise<Record<string, string>> {
 }
 
 /**
+ * TypeScript type definition for ResourceInfo from the Swift implementation
+ */
+export type ResourceInfo = {
+	contentType: string
+	fileName: string
+	filePath: string
+	fileSize: number
+	height: number
+	width: number
+}
+
+/**
  * TypeScript type definition for the JSON representation of a PHAsset
- * from the iOS Photos framework
+ * from the iOS Photos framework (CodablePHAsset)
  */
 export type PhotoInfo = {
-	burstIdentifier?: string
-	creationDate?: Date
-	editedFilename?: string
-	editedFilePath?: string
-	hasAdjustments: boolean
-	isFavorite: boolean
-	isHidden: boolean
+	dateCreated?: Date
+	dateModified?: Date
+	edited?: ResourceInfo
+	favorite: boolean
+	hidden: boolean
 	localIdentifier: string
-	mediaSubtypes: number
-	modificationDate?: Date
-	originalFilename?: string
-	originalFilePath?: string
-	pixelHeight: number
-	pixelWidth: number
-	representsBurst: boolean
-	sourceType: number
+	original: ResourceInfo
 	title?: string
 }
 
 export type AlbumInfo = {
 	assetCollectionSubtype: number
 	assetCollectionType: number
-	endDate?: Date
+	dateEnd?: Date
+	dateStart?: Date
 	estimatedAssetCount: number
 	localIdentifier: string
 	localizedTitle?: string
-	startDate?: Date
+}
+
+/**
+ * Runtime type guard for ResourceInfo
+ */
+export function isResourceInfo(value: unknown): value is ResourceInfo {
+	if (!is.plainObject(value)) {
+		return false
+	}
+
+	const object = value as Record<string, unknown>
+	return (
+		is.string(object.contentType) &&
+		is.string(object.fileName) &&
+		is.string(object.filePath) &&
+		is.number(object.fileSize) &&
+		is.number(object.height) &&
+		is.number(object.width)
+	)
 }
 
 /**
  * Runtime type guard for PhotoInfo
  */
-// eslint-disable-next-line complexity
 export function isPhotoInfo(value: unknown): value is PhotoInfo {
 	if (!is.plainObject(value)) {
 		return false
 	}
 
+	const object = value as Record<string, unknown>
+
 	// Required fields
 	if (
-		!is.string((value as Record<string, unknown>).localIdentifier) ||
-		!is.boolean((value as Record<string, unknown>).hasAdjustments) ||
-		!is.boolean((value as Record<string, unknown>).isFavorite) ||
-		!is.boolean((value as Record<string, unknown>).isHidden) ||
-		!is.number((value as Record<string, unknown>).mediaSubtypes) ||
-		!is.number((value as Record<string, unknown>).mediaType) ||
-		!is.number((value as Record<string, unknown>).pixelHeight) ||
-		!is.number((value as Record<string, unknown>).pixelWidth) ||
-		!is.boolean((value as Record<string, unknown>).representsBurst) ||
-		!is.number((value as Record<string, unknown>).sourceType)
+		!is.string(object.localIdentifier) ||
+		!is.boolean(object.favorite) ||
+		!is.boolean(object.hidden) ||
+		!isResourceInfo(object.original)
 	) {
 		return false
 	}
 
-	// Optional string fields (if present)
-	const object = value as Record<string, unknown>
+	// Optional fields
 	if (
-		(object.burstIdentifier !== undefined && !is.string(object.burstIdentifier)) ||
-		(object.editedFilename !== undefined && !is.string(object.editedFilename)) ||
-		(object.editedFilePath !== undefined && !is.string(object.editedFilePath)) ||
-		(object.originalFilename !== undefined && !is.string(object.originalFilename)) ||
-		(object.originalFilePath !== undefined && !is.string(object.originalFilePath)) ||
-		(object.title !== undefined && !is.string(object.title))
-	) {
-		return false
-	}
-
-	// Optional date fields (if present)
-	if (
-		(object.creationDate !== undefined && !is.date(object.creationDate)) ||
-		(object.modificationDate !== undefined && !is.date(object.modificationDate))
+		(object.dateCreated !== undefined && !is.date(object.dateCreated)) ||
+		(object.dateModified !== undefined && !is.date(object.dateModified)) ||
+		(object.title !== undefined && !is.string(object.title)) ||
+		(object.edited !== undefined && !isResourceInfo(object.edited))
 	) {
 		return false
 	}
@@ -133,8 +139,8 @@ export function isAlbumInfo(value: unknown): value is AlbumInfo {
 
 	if (
 		(object.localizedTitle !== undefined && !is.string(object.localizedTitle)) ||
-		(object.startDate !== undefined && !is.date(object.startDate)) ||
-		(object.endDate !== undefined && !is.date(object.endDate))
+		(object.dateStart !== undefined && !is.date(object.dateStart)) ||
+		(object.dateEnd !== undefined && !is.date(object.dateEnd))
 	) {
 		return false
 	}
@@ -206,7 +212,7 @@ export async function aphexAlbumInfo(
 ): Promise<AlbumInfo> {
 	const result = await execa(
 		'./aphex-swift',
-		['album-info', identifier, caseSensitive ? '--case-sensitive' : undefined].filter(Boolean),
+		['album-info', identifier, caseSensitive ? '--case-sensitive' : ''],
 		{
 			cwd: getDistributionPath(),
 		},
@@ -265,10 +271,7 @@ function getDistributionPath(): string {
 
 function dateReviver(key: string, value: unknown) {
 	if (
-		(key === 'creationDate' ||
-			key === 'modificationDate' ||
-			key === 'startDate' ||
-			key === 'endDate') &&
+		(key === 'dateCreated' || key === 'dateModified' || key === 'dateStart' || key === 'dateEnd') &&
 		typeof value === 'string'
 	) {
 		return value ? new Date(value) : undefined
