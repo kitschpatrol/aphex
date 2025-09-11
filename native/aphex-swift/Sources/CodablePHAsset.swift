@@ -4,7 +4,6 @@ import Photos
 /// A simplified Codable representation of PHAsset for read-only JSON export
 struct CodablePHAsset: Codable {
   let localIdentifier: String
-  let mediaType: Int
   let mediaSubtypes: UInt
   let sourceType: UInt
   let pixelWidth: Int
@@ -27,7 +26,7 @@ struct CodablePHAsset: Codable {
     guard asset.mediaType == .image else {
       fatalError("CodablePHAsset can only be initialized from photo assets")
     }
-    
+
     // Clean up the local identifier by removing the trailing /L0/001 part
     if let range = asset.localIdentifier.range(of: "/L0/") {
       self.localIdentifier = String(asset.localIdentifier[..<range.lowerBound])
@@ -35,7 +34,6 @@ struct CodablePHAsset: Codable {
       self.localIdentifier = asset.localIdentifier
     }
 
-    self.mediaType = asset.mediaType.rawValue
     self.mediaSubtypes = asset.mediaSubtypes.rawValue
     self.sourceType = asset.sourceType.rawValue
     self.pixelWidth = asset.pixelWidth
@@ -100,11 +98,9 @@ struct CodablePHAsset: Codable {
 
 // MARK: - Batch Operations
 extension Array where Element == PHAsset {
-  /// Converts an array of PHAssets to JSON string (photos only)
+  /// Converts an array of PHAssets to JSON string
   func toJSONString() throws -> String {
-    // Filter to only include photo assets
-    let photoAssets = self.filter { $0.mediaType == .image }
-    let codableAssets = photoAssets.map { CodablePHAsset(from: $0) }
+    let codableAssets = self.map { CodablePHAsset(from: $0) }
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = .iso8601
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -139,7 +135,7 @@ extension Array where Element == PHAsset {
 private func getOriginalFilePath(for asset: PHAsset) -> String? {
   // Only handle photo assets
   guard asset.mediaType == .image else { return nil }
-  
+
   guard let libraryURL = getSystemLibraryPath() else {
     return nil
   }
@@ -170,8 +166,8 @@ private func getOriginalFilePath(for asset: PHAsset) -> String? {
 private func getEditedFilePath(for asset: PHAsset) -> String? {
   // Only handle photo assets with adjustments
   guard asset.mediaType == .image,
-        asset.hasAdjustments,
-        let libraryURL = getSystemLibraryPath()
+    asset.hasAdjustments,
+    let libraryURL = getSystemLibraryPath()
   else {
     return nil
   }

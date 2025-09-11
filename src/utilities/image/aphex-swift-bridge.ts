@@ -36,7 +36,6 @@ export type PhotoInfo = {
 	isHidden: boolean
 	localIdentifier: string
 	mediaSubtypes: number
-	mediaType: number
 	modificationDate?: Date
 	originalFilename?: string
 	originalFilePath?: string
@@ -207,7 +206,7 @@ export async function aphexAlbumInfo(
 ): Promise<AlbumInfo> {
 	const result = await execa(
 		'./aphex-swift',
-		['album-info', identifier, caseSensitive ? '--case-sensitive' : ''],
+		['album-info', identifier, caseSensitive ? '--case-sensitive' : undefined].filter(Boolean),
 		{
 			cwd: getDistributionPath(),
 		},
