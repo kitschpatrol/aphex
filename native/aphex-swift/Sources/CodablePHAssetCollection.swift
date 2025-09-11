@@ -3,7 +3,7 @@ import Photos
 
 /// A simplified Codable representation of PHAssetCollection for read-only JSON export
 struct CodablePHAssetCollection: Codable {
-  let localIdentifier: String
+  let uuid: String
   let localizedTitle: String?
   let assetCollectionType: Int
   let assetCollectionSubtype: Int
@@ -14,9 +14,9 @@ struct CodablePHAssetCollection: Codable {
   init(from collection: PHAssetCollection) {
     // Clean up the local identifier by removing the trailing /L0/001 part
     if let range = collection.localIdentifier.range(of: "/L0/") {
-      self.localIdentifier = String(collection.localIdentifier[..<range.lowerBound])
+      self.uuid = String(collection.localIdentifier[..<range.lowerBound])
     } else {
-      self.localIdentifier = collection.localIdentifier
+      self.uuid = collection.localIdentifier
     }
 
     self.localizedTitle = collection.localizedTitle

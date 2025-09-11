@@ -5,7 +5,7 @@ import { packageDirectorySync } from 'package-directory'
 import { ensureArray } from '../general'
 
 /**
- * Get full album paths mapped to their local identifiers
+ * Get full album paths mapped to their UUIDs
  * @throws
  */
 export async function aphexAlbums(): Promise<Record<string, string>> {
@@ -44,19 +44,19 @@ export type PhotoInfo = {
 	edited?: ResourceInfo
 	favorite: boolean
 	hidden: boolean
-	localIdentifier: string
 	original: ResourceInfo
 	title?: string
+	uuid: string
 }
 
 export type AlbumInfo = {
-	assetCollectionSubtype: number
-	assetCollectionType: number
 	dateEnd?: Date
 	dateStart?: Date
 	estimatedAssetCount: number
-	localIdentifier: string
-	localizedTitle?: string
+	subtype: number
+	title?: string
+	type: number
+	uuid: string
 }
 
 /**
@@ -90,7 +90,7 @@ export function isPhotoInfo(value: unknown): value is PhotoInfo {
 
 	// Required fields
 	if (
-		!is.string(object.localIdentifier) ||
+		!is.string(object.uuid) ||
 		!is.boolean(object.favorite) ||
 		!is.boolean(object.hidden) ||
 		!isResourceInfo(object.original) ||
@@ -129,16 +129,16 @@ export function isAlbumInfo(value: unknown): value is AlbumInfo {
 	const object = value as Record<string, unknown>
 
 	if (
-		!is.string(object.localIdentifier) ||
-		!is.number(object.assetCollectionType) ||
-		!is.number(object.assetCollectionSubtype) ||
+		!is.string(object.uuid) ||
+		!is.number(object.type) ||
+		!is.number(object.subtype) ||
 		!is.number(object.estimatedAssetCount)
 	) {
 		return false
 	}
 
 	if (
-		(object.localizedTitle !== undefined && !is.string(object.localizedTitle)) ||
+		(object.title !== undefined && !is.string(object.title)) ||
 		(object.dateStart !== undefined && !is.date(object.dateStart)) ||
 		(object.dateEnd !== undefined && !is.date(object.dateEnd))
 	) {

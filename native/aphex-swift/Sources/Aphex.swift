@@ -25,13 +25,13 @@ struct aphex: ParsableCommand {
 
 struct Albums: ParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "Get album paths mapped to their local identifiers as JSON"
+        abstract: "Get album paths mapped to their UUIDs as JSON"
     )
 
     mutating func run() throws {
         try checkPhotosAccess()
 
-        let albumPaths = getAlbumPathsToLocalIdentifierMap()
+        let albumPaths = getAlbumPathsToUuidMap()
         let jsonData = try JSONSerialization.data(
             withJSONObject: albumPaths, options: [.prettyPrinted, .withoutEscapingSlashes])
 
@@ -45,13 +45,13 @@ struct AlbumInfo: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "album-info",
         abstract:
-            "Get album information for a given identifier (Local identifier, album name, or album path)"
+            "Get album information for a given identifier (UUID, album name, or album path)"
     )
 
     @Flag(name: .shortAndLong, help: "Case sensitive matching")
     var caseSensitive = false
 
-    @Argument(help: "Album identifier (Local identifier, album name, or album path)")
+    @Argument(help: "Album identifier (UUID, album name, or album path)")
     var identifier: String
 
     mutating func run() throws {
@@ -71,7 +71,7 @@ struct PhotoInfo: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "photo-info",
         abstract:
-            "Get photo asset information for given identifiers (Local identifier, filename, album name, or photo path)"
+            "Get photo asset information for given identifiers (UUID, filename, album name, or photo path)"
     )
 
     @Flag(name: .shortAndLong, help: "Case sensitive matching")
@@ -79,7 +79,7 @@ struct PhotoInfo: ParsableCommand {
 
     @Argument(
         help:
-            "Photo or album identifiers (Local identifiers, filenames, album names, or photo paths)"
+            "Photo or album identifiers (UUIDs, filenames, album names, or photo paths)"
     )
     var identifiers: [String]
 
@@ -108,7 +108,7 @@ struct Export: ParsableCommand {
 
     @Argument(
         help:
-            "Photo or album identifiers (Local identifiers, filenames, album names, or photo paths)"
+            "Photo or album identifiers (UUIDs, filenames, album names, or photo paths)"
     )
     var identifiers: [String]
 

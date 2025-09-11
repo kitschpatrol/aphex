@@ -1,7 +1,7 @@
 -- Exports images from Photos via automated GUI manipulation
 -- It's an unsavory approach, but no other means of automation seems to yield higher quality edited image exports (so far)
 -- Arguments are passed in their order of appearance in the GUI, and expect values exactly matching the UI strings in Photos.app
--- Accepts an individual photo UUID, or an album UUID (use osxphotos query to look up UUIDs)
+-- Accepts an individual photo UUID, or an album UUID (use aphex-swift to look up identifiers / UUIDs)
 on run { uuid, exportDirectory, photoKind, jpegQuality, tiffBitDepth, colorProfile, photoSize, maxSizeType, maxSizeValue, includeMetadata, includeLocation , fileName, sequentialPrefix, subfolderFormat}
 		
 	tell application "System Events"

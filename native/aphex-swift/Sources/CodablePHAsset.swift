@@ -14,7 +14,7 @@ struct ResourceInfo: Codable {
 
 /// A simplified Codable representation of PHAsset for read-only JSON export
 struct CodablePHAsset: Codable {
-  let localIdentifier: String
+  let uuid: String
   let dateCreated: Date
   let dateModified: Date
   let favorite: Bool
@@ -33,9 +33,9 @@ struct CodablePHAsset: Codable {
 
     // Clean up the local identifier by removing the trailing /L0/001 part
     if let range = asset.localIdentifier.range(of: "/L0/") {
-      self.localIdentifier = String(asset.localIdentifier[..<range.lowerBound])
+      self.uuid = String(asset.localIdentifier[..<range.lowerBound])
     } else {
-      self.localIdentifier = asset.localIdentifier
+      self.uuid = asset.localIdentifier
     }
 
     guard let dateCreated = asset.creationDate else {

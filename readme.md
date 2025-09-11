@@ -62,19 +62,17 @@ TK
 
 TK
 
-### Exporting a photo by local identifier / "UUID"
+### Exporting a photo by UUID
 
-Note that local identifiers are unique to each instance of your Photos.app library, so if you have the same library synced across several machines, you can't expect photo identifiers to be consistent.
-
-While these values resemble UUIDs, this is technically a misnomer since they are not guaranteed to be _universally_ unique.
+Note that UUIDs are unique to each instance of your Photos.app library, so if you have the same library synced across several machines, you can't expect the identifiers to be consistent. Technically, they aren't _universal_. Apple uses the term "local identifier" internally for this reason. For the sake of concision and consistency with tools like `osxphotos`, this library uses the term "UUID" interchangeably with "local identifier".
 
 ### Exporting an album by name
 
 TK
 
-### Exporting an album by local identifier
+### Exporting an album by UUID
 
-The same caveat about identifier consistency across library instances applies here.
+The same caveat about UUID consistency across library instances applies here.
 
 ## Implementation notes
 

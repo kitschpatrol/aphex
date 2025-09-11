@@ -239,19 +239,17 @@ async function imageCredits() {
 		}
 
 		const { photoInfo } = processMetadata
-		// eslint-disable-next-line ts/no-unnecessary-condition
-		if (photoInfo.localIdentifier === undefined) {
-			log.warn(`Photos local identifier not found for processed image: ${processedImagePath}`)
-			continue
-		}
+
+		// if (photoInfo.uuid === undefined) {
+		// 	log.warn(`Photos UUId not found for processed image: ${processedImagePath}`)
+		// 	continue
+		// }
 
 		// Get matching photo
-		const photo = photos.find((photo) => photo.localIdentifier === photoInfo.localIdentifier)
+		const photo = photos.find((photo) => photo.uuid === photoInfo.uuid)
 
 		if (photo === undefined) {
-			log.warn(
-				`Could not find photo with Local Identifier ${photoInfo.localIdentifier} in Photos album`,
-			)
+			log.warn(`Could not find photo with UUID ${photoInfo.uuid} in Photos album`)
 			continue
 		}
 

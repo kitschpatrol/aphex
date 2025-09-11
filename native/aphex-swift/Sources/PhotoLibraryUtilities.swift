@@ -48,8 +48,8 @@ enum PhotosAccessError: LocalizedError {
 
 // MARK: - Album Discovery
 
-/// Function to get all album paths mapped to their local identifiers
-public func getAlbumPathsToLocalIdentifierMap() -> [String: String] {
+/// Function to get all album paths mapped to their UUIDs
+public func getAlbumPathsToUuidMap() -> [String: String] {
   var albumPaths: [String: String] = [:]
 
   // Get all user collections (folders and user-created albums)
@@ -62,8 +62,8 @@ public func getAlbumPathsToLocalIdentifierMap() -> [String: String] {
       albumPaths.merge(pathsFromList) { _, new in new }
     } else if let album = collection as? PHAssetCollection {
       let albumName = album.localizedTitle ?? "Untitled Album"
-      let cleanLocalIdentifier = cleanLocalIdentifier(album.localIdentifier)
-      albumPaths["/\(albumName)"] = cleanLocalIdentifier
+      let cleanUuid = cleanLocalIdentifier(album.localIdentifier)
+      albumPaths["/\(albumName)"] = cleanUuid
     }
   }
 
@@ -74,8 +74,8 @@ public func getAlbumPathsToLocalIdentifierMap() -> [String: String] {
   for i in 0..<smartAlbums.count {
     let smartAlbum = smartAlbums.object(at: i)
     let albumName = smartAlbum.localizedTitle ?? "Untitled Smart Album"
-    let cleanLocalIdentifier = cleanLocalIdentifier(smartAlbum.localIdentifier)
-    albumPaths["/\(albumName)"] = cleanLocalIdentifier
+    let cleanUuid = cleanLocalIdentifier(smartAlbum.localIdentifier)
+    albumPaths["/\(albumName)"] = cleanUuid
   }
 
   // Also check for smart albums organized in collection lists
@@ -93,24 +93,24 @@ public func getAlbumPathsToLocalIdentifierMap() -> [String: String] {
 
 // MARK: - Album Info
 
-/// Function to get album information by local identifier or name
+/// Function to get album information by UUID or name
 public func getAlbum(
   identifier: String, albumMap: [String: String]? = nil, caseSensitive: Bool = false
 ) -> PHAssetCollection? {
   // Check if identifier looks like a UUID (8-4-4-4-12 pattern)
   if isUUID(identifier) {
-    return getAlbumByLocalIdentifier(localIdentifier: identifier)
+    return getAlbumByUuid(uuid: identifier)
   }
 
   // Otherwise treat as album name/path
-  let map = albumMap ?? getAlbumPathsToLocalIdentifierMap()
+  let map = albumMap ?? getAlbumPathsToUuidMap()
   return getAlbumByName(name: identifier, albumMap: map, caseSensitive: caseSensitive)
 }
 
-/// Function to get album by local identifier
-func getAlbumByLocalIdentifier(localIdentifier: String) -> PHAssetCollection? {
+/// Function to get album by UUID
+func getAlbumByUuid(uuid: String) -> PHAssetCollection? {
   let fetchResult = PHAssetCollection.fetchAssetCollections(
-    withLocalIdentifiers: [localIdentifier], options: nil)
+    withLocalIdentifiers: [uuid], options: nil)
   return fetchResult.firstObject
 }
 
@@ -131,30 +131,30 @@ func getAlbumByName(name: String, albumMap: [String: String], caseSensitive: Boo
     return nil
   }
 
-  return getAlbumByLocalIdentifier(localIdentifier: albumLocalIdentifier)
+  return getAlbumByUuid(uuid: albumLocalIdentifier)
 }
 
 // MARK: - Album Photos
 
-/// Function to get all PHAssets from an album by local identifier or name
+/// Function to get all PHAssets from an album by UUID or name
 public func getAlbumPhotos(
   identifier: String, albumMap: [String: String]? = nil, caseSensitive: Bool = false
 ) -> [PHAsset]? {
   // Check if identifier looks like a UUID (8-4-4-4-12 pattern)
   if isUUID(identifier) {
-    return getAlbumPhotosByLocalIdentifier(localIdentifier: identifier)
+    return getAlbumPhotosByUuid(uuid: identifier)
   }
 
   // Otherwise treat as album name/path
-  let map = albumMap ?? getAlbumPathsToLocalIdentifierMap()
+  let map = albumMap ?? getAlbumPathsToUuidMap()
   return getAlbumPhotosByName(name: identifier, albumMap: map, caseSensitive: caseSensitive)
 }
 
-/// Function to get all PHAssets from an album by its local identifier
-func getAlbumPhotosByLocalIdentifier(localIdentifier: String) -> [PHAsset]? {
-  // Fetch the album by its local identifier
+/// Function to get all PHAssets from an album by its UUID
+func getAlbumPhotosByUuid(uuid: String) -> [PHAsset]? {
+  // Fetch the album by its UUID
   let fetchResult = PHAssetCollection.fetchAssetCollections(
-    withLocalIdentifiers: [localIdentifier], options: nil)
+    withLocalIdentifiers: [uuid], options: nil)
 
   guard let album = fetchResult.firstObject else {
     return nil
@@ -186,26 +186,26 @@ func getAlbumPhotosByName(name: String, albumMap: [String: String], caseSensitiv
       ? (albumPath == normalizedPath) : (albumPath.lowercased() == normalizedPath.lowercased())
   }
 
-  guard let (_, albumLocalIdentifier) = matchingEntry else {
+  guard let (_, albumUuid) = matchingEntry else {
     return nil
   }
 
-  return getAlbumPhotosByLocalIdentifier(localIdentifier: albumLocalIdentifier)
+  return getAlbumPhotosByUuid(uuid: albumUuid)
 }
 
 // MARK: - Individual Photos
 
-/// Function to get a single PHAsset by local identifier or name/path
+/// Function to get a single PHAsset by UUID or name / path
 public func getPhoto(
   identifier: String, albumMap: [String: String]? = nil, caseSensitive: Bool = false
 ) -> PHAsset? {
   // Check if identifier looks like a UUID (8-4-4-4-12 pattern)
   if isUUID(identifier) {
-    return getPhotoByLocalIdentifier(localIdentifier: identifier)
+    return getPhotoByUuid(uuid: identifier)
   }
 
   // Otherwise treat as photo name/path
-  let map = albumMap ?? getAlbumPathsToLocalIdentifierMap()
+  let map = albumMap ?? getAlbumPathsToUuidMap()
 
   // Use existing photo name lookup function and extract first result
   if let photoArray = getPhotoByName(name: identifier, albumMap: map, caseSensitive: caseSensitive)
@@ -216,12 +216,12 @@ public func getPhoto(
   return nil
 }
 
-/// Function to get a single PHAsset by its local identifier
-func getPhotoByLocalIdentifier(localIdentifier: String) -> PHAsset? {
+/// Function to get a single PHAsset by its UUID
+func getPhotoByUuid(uuid: String) -> PHAsset? {
   let fetchOptions = PHFetchOptions()
   fetchOptions.predicate = NSPredicate(format: "mediaType == %d", PHAssetMediaType.image.rawValue)
   let fetchResult = PHAsset.fetchAssets(
-    withLocalIdentifiers: [localIdentifier], options: fetchOptions)
+    withLocalIdentifiers: [uuid], options: fetchOptions)
   return fetchResult.firstObject
 }
 
@@ -282,7 +282,7 @@ func getPhotoByName(name: String, albumMap: [String: String], caseSensitive: Boo
   }
 }
 
-// MARK: - Combined Albums / Local Identifiers / Names
+// MARK: - Combined Albums / UUIDs / Names
 
 public func getPhotos(
   identifiers: [String], albumMap: [String: String]? = nil, caseSensitive: Bool = false
@@ -292,7 +292,7 @@ public func getPhotos(
   }
 
   // Get the album map once and reuse it
-  let map = albumMap ?? getAlbumPathsToLocalIdentifierMap()
+  let map = albumMap ?? getAlbumPathsToUuidMap()
 
   var allPhotos: [PHAsset] = []
 
@@ -330,7 +330,7 @@ public func exportPhotos(
 
   var allUrls: [URL] = []
 
-  let map = albumMap ?? getAlbumPathsToLocalIdentifierMap()
+  let map = albumMap ?? getAlbumPathsToUuidMap()
   let photos = getPhotos(identifiers: identifiers, albumMap: map, caseSensitive: caseSensitive)
 
   guard photos != nil else {
@@ -519,8 +519,8 @@ func getAlbumPathsFromCollectionList(_ collectionList: PHCollectionList, basePat
     } else if let album = collection as? PHAssetCollection {
       let albumName = album.localizedTitle ?? "Untitled Album"
       let fullPath = "/\(currentPath)/\(albumName)"
-      let cleanLocalIdentifier = cleanLocalIdentifier(album.localIdentifier)
-      albumPaths[fullPath] = cleanLocalIdentifier
+      let cleanUuid = cleanLocalIdentifier(album.localIdentifier)
+      albumPaths[fullPath] = cleanUuid
     }
   }
 

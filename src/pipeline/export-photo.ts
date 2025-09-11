@@ -125,7 +125,7 @@ export async function exportPhoto(
 	const engine = await getEngineForPhoto(photoInfo, resolvedOptions)
 
 	if (engine === undefined) {
-		throw new Error(`No export engine found for photo "${photoInfo.localIdentifier}"`)
+		throw new Error(`No export engine found for photo "${photoInfo.uuid}"`)
 	}
 
 	const exportedPhoto: ExportedPhoto = {
@@ -144,7 +144,7 @@ export async function exportPhoto(
 		}
 		case 'photos-gui': {
 			const [exportedPath] = await exportViaAppleScriptGui(
-				photoInfo.localIdentifier,
+				photoInfo.uuid,
 				destinationDirectory,
 				resolvedOptions.appleScriptGuiOptions,
 			)
@@ -161,10 +161,7 @@ export async function exportPhoto(
 			break
 		}
 		case 'swift-photokit': {
-			const exportedPath = await exportViaSwiftPhotoKit(
-				photoInfo.localIdentifier,
-				destinationDirectory,
-			)
+			const exportedPath = await exportViaSwiftPhotoKit(photoInfo.uuid, destinationDirectory)
 			exportedPhoto.path = exportedPath
 			break
 		}
@@ -261,7 +258,7 @@ export async function exportPhotoAlbum(
 	const albumPhotoCount = albumPhotoInfo.length
 
 	if (albumPhotoCount === 0) {
-		throw new Error(`No photos found in album "${albumInfo.localizedTitle}"`)
+		throw new Error(`No photos found in album "${albumInfo.title}"`)
 	}
 
 	if (audit) {
@@ -269,13 +266,11 @@ export async function exportPhotoAlbum(
 		const titleSet = new Set<string>()
 		for (const photoInfo of albumPhotoInfo) {
 			if (photoInfo.title === undefined || photoInfo.title.trim() === '') {
-				throw new Error(`Photo missing title in album "${albumInfo.localizedTitle}"`)
+				throw new Error(`Photo missing title in album "${albumInfo.title}"`)
 			}
 
 			if (titleSet.has(photoInfo.title)) {
-				throw new Error(
-					`Duplicate title "${photoInfo.title}" in album "${albumInfo.localizedTitle}"`,
-				)
+				throw new Error(`Duplicate title "${photoInfo.title}" in album "${albumInfo.title}"`)
 			}
 
 			titleSet.add(photoInfo.title)
@@ -300,7 +295,7 @@ export async function exportPhotoAlbum(
 				// Existing image must be identical, so remove from the output schedule
 				const { processMetadata } = await getTags(path.join(exportDirectory, filename))
 				const albumImageInfo = albumPhotoInfo.find(
-					({ localIdentifier }) => localIdentifier === processMetadata?.photoInfo.localIdentifier,
+					({ uuid }) => uuid === processMetadata?.photoInfo.uuid,
 				)
 				albumPhotoInfo.splice(albumPhotoInfo.indexOf(albumImageInfo!), 1)
 			} else {
@@ -309,7 +304,7 @@ export async function exportPhotoAlbum(
 		}
 
 		console.log(
-			`Exporting ${albumPhotoInfo.length} new or updated / ${albumPhotoCount} total photos in "${albumInfo.localizedTitle}"`,
+			`Exporting ${albumPhotoInfo.length} new or updated / ${albumPhotoCount} total photos in "${albumInfo.title}"`,
 		)
 	}
 
@@ -345,12 +340,12 @@ export async function exportPhotoAlbum(
 	if (enginelessExports.length > 0) {
 		for (const photoInfo of enginelessExports) {
 			console.log(
-				`No export engine found for photo "${photoInfo.title}" in album "${albumInfo.localizedTitle}"`,
+				`No export engine found for photo "${photoInfo.title}" in album "${albumInfo.title}"`,
 			)
 		}
 
 		throw new Error(
-			`Unallocated photos in album "${albumInfo.localizedTitle}", make sure all file types are accounted for in the engine map options`,
+			`Unallocated photos in album "${albumInfo.title}", make sure all file types are accounted for in the engine map options`,
 		)
 	}
 
@@ -365,7 +360,7 @@ export async function exportPhotoAlbum(
 			const exportedPaths: string[] = []
 			for (const photoInfo of photosGuiExports) {
 				const exportedPath = await exportViaAppleScriptGui(
-					photoInfo.localIdentifier,
+					photoInfo.uuid,
 					exportDirectory,
 					resolvedOptions.appleScriptGuiOptions,
 				)
@@ -392,7 +387,7 @@ export async function exportPhotoAlbum(
 			)
 
 			const exportedPaths = await exportViaAppleScriptGui(
-				albumInfo.localIdentifier,
+				albumInfo.uuid,
 				tempDirectory,
 				resolvedOptions.appleScriptGuiOptions,
 			)
@@ -438,7 +433,7 @@ export async function exportPhotoAlbum(
 
 	if (swiftPhotokitExports.length > 0) {
 		for (const photoInfo of swiftPhotokitExports) {
-			const exportedPath = await exportViaSwiftPhotoKit(photoInfo.localIdentifier, exportDirectory)
+			const exportedPath = await exportViaSwiftPhotoKit(photoInfo.uuid, exportDirectory)
 			exportedPhotos.push({
 				exportEngine: 'swift-photokit',
 				exportOptions: resolvedOptions,
@@ -480,7 +475,7 @@ export async function exportPhotoAlbum(
 		}
 	}
 
-	console.log(`Exported ${exportedPhotos.length} photos from "${albumInfo.localizedTitle}"`)
+	console.log(`Exported ${exportedPhotos.length} photos from "${albumInfo.title}"`)
 	return exportedPhotos
 }
 
@@ -504,8 +499,7 @@ async function shouldKeepImage(
 	const existingImageTags = await getTags(path.join(exportDirectory, filename))
 
 	const photoInfo = albumPhotoInfo.find(
-		({ localIdentifier }) =>
-			localIdentifier === existingImageTags.processMetadata?.photoInfo.localIdentifier,
+		({ uuid }) => uuid === existingImageTags.processMetadata?.photoInfo.uuid,
 	)
 
 	// Delete images that aren't in the album

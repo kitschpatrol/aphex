@@ -8,13 +8,11 @@
 
 This tool is intended for use by the Aphex TypeScript library.
 
-Works _only_ with the system photo library. There is no way to define a custom Photos library.
+Works _only_ with the active system-level Apple photos library. There is no way to define a path to a stand-alone Photos library.
 
-Returns JSON for easy parsing in scripts.
+Returns JSON by default for easy parsing in scripts.
 
 TODO `photos://` or similar URL scheme support?
-
-TODO Flag to force photos only?
 
 ## Usage
 
@@ -31,13 +29,11 @@ OPTIONS:
   -h, --help              Show help information.
 
 SUBCOMMANDS:
-  albums                  Get album paths mapped to their local identifiers as
-                          JSON
-  album-info              Get album information for a given identifier (Local
-                          identifier, album name, or album path)
+  albums                  Get album paths mapped to their UUIDs as JSON
+  album-info              Get album information for a given identifier (UUID,
+                          album name, or album path)
   photo-info              Get photo asset information for given identifiers
-                          (Local identifier, filename, album name, or photo
-                          path)
+                          (UUID, filename, album name, or photo path)
   export                  Export photos for given identifiers to a destination
                           directory
 
@@ -51,7 +47,7 @@ SUBCOMMANDS:
 <!-- cli-help { cliCommand: "./dist/aphex-swift", helpFlag: "albums --help" }  -->
 
 ```txt
-OVERVIEW: Get album paths mapped to their local identifiers as JSON
+OVERVIEW: Get album paths mapped to their UUIDs as JSON
 
 USAGE: aphex albums
 
@@ -67,14 +63,14 @@ OPTIONS:
 <!-- cli-help { cliCommand: "./dist/aphex-swift", helpFlag: "photo-info --help" }  -->
 
 ```txt
-OVERVIEW: Get photo asset information for given identifiers (Local identifier,
-filename, album name, or photo path)
+OVERVIEW: Get photo asset information for given identifiers (UUID, filename,
+album name, or photo path)
 
 USAGE: aphex photo-info [--case-sensitive] <identifiers> ...
 
 ARGUMENTS:
-  <identifiers>           Photo or album identifiers (Local identifiers,
-                          filenames, album names, or photo paths)
+  <identifiers>           Photo or album identifiers (UUIDs, filenames, album
+                          names, or photo paths)
 
 OPTIONS:
   -c, --case-sensitive    Case sensitive matching
@@ -89,14 +85,13 @@ OPTIONS:
 <!-- cli-help { cliCommand: "./dist/aphex-swift", helpFlag: "album-info --help" }  -->
 
 ```txt
-OVERVIEW: Get album information for a given identifier (Local identifier, album
-name, or album path)
+OVERVIEW: Get album information for a given identifier (UUID, album name, or
+album path)
 
 USAGE: aphex album-info [--case-sensitive] <identifier>
 
 ARGUMENTS:
-  <identifier>            Album identifier (Local identifier, album name, or
-                          album path)
+  <identifier>            Album identifier (UUID, album name, or album path)
 
 OPTIONS:
   -c, --case-sensitive    Case sensitive matching
@@ -116,8 +111,8 @@ OVERVIEW: Export photos for given identifiers to a destination directory
 USAGE: aphex export [--case-sensitive] --destination <destination> <identifiers> ...
 
 ARGUMENTS:
-  <identifiers>           Photo or album identifiers (Local identifiers,
-                          filenames, album names, or photo paths)
+  <identifiers>           Photo or album identifiers (UUIDs, filenames, album
+                          names, or photo paths)
 
 OPTIONS:
   -c, --case-sensitive    Case sensitive matching

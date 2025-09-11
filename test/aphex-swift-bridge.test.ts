@@ -10,7 +10,7 @@ import {
 // One of the favorite photos has a title set
 
 describe('aphex-swift-bridge', () => {
-	it('maps album paths to local identifiers', async () => {
+	it('maps album paths to uuids', async () => {
 		const albums = await aphexAlbums()
 
 		console.log(albums)
@@ -23,7 +23,7 @@ describe('aphex-swift-bridge', () => {
 			expect(key.includes('/')).toBe(true)
 		}
 
-		// All values are valid local identifiers
+		// All values are valid UUIDs
 		for (const value of Object.values(albums)) {
 			expect(value).toMatch(/^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i)
 		}
@@ -32,17 +32,7 @@ describe('aphex-swift-bridge', () => {
 	it('gets album info', async () => {
 		const albumInfo = await aphexAlbumInfo('/Recents')
 
-		expect(Object.keys(albumInfo)).toMatchInlineSnapshot(`
-			[
-			  "assetCollectionSubtype",
-			  "assetCollectionType",
-			  "dateEnd",
-			  "dateStart",
-			  "estimatedAssetCount",
-			  "localIdentifier",
-			  "localizedTitle",
-			]
-		`)
+		expect(Object.keys(albumInfo)).toMatchInlineSnapshot()
 	})
 
 	it('gets photo info for album', { timeout: 60_000 }, async () => {
@@ -63,17 +53,17 @@ describe('aphex-swift-bridge', () => {
 		expect(specificPhotoInfo.at(0)?.original.fileName).toBe(originalFilename)
 	})
 
-	it('gets photo info for local identifier', { timeout: 60_000 }, async () => {
+	it('gets photo info for uuid', { timeout: 60_000 }, async () => {
 		// Get a representative photo filename
 		const photoInfo = await aphexPhotoInfo('/Favorites')
 		expect(photoInfo.length).toBeGreaterThan(0)
-		const localIdentifier = photoInfo.at(0)?.localIdentifier
-		expect(localIdentifier).toBeDefined()
+		const uuid = photoInfo.at(0)?.uuid
+		expect(uuid).toBeDefined()
 
 		// Make sure we can look it up
-		const specificPhotoInfo = await aphexPhotoInfo(localIdentifier!)
+		const specificPhotoInfo = await aphexPhotoInfo(uuid!)
 		expect(specificPhotoInfo.length).toBe(1)
-		expect(specificPhotoInfo.at(0)?.localIdentifier).toBe(localIdentifier)
+		expect(specificPhotoInfo.at(0)?.uuid).toBe(uuid)
 	})
 
 	// TODO export...
