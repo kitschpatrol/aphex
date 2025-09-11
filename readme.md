@@ -21,9 +21,11 @@
 
 ## Overview
 
-`aphex` is a TypeScript library for exporting images and albums from your local macOS Photos.app library via a Node-compatible runtime.
+Aphex is a TypeScript library for exporting images and albums from your local macOS Photos.app library via a Node-compatible runtime. It makes it simple to export high-quality versions of specific photos or albums from your Photos.app library via a path-like syntax.
 
 I created this library for integration in static website content management asset pipelines, and to attempt to work around some issues related to [exporting high-quality versions of edited images](https://github.com/RhetTbull/osxphotos/discussions/1522) from the Photos.app library.
+
+This repository also embeds the `aphex-swift` CLI project, which provides a minimal and performant wrapper around Apple's PhotoKit framework. It's not intended for direct use, instead it provides just enough to support the parts of the methods provided by the `aphex` TypeScript library that can only be implemented natively.
 
 If you are looking for an industrial-strength Photos.app mass-export or backup solution, **I highly recommend using [osxphotos](https://github.com/RhetTbull/osxphotos) instead**.
 
@@ -33,21 +35,50 @@ If you are looking for an industrial-strength Photos.app mass-export or backup s
 
 Requires macOS with Photos.app installed and [Node 21](https://nodejs.org/en/download/) or newer. Currently, only an arm64 (Apple Silicon) build of requisite binary is provided.
 
+Full image processing functionality also requires a number of image-related dependencies available via Homebrew. (Enumerated below.)
+
 ### Installation
 
 ```sh
+brew install libavif mozjpeg imagemagick webp dssim ffmpeg guetzli oxipng
 npm install @kitschpatrol/aphex
 ```
 
 ## Usage
 
-Placeholder...
+Aphex tries to be generous in what it accepts as valid image identifiers.
 
-```ts
-import { exportAlbum } from 'aphex'
+It imagines the contents of your Photos.app library as a hierarchical file system of folders, albums, and photos, where the "name" of each photo is either its filename or, if set, its title.
 
-exportAlbum('My Album', '~/Desktop/my-album')
-```
+This lets you access specific photos in specific albums via a path-like syntax.
+
+Be warned that exporting unedited images is very fast, but exporting _edited_ images can be very (very) slow, since an alternate AppleScript-based export strategy is required to ensure maximum quality.
+
+### Exporting a photo by filename
+
+TK
+
+### Exporting a photo by title
+
+TK
+
+### Exporting a photo by UUID
+
+Note that local identifiers / UUIDs are unique to each instance of your Photos.app library, so if you have the same library synced across several machines, you can't expect photo UUIDs to be consistent.
+
+### Exporting an album by name
+
+TK
+
+### Exporting an album by UUID
+
+The same caveat about UUID consistency across library instances applies here.
+
+## Implementation notes
+
+Currently, the TypeScript code bridges via simple CLI calls to the `aphex-swift` binary, which is a wrapper around parts of Apple's PhotoKit framework. This is flexible and fast enough for now, but projects like Kabir Oberai's [node-swift](https://github.com/kabiroberai/node-swift) could be a good alternative for tighter integration between native Swift code and the TypeScript API.
+
+Also, this library bundles a bunch of generically useful image processing functionality, which should probably live in a separate package.
 
 ## Maintainers
 
@@ -55,7 +86,7 @@ exportAlbum('My Album', '~/Desktop/my-album')
 
 ## Acknowledgments
 
-Thank you to [Rhet Turnbull](https://github.com/RhetTbull) for creating [osxphotos](https://github.com/RhetTbull/osxphotos), which powers some of the export pipelines in this library.
+Thank you to [Rhet Turnbull](https://github.com/RhetTbull) for creating [osxphotos](https://github.com/RhetTbull/osxphotos), which informed some of the export pipelines in this library.
 
 <!-- contributing -->
 
@@ -129,6 +160,3 @@ Editing in Photos.app destroys alpha channels.
 Editing in Pixelmator destroys alpha channels
 Editing in Photoshop destroys alpha channels
 Editing always destroys alpha channels?
-
-Promising integration:
-<https://github.com/kabiroberai/node-swift>
