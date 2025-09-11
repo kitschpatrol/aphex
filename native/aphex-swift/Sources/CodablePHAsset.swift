@@ -15,8 +15,8 @@ struct ResourceInfo: Codable {
 /// A simplified Codable representation of PHAsset for read-only JSON export
 struct CodablePHAsset: Codable {
   let localIdentifier: String
-  let dateCreated: Date?
-  let dateModified: Date?
+  let dateCreated: Date
+  let dateModified: Date
   let favorite: Bool
   let hidden: Bool
   let title: String?
@@ -38,8 +38,16 @@ struct CodablePHAsset: Codable {
       self.localIdentifier = asset.localIdentifier
     }
 
-    self.dateCreated = asset.creationDate
-    self.dateModified = asset.modificationDate
+    guard let dateCreated = asset.creationDate else {
+      throw CodablePHAssetError.dateCreatedNotAvailable(resource: asset.debugDescription)
+    }
+    self.dateCreated = dateCreated
+
+    guard let dateModified = asset.modificationDate else {
+      throw CodablePHAssetError.dateModifiedNotAvailable(resource: asset.debugDescription)
+    }
+    self.dateModified = dateModified
+
     self.favorite = asset.isFavorite
     self.hidden = asset.isHidden
 
@@ -125,6 +133,8 @@ extension ResourceInfo {
 enum CodablePHAssetError: LocalizedError {
   case originalResourceNotFound
   case fileURLNotAvailable(resource: String)
+  case dateCreatedNotAvailable(resource: String)
+  case dateModifiedNotAvailable(resource: String)
 
   var errorDescription: String? {
     switch self {
@@ -132,6 +142,10 @@ enum CodablePHAssetError: LocalizedError {
       return "Original photo resource not found in asset"
     case .fileURLNotAvailable(let resource):
       return "File URL not available for resource: \(resource)"
+    case .dateCreatedNotAvailable(let resource):
+      return "Created date not available for resource: \(resource)"
+    case .dateModifiedNotAvailable(let resource):
+      return "Modified date not available for resource: \(resource)"
     }
   }
 }
