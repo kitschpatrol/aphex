@@ -29,7 +29,7 @@ import { getTagCount } from '../src/utilities/image/tags'
 // # Export Functions
 
 async function exportViaAppleScriptGuiWrapped(
-	photoUuid: string,
+	localIdentifier: string,
 	destinationDirectory: string,
 	format: 'jpeg-high' | 'jpeg-max' | 'png',
 ): Promise<string> {
@@ -37,10 +37,10 @@ async function exportViaAppleScriptGuiWrapped(
 
 	// No control over exact file name in the gui, so we copy to temp first
 	const tempDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.kitschpatrol.aphex.audit.${photoUuid}`),
+		path.join(os.tmpdir(), `com.kitschpatrol.aphex.audit.${localIdentifier}`),
 	)
 
-	const result = await exportViaAppleScriptGui(photoUuid, tempDirectory, {
+	const result = await exportViaAppleScriptGui(localIdentifier, tempDirectory, {
 		colorProfile: 'Original',
 		fileName: 'Use Title',
 		includeLocation: true,
@@ -52,13 +52,16 @@ async function exportViaAppleScriptGuiWrapped(
 
 	const tempPath = result[0]
 
-	const destinationPath = path.join(destinationDirectory, `${photoUuid}${path.extname(tempPath)}`)
+	const destinationPath = path.join(
+		destinationDirectory,
+		`${localIdentifier}${path.extname(tempPath)}`,
+	)
 	await fse.copyFile(tempPath, destinationPath)
 	await fse.rm(tempDirectory, { force: true, recursive: true })
 	return destinationPath
 }
 
-async function exportPhotos(destination: string, photoUuid: string): Promise<string[]> {
+async function exportPhotos(destination: string, localIdentifier: string): Promise<string[]> {
 	// Create the destination directory
 	await fse.mkdir(destination, { recursive: true })
 
@@ -68,37 +71,37 @@ async function exportPhotos(destination: string, photoUuid: string): Promise<str
 	exportedFiles.push(
 		// File System
 		await exportViaFileSystem(
-			photoUuid, //
+			localIdentifier, //
 			path.join(destination, 'file-system'),
 			false,
 		),
 
 		await exportViaFileSystem(
-			photoUuid, //
+			localIdentifier, //
 			path.join(destination, 'original-file-system'),
 			true,
 		),
 
 		await exportViaAppleScriptGuiWrapped(
-			photoUuid, //
+			localIdentifier, //
 			path.join(destination, 'photos-gui-jpeg-high'),
 			'jpeg-high',
 		),
 
 		await exportViaAppleScriptGuiWrapped(
-			photoUuid, //
+			localIdentifier, //
 			path.join(destination, 'photos-gui-jpeg-max'),
 			'jpeg-max',
 		),
 
 		await exportViaAppleScriptGuiWrapped(
-			photoUuid, //
+			localIdentifier, //
 			path.join(destination, 'photos-gui-png'),
 			'png',
 		),
 
 		await exportViaSwiftPhotoKit(
-			photoUuid, //
+			localIdentifier, //
 			path.join(destination, 'swift-photo-kit'),
 		),
 	)

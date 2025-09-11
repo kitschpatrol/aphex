@@ -1,8 +1,8 @@
-import { assertString } from '@sindresorhus/is'
 import fse from 'fs-extra'
 import os from 'node:os'
 import path from 'node:path'
 import { Piscina } from 'piscina'
+import type { PhotoInfo } from '../utilities/image/aphex-swift-bridge'
 import type { ColorProfile } from '../utilities/image/color'
 import type {
 	CompressImageOptions,
@@ -69,11 +69,9 @@ export type ProcessImageResult = {
 }
 
 export type ProcessMetadata = ProcessImageResult & {
-	dateModified: string | undefined // From photos
-	edited: boolean // From photos
 	exportEngine: ExportEngine
 	options: { export: ExportPhotoOptions; process: ProcessImageOptions }
-	uuid: string // From photos
+	photoInfo: PhotoInfo
 }
 
 export const defaultProcessImageOptions: ProcessImageOptions = {
@@ -153,18 +151,16 @@ export async function processPhotos(
 		const processingOutputPath = result.output.path
 		const finalOutputPath = path.join(outputDirectory, path.basename(result.output.path))
 		const { exportEngine, exportOptions, photoInfo } = exportedPhoto
-		assertString(photoInfo.originalFilePath)
-		const tags = await getTags(photoInfo.originalFilePath)
+
+		const tags = await getTags(photoInfo.original.filePath)
 		result.output.path = finalOutputPath
 		tags.processMetadata = {
-			dateModified: photoInfo.modificationDate?.toISOString() ?? undefined,
-			edited: photoInfo.editedFilePath !== undefined,
 			exportEngine,
 			options: {
 				export: exportOptions,
 				process: options,
 			},
-			uuid: photoInfo.localIdentifier,
+			photoInfo,
 			...result,
 		}
 

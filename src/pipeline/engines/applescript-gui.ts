@@ -40,9 +40,9 @@ const defaultExportViaAppleScriptGuiOptions: Required<ExportViaAppleScriptGuiOpt
  */
 export async function exportViaAppleScriptGui(
 	/**
-	 * UUID of either a photo or an album
+	 * Local identifier of either a photo or an album
 	 */
-	uuid: string,
+	localIdentifier: string,
 	exportDirectory: string,
 	options?: ExportViaAppleScriptGuiOptions,
 ): Promise<string[]> {
@@ -74,7 +74,7 @@ export async function exportViaAppleScriptGui(
 
 	const { failed, stderr } = await execa('osascript', [
 		appleScriptPath,
-		uuid,
+		localIdentifier,
 		tempDirectory,
 		photoKind,
 		jpegQuality,
@@ -91,17 +91,19 @@ export async function exportViaAppleScriptGui(
 	])
 
 	if (failed) {
-		throw new Error(`Error exporting album "${uuid}": ${stderr}`)
+		throw new Error(`Error exporting album "${localIdentifier}": ${stderr}`)
 	}
 
 	// Osascript logs to stderr...
 	const results = stderr.split('\n').filter((line) => line.trim() !== '')
 	if (results.length === 0) {
-		throw new Error(`No photos exported for album "${uuid}"`)
+		throw new Error(`No photos exported for album "${localIdentifier}"`)
 	}
 
 	if (typeof results[0] !== 'string') {
-		throw new TypeError(`Unexpected export results for album "${uuid}": ${JSON.stringify(results)}`)
+		throw new TypeError(
+			`Unexpected export results for album "${localIdentifier}": ${JSON.stringify(results)}`,
+		)
 	}
 
 	const cleanPaths: string[] = []

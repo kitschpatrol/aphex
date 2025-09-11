@@ -62,17 +62,19 @@ TK
 
 TK
 
-### Exporting a photo by UUID
+### Exporting a photo by local identifier / "UUID"
 
-Note that local identifiers / UUIDs are unique to each instance of your Photos.app library, so if you have the same library synced across several machines, you can't expect photo UUIDs to be consistent.
+Note that local identifiers are unique to each instance of your Photos.app library, so if you have the same library synced across several machines, you can't expect photo identifiers to be consistent.
+
+While these values resemble UUIDs, this is technically a misnomer since they are not guaranteed to be _universally_ unique.
 
 ### Exporting an album by name
 
 TK
 
-### Exporting an album by UUID
+### Exporting an album by local identifier
 
-The same caveat about UUID consistency across library instances applies here.
+The same caveat about identifier consistency across library instances applies here.
 
 ## Implementation notes
 
@@ -87,6 +89,8 @@ Also, this library bundles a bunch of generically useful image processing functi
 ## Acknowledgments
 
 Thank you to [Rhet Turnbull](https://github.com/RhetTbull) for creating [osxphotos](https://github.com/RhetTbull/osxphotos), which informed some of the export pipelines in this library.
+
+Aphex borrows a technique from [Andreas Bentele](https://www.bentele-software.de/)'s [PhotosExporter](https://github.com/abentele/PhotosExporter) for extracting semi-private values from `PHAssetResource` objects.
 
 <!-- contributing -->
 

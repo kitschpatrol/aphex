@@ -25,13 +25,13 @@ struct aphex: ParsableCommand {
 
 struct Albums: ParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "Get album paths mapped to their UUIDs as JSON"
+        abstract: "Get album paths mapped to their local identifiers as JSON"
     )
 
     mutating func run() throws {
         try checkPhotosAccess()
-        
-        let albumPaths = getAlbumPathsToUuidMap()
+
+        let albumPaths = getAlbumPathsToLocalIdentifierMap()
         let jsonData = try JSONSerialization.data(
             withJSONObject: albumPaths, options: [.prettyPrinted, .withoutEscapingSlashes])
 
@@ -44,18 +44,19 @@ struct Albums: ParsableCommand {
 struct AlbumInfo: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "album-info",
-        abstract: "Get album information for a given identifier (UUID, album name, or album path)"
+        abstract:
+            "Get album information for a given identifier (Local identifier, album name, or album path)"
     )
 
     @Flag(name: .shortAndLong, help: "Case sensitive matching")
     var caseSensitive = false
 
-    @Argument(help: "Album identifier (UUID, album name, or album path)")
+    @Argument(help: "Album identifier (Local identifier, album name, or album path)")
     var identifier: String
 
     mutating func run() throws {
         try checkPhotosAccess()
-        
+
         guard let album = getAlbum(identifier: identifier, caseSensitive: caseSensitive) else {
             throw ValidationError("No album found for identifier: \(identifier)")
         }
@@ -70,13 +71,16 @@ struct PhotoInfo: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "photo-info",
         abstract:
-            "Get photo asset information for given identifiers (UUID, filename, album name, or photo path)"
+            "Get photo asset information for given identifiers (Local identifier, filename, album name, or photo path)"
     )
 
     @Flag(name: .shortAndLong, help: "Case sensitive matching")
     var caseSensitive = false
 
-    @Argument(help: "Photo or album identifiers (UUIDs, filenames, album names, or photo paths)")
+    @Argument(
+        help:
+            "Photo or album identifiers (Local identifiers, filenames, album names, or photo paths)"
+    )
     var identifiers: [String]
 
     mutating func run() throws {
@@ -102,12 +106,15 @@ struct Export: ParsableCommand {
     @Option(name: .shortAndLong, help: "Destination directory for exported photos")
     var destination: String
 
-    @Argument(help: "Photo or album identifiers (UUIDs, filenames, album names, or photo paths)")
+    @Argument(
+        help:
+            "Photo or album identifiers (Local identifiers, filenames, album names, or photo paths)"
+    )
     var identifiers: [String]
 
     mutating func run() throws {
         try checkPhotosAccess()
-        
+
         let expandedPath = NSString(string: destination).expandingTildeInPath
         let destinationURL = URL(fileURLWithPath: expandedPath)
 

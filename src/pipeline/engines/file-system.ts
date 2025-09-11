@@ -1,4 +1,3 @@
-import { assert } from '@sindresorhus/is'
 import fse from 'fs-extra'
 import path from 'node:path'
 import type { PhotoInfo } from '../../utilities/image/aphex-swift-bridge'
@@ -12,26 +11,21 @@ export async function exportViaFileSystem(
 	destinationDirectory: string,
 	forceOriginal = false,
 ): Promise<string> {
-	const [{ editedFilename, editedFilePath, originalFilename, originalFilePath }] = isPhotoInfo(
-		photoUuid,
-	)
+	const [{ edited, original }] = isPhotoInfo(photoUuid)
 		? [photoUuid]
 		: await aphexPhotoInfo(photoUuid)
 
-	assert.string(originalFilePath)
-	assert.string(originalFilename)
-
-	if (forceOriginal || editedFilePath === undefined || editedFilename === undefined) {
-		const destinationPath = path.join(destinationDirectory, originalFilename)
-		await fse.copy(originalFilePath, destinationPath, {
+	if (forceOriginal || edited === undefined) {
+		const destinationPath = path.join(destinationDirectory, original.fileName)
+		await fse.copy(original.filePath, destinationPath, {
 			overwrite: true,
 		})
 
 		return destinationPath
 	}
 
-	const destinationPath = path.join(destinationDirectory, editedFilename)
-	await fse.copy(editedFilePath, destinationPath, {
+	const destinationPath = path.join(destinationDirectory, edited.fileName)
+	await fse.copy(edited.filePath, destinationPath, {
 		overwrite: true,
 	})
 

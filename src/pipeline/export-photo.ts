@@ -152,8 +152,7 @@ export async function exportPhoto(
 			exportedPhoto.path = exportedPath
 
 			// Copy relevant metadata from the original photo since photos-gui doesn't preserve it
-			assertString(photoInfo.originalFilePath)
-			await cloneTags(photoInfo.originalFilePath, exportedPhoto.path, [
+			await cloneTags(photoInfo.original.filePath, exportedPhoto.path, [
 				'credit',
 				'creator',
 				'preservedFileName',
@@ -193,13 +192,12 @@ async function getEngineForPhoto(
 		defaultExportPhotoOptions,
 	)
 
-	assertString(photoInfo.originalFilePath)
-
 	// Original only
-	if (!photoInfo.hasAdjustments) {
+	if (!photoInfo.edited) {
 		// Checks for actual transparency, not just the presence of a channel
-		const alpha = await hasAlpha(photoInfo.originalFilePath)
-		const type = lookupImageMimeType(photoInfo.originalFilePath, true)
+		const alpha = await hasAlpha(photoInfo.original.filePath)
+		// TODO get MIME from contentType field?
+		const type = lookupImageMimeType(photoInfo.original.filePath, true)
 		return alpha
 			? typeof engineOriginalAlpha === 'string'
 				? engineOriginalAlpha
@@ -210,8 +208,7 @@ async function getEngineForPhoto(
 	}
 
 	// Has edits
-	assertString(photoInfo.editedFilePath)
-	const alpha = await hasAlpha(photoInfo.editedFilePath)
+	const alpha = await hasAlpha(photoInfo.edited.filePath)
 
 	if (alpha) {
 		console.warn(
@@ -219,7 +216,8 @@ async function getEngineForPhoto(
 		)
 	}
 
-	const type = lookupImageMimeType(photoInfo.editedFilePath, true)
+	const type = lookupImageMimeType(photoInfo.edited.filePath, true)
+	// TODO get MIME from contentType field?
 	return alpha
 		? typeof engineEditedAlpha === 'string'
 			? engineEditedAlpha
@@ -302,7 +300,7 @@ export async function exportPhotoAlbum(
 				// Existing image must be identical, so remove from the output schedule
 				const { processMetadata } = await getTags(path.join(exportDirectory, filename))
 				const albumImageInfo = albumPhotoInfo.find(
-					({ localIdentifier }) => localIdentifier === processMetadata?.uuid,
+					({ localIdentifier }) => localIdentifier === processMetadata?.photoInfo.localIdentifier,
 				)
 				albumPhotoInfo.splice(albumPhotoInfo.indexOf(albumImageInfo!), 1)
 			} else {
@@ -379,7 +377,7 @@ export async function exportPhotoAlbum(
 					exportEngine: 'photos-gui',
 					exportOptions: resolvedOptions,
 					path: exportPath,
-					photoInfo: findPhotoInfoByTitleFilename(exportPath, albumPhotoInfo)!,
+					photoInfo: findPhotoInfoByTitleFileName(exportPath, albumPhotoInfo)!,
 					processOptions: resolvedProcessOptions,
 				})
 			}
@@ -401,7 +399,7 @@ export async function exportPhotoAlbum(
 
 			for (const exportPath of exportedPaths) {
 				// Delete photos that weren't schedule for export with the photos-gui engine
-				const photoInfo = findPhotoInfoByTitleFilename(exportPath, albumPhotoInfo)
+				const photoInfo = findPhotoInfoByTitleFileName(exportPath, albumPhotoInfo)
 
 				if (photoInfo === undefined || !photosGuiExports.includes(photoInfo)) {
 					await fse.rm(exportPath, { force: true })
@@ -456,9 +454,8 @@ export async function exportPhotoAlbum(
 	for (const exportedPhoto of exportedPhotos) {
 		if (exportedPhoto.exportEngine === 'photos-gui') {
 			// Copy relevant metadata from the original photo
-			assertString(exportedPhoto.photoInfo.originalFilePath)
 			const clonedKeys = await cloneTags(
-				exportedPhoto.photoInfo.originalFilePath,
+				exportedPhoto.photoInfo.original.filePath,
 				exportedPhoto.path,
 				['credit', 'creator', 'preservedFileName'],
 			)
@@ -489,8 +486,9 @@ export async function exportPhotoAlbum(
 
 /**
  * Sync a single album to a folder, deleting any images that are no longer in the album
+ *
+ * TODO this could be much simpler? Needs dynamic exif metadata handling.
  */
-
 async function shouldKeepImage(
 	filename: string,
 	exportDirectory: string,
@@ -505,12 +503,13 @@ async function shouldKeepImage(
 
 	const existingImageTags = await getTags(path.join(exportDirectory, filename))
 
-	const imageInfo = albumPhotoInfo.find(
-		({ localIdentifier }) => localIdentifier === existingImageTags.processMetadata?.uuid,
+	const photoInfo = albumPhotoInfo.find(
+		({ localIdentifier }) =>
+			localIdentifier === existingImageTags.processMetadata?.photoInfo.localIdentifier,
 	)
 
 	// Delete images that aren't in the album
-	if (imageInfo === undefined) {
+	if (photoInfo === undefined) {
 		console.log(`Found non-album image: "${filename}"`)
 		return false
 	}
@@ -522,15 +521,18 @@ async function shouldKeepImage(
 	}
 
 	// Delete images that have been modified or have different export or processing options
-	if (existingImageTags.processMetadata.dateModified !== imageInfo.modificationDate) {
+	if (existingImageTags.processMetadata.photoInfo.dateModified !== photoInfo.dateModified) {
 		console.log(`Found outdated image: "${filename}"`)
 		return false
 	}
 
-	if (existingImageTags.processMetadata.edited !== (imageInfo.editedFilePath !== undefined)) {
+	if (
+		JSON.stringify(existingImageTags.processMetadata.photoInfo.edited ?? {}) !==
+		JSON.stringify(photoInfo.edited ?? {})
+	) {
 		console.log(`Found image with change in edit status: "${filename}"`)
-		console.log(existingImageTags.processMetadata.edited)
-		console.log(imageInfo.editedFilePath)
+		console.log(existingImageTags.processMetadata.photoInfo.edited)
+		console.log(photoInfo.edited)
 		return false
 	}
 
@@ -553,8 +555,7 @@ async function shouldKeepImage(
 	}
 
 	// Finally, check for new metadata (in the original image)
-	assertString(imageInfo.originalFilePath)
-	const albumImageTags = await getTags(imageInfo.originalFilePath)
+	const albumImageTags = await getTags(photoInfo.original.filePath)
 	if (
 		existingImageTags.credit !== albumImageTags.credit ||
 		existingImageTags.creator !== albumImageTags.creator ||
@@ -569,17 +570,16 @@ async function shouldKeepImage(
 }
 
 // Titles MUST be present and MUST be unique
-function findPhotoInfoByTitleFilename(
-	titleFilename: string,
+function findPhotoInfoByTitleFileName(
+	titleFileName: string,
 	photoInfoArray: PhotoInfo[],
 ): PhotoInfo | undefined {
-	const titleFromFilename = path.basename(titleFilename, path.extname(titleFilename))
-	const photoInfo = photoInfoArray.find(({ originalFilename, title }) => {
-		assertString(originalFilename)
+	const titleFromFileName = path.basename(titleFileName, path.extname(titleFileName))
+	const photoInfo = photoInfoArray.find(({ original, title }) => {
 		assertString(title)
 		return (
-			titleFromFilename === title ||
-			titleFromFilename === path.basename(originalFilename, path.extname(originalFilename))
+			titleFromFileName === title ||
+			titleFromFileName === path.basename(original.fileName, path.extname(original.fileName))
 		)
 	})
 

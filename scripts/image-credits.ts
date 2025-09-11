@@ -16,7 +16,6 @@
  */
 
 import { confirm, log, select, spinner, text } from '@clack/prompts'
-import { assertString } from '@sindresorhus/is'
 import { exiftool } from 'exiftool-vendored'
 import { globby } from 'globby'
 import open from 'open'
@@ -68,8 +67,7 @@ async function imageCredits() {
 	log.step('Step 2: Write filename metadata to original files')
 
 	for (const photo of photos) {
-		const { originalFilePath } = photo
-		assertString(originalFilePath, 'Photo is missing original file path')
+		const { filePath } = photo.original
 
 		// Temp clean up code...
 		// const legacyTags = await getTags(path)
@@ -100,7 +98,7 @@ async function imageCredits() {
 		// }
 
 		// Keep stuff below -------------------
-		const tags = await getTags(originalFilePath)
+		const tags = await getTags(filePath)
 		const tagsValid = await validateTags(
 			tags,
 			['preservedFileName', 'label'],
@@ -140,18 +138,17 @@ async function imageCredits() {
 	} else {
 		log.info('Opening:')
 		let logAccumulator = ''
-		for (const { originalFilePath } of photos) {
-			assertString(originalFilePath, 'Photo is missing original file path')
+		for (const { original } of photos) {
 			if (
 				whatToOpen === 'some' &&
-				photosWithInvalidTags.every((photo) => photo.originalFilePath !== originalFilePath)
+				photosWithInvalidTags.every((photo) => photo.original.filePath !== original.filePath)
 			) {
 				continue
 			}
 
-			logAccumulator += `${originalFilePath}\n`
+			logAccumulator += `${original.filePath}\n`
 
-			await open(originalFilePath, { app: { name: 'metaimage' } })
+			await open(original.filePath, { app: { name: 'metaimage' } })
 		}
 
 		log.message(logAccumulator)
@@ -174,22 +171,21 @@ async function imageCredits() {
 	log.step('Step 4: Sync metadata from original files to edited version')
 
 	for (const photo of photos) {
-		const { editedFilePath, originalFilePath } = photo
-		assertString(originalFilePath, 'Photo is missing original file path')
+		const { edited, original } = photo
 
-		if (editedFilePath === undefined) {
-			log.warning(`No edited version found for:\n${originalFilePath}`)
+		if (edited === undefined) {
+			log.warning(`No edited version found for:\n${original.filePath}`)
 			continue
 		}
 
 		log.message(
-			`Syncing metadata from original to edited:\nFrom: ${originalFilePath}\nTo: ${editedFilePath}`,
+			`Syncing metadata from original to edited:\nFrom: ${original.filePath}\nTo: ${edited.filePath}`,
 			{
 				symbol: '🔄',
 			},
 		)
 
-		const clonedKeys = await cloneTags(originalFilePath, editedFilePath, [
+		const clonedKeys = await cloneTags(original.filePath, edited.filePath, [
 			'credit',
 			'preservedFileName',
 			'creator',
@@ -242,35 +238,35 @@ async function imageCredits() {
 			continue
 		}
 
-		const { uuid } = processMetadata
+		const { photoInfo } = processMetadata
 		// eslint-disable-next-line ts/no-unnecessary-condition
-		if (uuid === undefined) {
-			log.warn(`Photos UUID not found for processed image: ${processedImagePath}`)
+		if (photoInfo.localIdentifier === undefined) {
+			log.warn(`Photos local identifier not found for processed image: ${processedImagePath}`)
 			continue
 		}
 
 		// Get matching photo
-
-		const photo = photos.find((photo) => photo.localIdentifier === uuid)
+		const photo = photos.find((photo) => photo.localIdentifier === photoInfo.localIdentifier)
 
 		if (photo === undefined) {
-			log.warn(`Could not find photo with UUID ${uuid} in Photos album`)
+			log.warn(
+				`Could not find photo with Local Identifier ${photoInfo.localIdentifier} in Photos album`,
+			)
 			continue
 		}
 
 		processedImagesFound += 1
 
-		const { originalFilePath } = photo
-		assertString(originalFilePath, 'Photo is missing original file path')
+		const { original } = photo
 
 		log.message(
-			`Syncing metadata from original to processed:\nFrom: ${originalFilePath}\nTo: ${processedImagePath}`,
+			`Syncing metadata from original to processed:\nFrom: ${original.filePath}\nTo: ${processedImagePath}`,
 			{
 				symbol: '🔄',
 			},
 		)
 
-		const clonedKeys = await cloneTags(originalFilePath, processedImagePath, [
+		const clonedKeys = await cloneTags(original.filePath, processedImagePath, [
 			'credit',
 			'creator',
 			'label',

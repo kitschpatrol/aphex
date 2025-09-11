@@ -1,5 +1,4 @@
 import type { Tags } from 'exiftool-vendored'
-import { assertString } from '@sindresorhus/is'
 import { exiftool } from 'exiftool-vendored'
 import type { ProcessMetadata } from '../../pipeline/process'
 import type { PhotoInfo } from './aphex-swift-bridge'
@@ -143,33 +142,35 @@ export type ImageTags = {
 
 /**
  * Get the preserved file name of an image
+ * TODO this is always from PhotoInfo now?
  */
 export async function getPreservedFileName(photoInfo: PhotoInfo): Promise<string | undefined> {
-	const { originalFilename: filenamePhotos, originalFilePath } = photoInfo
-	assertString(originalFilePath)
+	const { original } = photoInfo
+
 	const {
 		FileName: filenameExif,
 		OriginalFileName: filenameExifOriginal,
 		PreservedFileName: filenameXmpPreserved,
-	} = await exiftool.read(originalFilePath)
-	const filenamePath = originalFilePath.split('/').pop()
-	assertString(filenamePath)
+	} = await exiftool.read(original.filePath)
+	const filenamePath = original.filePath.split('/').pop()
 
 	console.log(
-		`filenamePhotos:        ${filenamePhotos}\n` +
-			`filenameExifOriginal:  ${filenameExifOriginal}\n` +
+		`filenamePhotos:       ${original.fileName}\n` +
+			`filenameExifOriginal: ${filenameExifOriginal}\n` +
 			`filenameXmpPreserved: ${filenameXmpPreserved}\n` +
-			`filenameExif:          ${filenameExif}\n` +
-			`filenamePath:          ${filenamePath}`,
+			`filenameExif:         ${filenameExif}\n` +
+			`filenamePath:         ${filenamePath}`,
 	)
 
-	return (
-		filenamePhotos ??
-		filenameExifOriginal ??
-		filenameXmpPreserved ??
-		filenameExif ??
-		filenamePath
-	).trim()
+	return original.fileName
+	// Hmm...
+	// return (
+	// 	original.fileName ??
+	// 	filenameExifOriginal ??
+	// 	filenameXmpPreserved ??
+	// 	filenameExif ??
+	// 	filenamePath
+	// ).trim()
 }
 
 /**

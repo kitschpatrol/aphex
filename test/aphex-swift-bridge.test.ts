@@ -1,0 +1,80 @@
+import { describe, expect, it } from 'vitest'
+import {
+	aphexAlbumInfo,
+	aphexAlbums,
+	aphexPhotoInfo,
+} from '../src/utilities/image/aphex-swift-bridge'
+
+// Assumes your system library:
+// Has one or more favorite photo
+// One of the favorite photos has a title set
+
+describe('aphex-swift-bridge', () => {
+	it('maps album paths to local identifiers', async () => {
+		const albums = await aphexAlbums()
+
+		console.log(albums)
+
+		// Got something
+		expect(Object.entries(albums).length).toBeGreaterThan(0)
+
+		// All keys have forward slashes
+		for (const key of Object.keys(albums)) {
+			expect(key.includes('/')).toBe(true)
+		}
+
+		// All values are valid local identifiers
+		for (const value of Object.values(albums)) {
+			expect(value).toMatch(/^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i)
+		}
+	})
+
+	it('gets album info', async () => {
+		const albumInfo = await aphexAlbumInfo('/Recents')
+
+		expect(Object.keys(albumInfo)).toMatchInlineSnapshot(`
+			[
+			  "assetCollectionSubtype",
+			  "assetCollectionType",
+			  "dateEnd",
+			  "dateStart",
+			  "estimatedAssetCount",
+			  "localIdentifier",
+			  "localizedTitle",
+			]
+		`)
+	})
+
+	it('gets photo info for album', { timeout: 60_000 }, async () => {
+		const photoInfo = await aphexPhotoInfo('/Favorites')
+		expect(photoInfo.length).toBeGreaterThan(0)
+	})
+
+	it('gets photo info for filename', { timeout: 60_000 }, async () => {
+		// Get a representative photo filename
+		const photoInfo = await aphexPhotoInfo('/Favorites')
+		expect(photoInfo.length).toBeGreaterThan(0)
+		const originalFilename = photoInfo.at(0)?.original.fileName
+		expect(originalFilename).toBeDefined()
+
+		// Make sure we can look it up
+		const specificPhotoInfo = await aphexPhotoInfo(`/Favorites/${originalFilename}`)
+		expect(specificPhotoInfo.length).toBe(1)
+		expect(specificPhotoInfo.at(0)?.original.fileName).toBe(originalFilename)
+	})
+
+	it('gets photo info for local identifier', { timeout: 60_000 }, async () => {
+		// Get a representative photo filename
+		const photoInfo = await aphexPhotoInfo('/Favorites')
+		expect(photoInfo.length).toBeGreaterThan(0)
+		const localIdentifier = photoInfo.at(0)?.localIdentifier
+		expect(localIdentifier).toBeDefined()
+
+		// Make sure we can look it up
+		const specificPhotoInfo = await aphexPhotoInfo(localIdentifier!)
+		expect(specificPhotoInfo.length).toBe(1)
+		expect(specificPhotoInfo.at(0)?.localIdentifier).toBe(localIdentifier)
+	})
+
+	// TODO export...
+})

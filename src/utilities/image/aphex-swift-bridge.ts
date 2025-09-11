@@ -5,7 +5,7 @@ import { packageDirectorySync } from 'package-directory'
 import { ensureArray } from '../general'
 
 /**
- * Get full album paths mapped to their UUIDs
+ * Get full album paths mapped to their local identifiers
  * @throws
  */
 export async function aphexAlbums(): Promise<Record<string, string>> {
@@ -39,8 +39,8 @@ export type ResourceInfo = {
  * from the iOS Photos framework (CodablePHAsset)
  */
 export type PhotoInfo = {
-	dateCreated?: Date
-	dateModified?: Date
+	dateCreated: Date
+	dateModified: Date
 	edited?: ResourceInfo
 	favorite: boolean
 	hidden: boolean
@@ -93,15 +93,15 @@ export function isPhotoInfo(value: unknown): value is PhotoInfo {
 		!is.string(object.localIdentifier) ||
 		!is.boolean(object.favorite) ||
 		!is.boolean(object.hidden) ||
-		!isResourceInfo(object.original)
+		!isResourceInfo(object.original) ||
+		!is.date(object.dateCreated) ||
+		!is.date(object.dateModified)
 	) {
 		return false
 	}
 
 	// Optional fields
 	if (
-		(object.dateCreated !== undefined && !is.date(object.dateCreated)) ||
-		(object.dateModified !== undefined && !is.date(object.dateModified)) ||
 		(object.title !== undefined && !is.string(object.title)) ||
 		(object.edited !== undefined && !isResourceInfo(object.edited))
 	) {
@@ -176,7 +176,7 @@ export function assertAlbumInfo(value: unknown): asserts value is AlbumInfo {
 }
 
 /**
- * Get photo asset information for given identifiers (UUID, filename, album name, or photo path)
+ * Get photo asset information for given identifiers (ID, filename, album name, or photo path)
  * @throws
  */
 export async function aphexPhotoInfo(
@@ -187,7 +187,7 @@ export async function aphexPhotoInfo(
 
 	const result = await execa(
 		'./aphex-swift',
-		['photo-info', ...identifiersArray, caseSensitive ? '--case-sensitive' : ''],
+		['photo-info', ...identifiersArray, ...(caseSensitive ? ['--case-sensitive'] : [])],
 		{
 			cwd: getDistributionPath(),
 		},
@@ -212,7 +212,7 @@ export async function aphexAlbumInfo(
 ): Promise<AlbumInfo> {
 	const result = await execa(
 		'./aphex-swift',
-		['album-info', identifier, caseSensitive ? '--case-sensitive' : ''],
+		['album-info', identifier, ...(caseSensitive ? ['--case-sensitive'] : [])],
 		{
 			cwd: getDistributionPath(),
 		},
@@ -245,7 +245,7 @@ export async function aphexExport(
 			...identifiersArray,
 			'--destination',
 			destination,
-			caseSensitive ? '--case-sensitive' : '',
+			...(caseSensitive ? ['--case-sensitive'] : []),
 		],
 		{
 			cwd: getDistributionPath(),

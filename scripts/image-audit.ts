@@ -129,7 +129,7 @@ async function generateAudit(paths: string[]): Promise<string> {
 			mimeResultsOutput.push(metadata.output.mime)
 			compressionResults.push(metadata.report.compression)
 			engineResults.push(metadata.exportEngine)
-			editedResults.push(metadata.edited ? 'Edited' : 'Original')
+			editedResults.push(metadata.photoInfo.edited === undefined ? 'Original' : 'Edited')
 			durationResults.push(metadata.report.durationMs)
 
 			if (metadata.report.similarity !== undefined) {

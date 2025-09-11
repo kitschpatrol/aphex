@@ -12,12 +12,13 @@ type TempDirectoryFixture = {
 
 async function createTempDirectory() {
 	const osTempDirectory = os.tmpdir()
-	const tempDirectory = path.join(osTempDirectory, 'unit-test-')
+	const tempDirectory = path.join(osTempDirectory, 'aphex.unit-test')
+
 	return fs.mkdtemp(tempDirectory)
 }
 
-const cleanUp = false
-const openDirectory = true
+const cleanUp = true
+const openDirectory = false
 
 export const tempDirectoryFixture = test.extend<TempDirectoryFixture>({
 	// eslint-disable-next-line no-empty-pattern
