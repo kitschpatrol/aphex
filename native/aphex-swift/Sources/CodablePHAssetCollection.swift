@@ -8,9 +8,9 @@ struct CodablePHAssetCollection: Codable {
   let assetCollectionType: Int
   let assetCollectionSubtype: Int
   let estimatedAssetCount: Int
-  let startDate: Date?
-  let endDate: Date?
-  
+  let dateStart: Date?
+  let dateEnd: Date?
+
   init(from collection: PHAssetCollection) {
     // Clean up the local identifier by removing the trailing /L0/001 part
     if let range = collection.localIdentifier.range(of: "/L0/") {
@@ -18,22 +18,22 @@ struct CodablePHAssetCollection: Codable {
     } else {
       self.localIdentifier = collection.localIdentifier
     }
-    
+
     self.localizedTitle = collection.localizedTitle
     self.assetCollectionType = collection.assetCollectionType.rawValue
     self.assetCollectionSubtype = collection.assetCollectionSubtype.rawValue
     self.estimatedAssetCount = collection.estimatedAssetCount
-    self.startDate = collection.startDate
-    self.endDate = collection.endDate
+    self.dateStart = collection.startDate
+    self.dateEnd = collection.endDate
   }
-  
+
   // MARK: - JSON Export
   /// Encodes the asset collection to a JSON string
   func toJSONString() throws -> String {
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = .iso8601
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    
+
     let data = try encoder.encode(self)
     guard let string = String(data: data, encoding: .utf8) else {
       throw EncodingError.invalidValue(

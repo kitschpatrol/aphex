@@ -139,3 +139,5 @@ swift run aphex-swift export "test-album" --destination "/Users/mika/Desktop" | 
 [MIT](license.txt) © Eric Mika
 
 <!-- /license -->
+
+https://github.com/abentele/PhotosExporter
