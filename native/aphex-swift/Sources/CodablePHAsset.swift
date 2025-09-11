@@ -23,6 +23,11 @@ struct CodablePHAsset: Codable {
   let editedFilePath: String?
 
   init(from asset: PHAsset) {
+    // Only initialize from photo assets
+    guard asset.mediaType == .image else {
+      fatalError("CodablePHAsset can only be initialized from photo assets")
+    }
+    
     // Clean up the local identifier by removing the trailing /L0/001 part
     if let range = asset.localIdentifier.range(of: "/L0/") {
       self.localIdentifier = String(asset.localIdentifier[..<range.lowerBound])
@@ -43,20 +48,20 @@ struct CodablePHAsset: Codable {
     self.burstIdentifier = asset.burstIdentifier
     self.representsBurst = asset.representsBurst
 
-    // Get filenames from PHAssetResource
+    // Get filenames from PHAssetResource (photos only)
     let resources = PHAssetResource.assetResources(for: asset)
 
-    // Find original filename
+    // Find original filename (photos only)
     self.originalFilename =
       resources.first { resource in
-        resource.type == .photo || resource.type == .video || resource.type == .audio
+        resource.type == .photo
       }?.originalFilename
 
     // Find edited filename (if asset has adjustments)
     if asset.hasAdjustments {
       self.editedFilename =
         resources.first { resource in
-          resource.type == .fullSizePhoto || resource.type == .fullSizeVideo
+          resource.type == .fullSizePhoto
         }?.originalFilename
     } else {
       self.editedFilename = nil
@@ -95,9 +100,11 @@ struct CodablePHAsset: Codable {
 
 // MARK: - Batch Operations
 extension Array where Element == PHAsset {
-  /// Converts an array of PHAssets to JSON string
+  /// Converts an array of PHAssets to JSON string (photos only)
   func toJSONString() throws -> String {
-    let codableAssets = self.map { CodablePHAsset(from: $0) }
+    // Filter to only include photo assets
+    let photoAssets = self.filter { $0.mediaType == .image }
+    let codableAssets = photoAssets.map { CodablePHAsset(from: $0) }
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = .iso8601
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -128,8 +135,11 @@ extension Array where Element == PHAsset {
 
 // MARK: - File Path Construction
 
-/// Get the original file path using osxphotos approach
+/// Get the original file path using osxphotos approach (photos only)
 private func getOriginalFilePath(for asset: PHAsset) -> String? {
+  // Only handle photo assets
+  guard asset.mediaType == .image else { return nil }
+  
   guard let libraryURL = getSystemLibraryPath() else {
     return nil
   }
@@ -137,9 +147,9 @@ private func getOriginalFilePath(for asset: PHAsset) -> String? {
   let cleanUUID = cleanLocalIdentifier(asset.localIdentifier)
   let firstLetter = String(cleanUUID.prefix(1))
 
-  // Get original filename from PHAssetResource
+  // Get original filename from PHAssetResource (photos only)
   let resources = PHAssetResource.assetResources(for: asset)
-  guard let originalResource = resources.first(where: { $0.type == .photo || $0.type == .video }),
+  guard let originalResource = resources.first(where: { $0.type == .photo }),
     let pathExtension = originalResource.originalFilename.split(separator: ".").last
   else {
     return nil
@@ -156,10 +166,12 @@ private func getOriginalFilePath(for asset: PHAsset) -> String? {
   return FileManager.default.fileExists(atPath: originalPath) ? originalPath : nil
 }
 
-/// Get the edited file path using osxphotos approach
+/// Get the edited file path using osxphotos approach (photos only)
 private func getEditedFilePath(for asset: PHAsset) -> String? {
-  guard asset.hasAdjustments,
-    let libraryURL = getSystemLibraryPath()
+  // Only handle photo assets with adjustments
+  guard asset.mediaType == .image,
+        asset.hasAdjustments,
+        let libraryURL = getSystemLibraryPath()
   else {
     return nil
   }
@@ -167,19 +179,14 @@ private func getEditedFilePath(for asset: PHAsset) -> String? {
   let cleanUUID = cleanLocalIdentifier(asset.localIdentifier)
   let firstChar = String(cleanUUID.prefix(1))
 
-  var filename: String
-  if asset.mediaType == .image {
-    // Check if it's HEIC or default to JPEG for edited images
-    let resources = PHAssetResource.assetResources(for: asset)
-    if resources.contains(where: { $0.uniformTypeIdentifier == "public.heic" }) {
-      filename = "\(cleanUUID)_1_201_a.heic"
-    } else {
-      filename = "\(cleanUUID)_1_201_a.jpeg"
-    }
-  } else if asset.mediaType == .video {
-    filename = "\(cleanUUID)_2_0_a.mov"
+  // Only handle image files
+  let filename: String
+  // Check if it's HEIC or default to JPEG for edited images
+  let resources = PHAssetResource.assetResources(for: asset)
+  if resources.contains(where: { $0.uniformTypeIdentifier == "public.heic" }) {
+    filename = "\(cleanUUID)_1_201_a.heic"
   } else {
-    return nil
+    filename = "\(cleanUUID)_1_201_a.jpeg"
   }
 
   let editedPath =

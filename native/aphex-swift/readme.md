@@ -129,7 +129,7 @@ OPTIONS:
 ## Examples
 
 ```sh
-swift run aphex export "test-album" --destination "/Users/mika/Desktop" | jq
+swift run aphex-swift export "test-album" --destination "/Users/mika/Desktop" | jq
 ```
 
 <!-- license -->

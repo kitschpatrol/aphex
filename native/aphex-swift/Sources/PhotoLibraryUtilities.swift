@@ -156,8 +156,10 @@ func getAlbumPhotosByUuid(uuid: String) -> [PHAsset]? {
     return nil
   }
 
-  // Fetch all assets in the album
-  let assetFetchResult = PHAsset.fetchAssets(in: album, options: nil)
+  // Fetch only photo assets in the album
+  let fetchOptions = PHFetchOptions()
+  fetchOptions.predicate = NSPredicate(format: "mediaType == %d", PHAssetMediaType.image.rawValue)
+  let assetFetchResult = PHAsset.fetchAssets(in: album, options: fetchOptions)
 
   var assets: [PHAsset] = []
   assetFetchResult.enumerateObjects { asset, _, _ in
@@ -212,7 +214,9 @@ public func getPhoto(
 
 /// Function to get a single PHAsset by its UUID
 func getPhotoByUuid(uuid: String) -> PHAsset? {
-  let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [uuid], options: nil)
+  let fetchOptions = PHFetchOptions()
+  fetchOptions.predicate = NSPredicate(format: "mediaType == %d", PHAssetMediaType.image.rawValue)
+  let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [uuid], options: fetchOptions)
   return fetchResult.firstObject
 }
 
@@ -238,8 +242,11 @@ func getPhotoByName(name: String, albumMap: [String: String], caseSensitive: Boo
     return nil
   }
 
-  // Search for photo by title first, then filename
+  // Search for photo by title first, then filename (photos only)
   let matchingPhoto = albumPhotos.first { asset in
+    // Only match photo assets
+    guard asset.mediaType == .image else { return false }
+    
     // Try title match first
     if let title = asset.value(forKey: "title") as? String {
       let titleMatch =
@@ -251,7 +258,7 @@ func getPhotoByName(name: String, albumMap: [String: String], caseSensitive: Boo
 
     // Try filename match (requires extension)
     let resources = PHAssetResource.assetResources(for: asset)
-    for resource in resources {
+    for resource in resources where resource.type == .photo {
       let filename = resource.originalFilename
       let filenameMatch =
         caseSensitive ? (filename == photoName) : (filename.lowercased() == photoName.lowercased())
@@ -287,13 +294,18 @@ public func getPhotos(
   for identifier in identifiers {
     // Try as photo first (single photo)
     if let photo = getPhoto(identifier: identifier, albumMap: map, caseSensitive: caseSensitive) {
-      allPhotos.append(photo)
+      // Only add if it's a photo asset
+      if photo.mediaType == .image {
+        allPhotos.append(photo)
+      }
     }
     // If not found as single photo, try as album (multiple photos)
     else if let albumPhotos = getAlbumPhotos(
       identifier: identifier, albumMap: map, caseSensitive: caseSensitive)
     {
-      allPhotos.append(contentsOf: albumPhotos)
+      // Filter to only include photo assets
+      let photoAssets = albumPhotos.filter { $0.mediaType == .image }
+      allPhotos.append(contentsOf: photoAssets)
     }
   }
 
@@ -321,6 +333,9 @@ public func exportPhotos(
   }
 
   for photo in photos! {
+    // Only export photo assets
+    guard photo.mediaType == .image else { continue }
+    
     do {
       if let exportedUrl = try exportPhotoAsset(asset: photo, destination: destination) {
         allUrls.append(exportedUrl)
@@ -334,6 +349,13 @@ public func exportPhotos(
 }
 
 func exportPhotoAsset(asset: PHAsset, destination: URL) throws -> URL? {
+  // Only export photo assets
+  guard asset.mediaType == .image else {
+    throw NSError(
+      domain: "ExportError", code: 5,
+      userInfo: [NSLocalizedDescriptionKey: "Asset is not a photo - only photo assets can be exported"])
+  }
+  
   // Determine the final export URL
   let finalDestination: URL
 
@@ -410,13 +432,20 @@ func exportPhotoAsset(asset: PHAsset, destination: URL) throws -> URL? {
 
 // Helper function to generate a filename for an asset
 private func generateFilename(for asset: PHAsset, in directory: URL) throws -> URL {
+  // Only handle photo assets
+  guard asset.mediaType == .image else {
+    throw NSError(
+      domain: "ExportError", code: 4,
+      userInfo: [NSLocalizedDescriptionKey: "Asset is not a photo - only photo assets are supported"])
+  }
+  
   // Get the original file extension
   let resources = PHAssetResource.assetResources(for: asset)
-  guard let originalResource = resources.first(where: { $0.type == .photo || $0.type == .video })
+  guard let originalResource = resources.first(where: { $0.type == .photo })
   else {
     throw NSError(
       domain: "ExportError", code: 4,
-      userInfo: [NSLocalizedDescriptionKey: "Could not determine file type for asset"])
+      userInfo: [NSLocalizedDescriptionKey: "Could not determine file type for photo asset"])
   }
 
   let originalFilename = originalResource.originalFilename
