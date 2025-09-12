@@ -45,3 +45,24 @@ struct CodablePHAssetCollection: Codable {
     return string
   }
 }
+
+// MARK: - Batch Operations
+extension Array where Element == PHAssetCollection {
+  /// Converts an array of PHAssetCollections to JSON string
+  func toJSONString() throws -> String {
+    let codableAlbums = self.map { CodablePHAssetCollection(from: $0) }
+    let encoder = JSONEncoder()
+    encoder.dateEncodingStrategy = .iso8601
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+
+    let data = try encoder.encode(codableAlbums)
+    guard let string = String(data: data, encoding: .utf8) else {
+      throw EncodingError.invalidValue(
+        codableAlbums,
+        EncodingError.Context(
+          codingPath: [], debugDescription: "Failed to convert data to UTF-8 string")
+      )
+    }
+    return string
+  }
+}

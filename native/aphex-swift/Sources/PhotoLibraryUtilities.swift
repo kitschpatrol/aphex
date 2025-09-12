@@ -94,7 +94,7 @@ public func getAlbumPathsToUuidMap() -> [String: String] {
 // MARK: - Album Info
 
 /// Function to get album information by UUID or name
-public func getAlbum(
+func getAlbum(
   identifier: String, albumMap: [String: String]? = nil, caseSensitive: Bool = false
 ) -> PHAssetCollection? {
   // Check if identifier looks like a UUID (8-4-4-4-12 pattern)
@@ -345,7 +345,7 @@ func getAllAlbums() -> [PHAssetCollection]? {
 /// Recursive helper function to get all albums from a collection list
 func getAlbumsFromCollectionList(_ collectionList: PHCollectionList) -> [PHAssetCollection] {
   var albums: [PHAssetCollection] = []
-  
+
   let collections = PHCollection.fetchCollections(in: collectionList, options: nil)
   for i in 0..<collections.count {
     let collection = collections.object(at: i)
@@ -356,7 +356,7 @@ func getAlbumsFromCollectionList(_ collectionList: PHCollectionList) -> [PHAsset
       albums.append(album)
     }
   }
-  
+
   return albums
 }
 
@@ -394,6 +394,29 @@ public func getPhotos(
 
   // Return nil if no photos found anywhere, otherwise return the collected photos
   return allPhotos.isEmpty ? nil : allPhotos
+}
+
+public func getAlbums(
+  identifiers: [String], albumMap: [String: String]? = nil, caseSensitive: Bool = false
+) -> [PHAssetCollection]? {
+  guard !identifiers.isEmpty else {
+    return getAllAlbums()
+  }
+
+  // Get the album map once and reuse it
+  let map = albumMap ?? getAlbumPathsToUuidMap()
+
+  var allAlbums: [PHAssetCollection] = []
+
+  for identifier in identifiers {
+    // Try to find album by identifier
+    if let album = getAlbum(identifier: identifier, albumMap: map, caseSensitive: caseSensitive) {
+      allAlbums.append(album)
+    }
+  }
+
+  // Return nil if no albums found anywhere, otherwise return the collected albums
+  return allAlbums.isEmpty ? nil : allAlbums
 }
 
 // MARK: - Export photos

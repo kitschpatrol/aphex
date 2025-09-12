@@ -45,24 +45,26 @@ struct AlbumInfo: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "album-info",
         abstract:
-            "Get album information for a given identifier (UUID, album name, or album path)"
+            "Get album information for given identifiers (UUID, album name, or album path)"
     )
 
     @Flag(name: .shortAndLong, help: "Case sensitive matching")
     var caseSensitive = false
 
-    @Argument(help: "Album identifier (UUID, album name, or album path)")
-    var identifier: String
+    @Argument(
+        help:
+            "Album identifiers (UUIDs, album names, or album paths). If no identifiers are provided, returns all albums in the library."
+    )
+    var identifiers: [String] = []
 
     mutating func run() throws {
         try checkPhotosAccess()
 
-        guard let album = getAlbum(identifier: identifier, caseSensitive: caseSensitive) else {
-            throw ValidationError("No album found for identifier: \(identifier)")
+        guard let albums = getAlbums(identifiers: identifiers, caseSensitive: caseSensitive) else {
+            throw ValidationError("No albums found")
         }
 
-        let codableAlbum = CodablePHAssetCollection(from: album)
-        let jsonString = try codableAlbum.toJSONString()
+        let jsonString = try albums.toJSONString()
         print(jsonString)
     }
 }
