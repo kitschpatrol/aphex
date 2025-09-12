@@ -28,7 +28,7 @@ struct CodablePHAssetCollection: Codable {
   func toJSONString() throws -> String {
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = .iso8601
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
 
     let data = try encoder.encode(self)
     guard let string = String(data: data, encoding: .utf8) else {
@@ -49,7 +49,7 @@ extension Array where Element == PHAssetCollection {
     let codableAlbums = self.map { CodablePHAssetCollection(from: $0) }
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = .iso8601
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
 
     let data = try encoder.encode(codableAlbums)
     guard let string = String(data: data, encoding: .utf8) else {

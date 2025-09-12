@@ -19,26 +19,8 @@ func logError(_ message: String) {
 struct aphex: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "A multi-command CLI tool for managing photo albums",
-        subcommands: [Albums.self, AlbumInfo.self, PhotoInfo.self, Export.self]
+        subcommands: [AlbumInfo.self, PhotoInfo.self, Export.self]
     )
-}
-
-struct Albums: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        abstract: "Get album paths mapped to their UUIDs as JSON"
-    )
-
-    mutating func run() throws {
-        try checkPhotosAccess()
-
-        let albumPaths = getAlbumPathsToUuidMap()
-        let jsonData = try JSONSerialization.data(
-            withJSONObject: albumPaths, options: [.prettyPrinted, .withoutEscapingSlashes])
-
-        if let jsonString = String(data: jsonData, encoding: .utf8) {
-            print(jsonString)
-        }
-    }
 }
 
 struct AlbumInfo: ParsableCommand {

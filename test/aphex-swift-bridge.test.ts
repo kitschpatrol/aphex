@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
 	aphexAlbumInfo,
-	aphexAlbums,
 	aphexExport,
 	aphexPhotoInfo,
 } from '../src/utilities/image/aphex-swift-bridge'
@@ -12,23 +11,6 @@ import { tempDirectoryFixture } from './utilities/temp-directory'
 // One of the favorite photos has a title set
 
 describe('aphex-swift-bridge', () => {
-	it('maps album paths to uuids', async () => {
-		const albums = await aphexAlbums()
-
-		// Got something
-		expect(Object.entries(albums).length).toBeGreaterThan(0)
-
-		// All keys have forward slashes
-		for (const key of Object.keys(albums)) {
-			expect(key.includes('/')).toBe(true)
-		}
-
-		// All values are valid UUIDs
-		for (const value of Object.values(albums)) {
-			expect(value).toMatch(/^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i)
-		}
-	})
-
 	it('gets album info', async () => {
 		const albumInfo = await aphexAlbumInfo('/Recents')
 

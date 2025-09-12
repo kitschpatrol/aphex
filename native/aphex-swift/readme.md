@@ -29,8 +29,7 @@ OPTIONS:
   -h, --help              Show help information.
 
 SUBCOMMANDS:
-  albums                  Get album paths mapped to their UUIDs as JSON
-  album-info              Get album information for a given identifier (UUID,
+  album-info              Get album information for given identifiers (UUID,
                           album name, or album path)
   photo-info              Get photo asset information for given identifiers
                           (UUID, filename, album name, or photo path)
@@ -38,22 +37,6 @@ SUBCOMMANDS:
                           directory
 
   See 'aphex help <subcommand>' for detailed help.
-```
-
-<!-- /cli-help -->
-
-### Subcommand: `aphex-swift albums`
-
-<!-- cli-help { cliCommand: "./dist/aphex-swift", helpFlag: "albums --help" }  -->
-
-```txt
-OVERVIEW: Get album paths mapped to their UUIDs as JSON
-
-USAGE: aphex albums
-
-OPTIONS:
-  -h, --help              Show help information.
-
 ```
 
 <!-- /cli-help -->
@@ -66,11 +49,12 @@ OPTIONS:
 OVERVIEW: Get photo asset information for given identifiers (UUID, filename,
 album name, or photo path)
 
-USAGE: aphex photo-info [--case-sensitive] <identifiers> ...
+USAGE: aphex photo-info [--case-sensitive] [<identifiers> ...]
 
 ARGUMENTS:
   <identifiers>           Photo or album identifiers (UUIDs, filenames, album
-                          names, or photo paths)
+                          names, or photo paths). If no identifiers are
+                          provided, returns all photos in the library.
 
 OPTIONS:
   -c, --case-sensitive    Case sensitive matching
@@ -85,13 +69,15 @@ OPTIONS:
 <!-- cli-help { cliCommand: "./dist/aphex-swift", helpFlag: "album-info --help" }  -->
 
 ```txt
-OVERVIEW: Get album information for a given identifier (UUID, album name, or
+OVERVIEW: Get album information for given identifiers (UUID, album name, or
 album path)
 
-USAGE: aphex album-info [--case-sensitive] <identifier>
+USAGE: aphex album-info [--case-sensitive] [<identifiers> ...]
 
 ARGUMENTS:
-  <identifier>            Album identifier (UUID, album name, or album path)
+  <identifiers>           Album identifiers (UUIDs, album names, or album
+                          paths). If no identifiers are provided, returns all
+                          albums in the library.
 
 OPTIONS:
   -c, --case-sensitive    Case sensitive matching

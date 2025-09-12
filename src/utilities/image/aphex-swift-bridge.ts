@@ -5,24 +5,6 @@ import { packageDirectorySync } from 'package-directory'
 import { ensureArray } from '../general'
 
 /**
- * Get full album paths mapped to their UUIDs
- * @throws
- */
-export async function aphexAlbums(): Promise<Record<string, string>> {
-	const result = await execa('./aphex-swift', ['albums'], {
-		cwd: getDistributionPath(),
-	})
-
-	try {
-		const output: unknown = JSON.parse(result.stdout)
-		assert.object<string, string>(output)
-		return output
-	} catch {
-		throw new Error(`Error fetching albums: ${result.stdout}`)
-	}
-}
-
-/**
  * TypeScript type definition for ResourceInfo from the Swift implementation
  */
 export type ResourceInfo = {
@@ -277,7 +259,7 @@ export async function aphexExport(
 		assert.array<string>(output)
 		return output
 	} catch {
-		throw new Error(`Error fetching albums: ${result.stdout}`)
+		throw new Error(`Error exporting: ${result.stdout}`)
 	}
 }
 
