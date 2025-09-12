@@ -31,12 +31,7 @@ struct CodablePHAsset: Codable {
       fatalError("CodablePHAsset can only be initialized from photo assets")
     }
 
-    // Clean up the local identifier by removing the trailing /L0/001 part
-    if let range = asset.localIdentifier.range(of: "/L0/") {
-      self.uuid = String(asset.localIdentifier[..<range.lowerBound])
-    } else {
-      self.uuid = asset.localIdentifier
-    }
+    self.uuid = cleanLocalIdentifier(asset.localIdentifier)
 
     guard let dateCreated = asset.creationDate else {
       throw CodablePHAssetError.dateCreatedNotAvailable(resource: asset.debugDescription)

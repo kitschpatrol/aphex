@@ -253,7 +253,7 @@ export async function exportPhotoAlbum(
 	// Needed for the metadata provided in the function's return value, and
 	// for identifying edited images in the "slow path" mixing engines
 
-	const albumInfo = await aphexAlbumInfo(identifier)
+	const [albumInfo] = await aphexAlbumInfo(identifier)
 	const albumPhotoInfo = await aphexPhotoInfo(identifier)
 	const albumPhotoCount = albumPhotoInfo.length
 

@@ -50,6 +50,15 @@ enum PhotosAccessError: LocalizedError {
 
 /// Function to get all album paths mapped to their UUIDs
 public func getAlbumPathsToUuidMap() -> [String: String] {
+  // Simple memoization using static let (computed once)
+  struct Cache {
+    static let result: [String: String] = _getAlbumPathsToUuidMapInternal()
+  }
+  return Cache.result
+}
+
+/// Internal implementation of getSystemLibraryPath
+private func _getAlbumPathsToUuidMapInternal() -> [String: String] {
   var albumPaths: [String: String] = [:]
 
   // Get all user collections (folders and user-created albums)
@@ -307,57 +316,12 @@ func getAllPhotos() -> [PHAsset]? {
 
 // MARK: - All Albums
 
-func getAllAlbums() -> [PHAssetCollection]? {
-  var allAlbums: [PHAssetCollection] = []
+func getAllAlbums(albumMap: [String: String]? = nil) -> [PHAssetCollection] {
+  let map = albumMap ?? getAlbumPathsToUuidMap()
 
-  // Get all user collections (folders and user-created albums)
-  let userCollections = PHCollectionList.fetchTopLevelUserCollections(with: nil)
-  for i in 0..<userCollections.count {
-    let collection = userCollections.object(at: i)
-    if let list = collection as? PHCollectionList {
-      let albumsFromList = getAlbumsFromCollectionList(list)
-      allAlbums.append(contentsOf: albumsFromList)
-    } else if let album = collection as? PHAssetCollection {
-      allAlbums.append(album)
-    }
+  return map.compactMap { (_, uuid) in
+    getAlbumByUuid(uuid: uuid)
   }
-
-  // Get all smart albums
-  let smartAlbums = PHAssetCollection.fetchAssetCollections(
-    with: .smartAlbum, subtype: .any, options: nil)
-  for i in 0..<smartAlbums.count {
-    let smartAlbum = smartAlbums.object(at: i)
-    allAlbums.append(smartAlbum)
-  }
-
-  // Get smart albums organized in collection lists
-  let allCollectionLists = PHCollectionList.fetchCollectionLists(
-    with: .smartFolder, subtype: .any, options: nil)
-  for i in 0..<allCollectionLists.count {
-    let collectionList = allCollectionLists.object(at: i)
-    let albumsFromList = getAlbumsFromCollectionList(collectionList)
-    allAlbums.append(contentsOf: albumsFromList)
-  }
-
-  return allAlbums.isEmpty ? nil : allAlbums
-}
-
-/// Recursive helper function to get all albums from a collection list
-func getAlbumsFromCollectionList(_ collectionList: PHCollectionList) -> [PHAssetCollection] {
-  var albums: [PHAssetCollection] = []
-
-  let collections = PHCollection.fetchCollections(in: collectionList, options: nil)
-  for i in 0..<collections.count {
-    let collection = collections.object(at: i)
-    if let subList = collection as? PHCollectionList {
-      let albumsFromSubList = getAlbumsFromCollectionList(subList)
-      albums.append(contentsOf: albumsFromSubList)
-    } else if let album = collection as? PHAssetCollection {
-      albums.append(album)
-    }
-  }
-
-  return albums
 }
 
 // MARK: - Combined Albums / UUIDs / Names
@@ -399,12 +363,13 @@ public func getPhotos(
 public func getAlbums(
   identifiers: [String], albumMap: [String: String]? = nil, caseSensitive: Bool = false
 ) -> [PHAssetCollection]? {
-  guard !identifiers.isEmpty else {
-    return getAllAlbums()
-  }
+  // Get the album map once and reuse it, even though it's memoized...
 
-  // Get the album map once and reuse it
   let map = albumMap ?? getAlbumPathsToUuidMap()
+
+  guard !identifiers.isEmpty else {
+    return getAllAlbums(albumMap: map)
+  }
 
   var allAlbums: [PHAssetCollection] = []
 
@@ -628,12 +593,9 @@ func getAlbumPathsFromCollectionList(_ collectionList: PHCollectionList, basePat
   return albumPaths
 }
 
-/// Helper function to clean local identifier (remove /L0/001 suffix if present)
+/// Helper function to clean local identifier (remove `/L0/...` suffix if present)
 func cleanLocalIdentifier(_ identifier: String) -> String {
-  if let range = identifier.range(of: "/L0/") {
-    return String(identifier[..<range.lowerBound])
-  }
-  return identifier
+  return identifier.split(separator: "/").first.map(String.init) ?? identifier
 }
 
 /// Extend NSImage to support saving in PNG format

@@ -32,11 +32,14 @@ describe('aphex-swift-bridge', () => {
 	it('gets album info', async () => {
 		const albumInfo = await aphexAlbumInfo('/Recents')
 
-		expect(Object.keys(albumInfo)).toMatchInlineSnapshot(`
+		expect(albumInfo.length).toBe(1)
+
+		expect(Object.keys(albumInfo.at(0)!)).toMatchInlineSnapshot(`
 			[
 			  "dateEnd",
 			  "dateStart",
 			  "estimatedAssetCount",
+			  "path",
 			  "subtype",
 			  "title",
 			  "type",

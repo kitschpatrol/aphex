@@ -53,8 +53,9 @@ export type AlbumInfo = {
 	dateEnd?: Date
 	dateStart?: Date
 	estimatedAssetCount: number
+	path: string
 	subtype: number
-	title?: string
+	title: string
 	type: number
 	uuid: string
 }
@@ -132,13 +133,14 @@ export function isAlbumInfo(value: unknown): value is AlbumInfo {
 		!is.string(object.uuid) ||
 		!is.number(object.type) ||
 		!is.number(object.subtype) ||
-		!is.number(object.estimatedAssetCount)
+		!is.number(object.estimatedAssetCount) ||
+		!is.string(object.title) ||
+		!is.string(object.path)
 	) {
 		return false
 	}
 
 	if (
-		(object.title !== undefined && !is.string(object.title)) ||
 		(object.dateStart !== undefined && !is.date(object.dateStart)) ||
 		(object.dateEnd !== undefined && !is.date(object.dateEnd))
 	) {
@@ -176,6 +178,22 @@ export function assertAlbumInfo(value: unknown): asserts value is AlbumInfo {
 }
 
 /**
+ * Runtime type guard for AlbumInfo array
+ */
+export function isAlbumInfoArray(value: unknown): value is AlbumInfo[] {
+	return is.array(value) && value.every((element) => isAlbumInfo(element))
+}
+
+/**
+ * Assert that a value is an AlbumInfo array
+ */
+export function assertAlbumInfoArray(value: unknown): asserts value is AlbumInfo[] {
+	if (!isAlbumInfoArray(value)) {
+		throw new Error('Invalid AlbumInfo array')
+	}
+}
+
+/**
  * Get photo asset information for given identifiers (ID, filename, album name, or photo path)
  * @throws
  */
@@ -207,12 +225,14 @@ export async function aphexPhotoInfo(
  * @throws
  */
 export async function aphexAlbumInfo(
-	identifier: string,
+	identifiers: string | string[],
 	caseSensitive = false,
-): Promise<AlbumInfo> {
+): Promise<AlbumInfo[]> {
+	const identifiersArray = ensureArray(identifiers)
+
 	const result = await execa(
 		'./aphex-swift',
-		['album-info', identifier, ...(caseSensitive ? ['--case-sensitive'] : [])],
+		['album-info', ...identifiersArray, ...(caseSensitive ? ['--case-sensitive'] : [])],
 		{
 			cwd: getDistributionPath(),
 		},
@@ -220,7 +240,7 @@ export async function aphexAlbumInfo(
 
 	try {
 		const output: unknown = JSON.parse(result.stdout, dateReviver)
-		assertAlbumInfo(output)
+		assertAlbumInfoArray(output)
 		return output
 	} catch {
 		throw new Error(`Error fetching album info: ${result.stdout}`)
