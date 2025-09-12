@@ -382,7 +382,7 @@ export async function exportPhotoAlbum(
 			const tempDirectory = await fse.mkdtemp(
 				path.join(
 					os.tmpdir(),
-					`com.kitschpatrol.aphex-${githubSlug(identifier)}.photos-gui-album-export`,
+					`com.kitschpatrol.aphex-${githubSlug(identifier)}.photos-gui-album-export.`,
 				),
 			)
 

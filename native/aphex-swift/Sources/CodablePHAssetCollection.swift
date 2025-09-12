@@ -4,9 +4,9 @@ import Photos
 /// A simplified Codable representation of PHAssetCollection for read-only JSON export
 struct CodablePHAssetCollection: Codable {
   let uuid: String
-  let localizedTitle: String?
-  let assetCollectionType: Int
-  let assetCollectionSubtype: Int
+  let title: String?
+  let type: Int
+  let subtype: Int
   let estimatedAssetCount: Int
   let dateStart: Date?
   let dateEnd: Date?
@@ -19,9 +19,9 @@ struct CodablePHAssetCollection: Codable {
       self.uuid = collection.localIdentifier
     }
 
-    self.localizedTitle = collection.localizedTitle
-    self.assetCollectionType = collection.assetCollectionType.rawValue
-    self.assetCollectionSubtype = collection.assetCollectionSubtype.rawValue
+    self.title = collection.localizedTitle
+    self.type = collection.assetCollectionType.rawValue
+    self.subtype = collection.assetCollectionSubtype.rawValue
     self.estimatedAssetCount = collection.estimatedAssetCount
     self.dateStart = collection.startDate
     self.dateEnd = collection.endDate

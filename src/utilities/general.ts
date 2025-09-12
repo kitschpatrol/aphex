@@ -129,7 +129,7 @@ export async function execaWithTempCleanup(
 	const fileName = typeof file === 'string' ? file : path.basename(file.pathname)
 
 	const tempDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.kitschpatrol.aphex.execa.${getSlugFilename(fileName)}`),
+		path.join(os.tmpdir(), `com.kitschpatrol.aphex.execa.${getSlugFilename(fileName)}.`),
 	)
 
 	const result = await execa(file, args, {

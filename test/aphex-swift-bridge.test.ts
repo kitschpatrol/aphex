@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
 	aphexAlbumInfo,
 	aphexAlbums,
+	aphexExport,
 	aphexPhotoInfo,
 } from '../src/utilities/image/aphex-swift-bridge'
+import { tempDirectoryFixture } from './utilities/temp-directory'
 
 // Assumes your system library:
 // Has one or more favorite photo
@@ -12,8 +14,6 @@ import {
 describe('aphex-swift-bridge', () => {
 	it('maps album paths to uuids', async () => {
 		const albums = await aphexAlbums()
-
-		console.log(albums)
 
 		// Got something
 		expect(Object.entries(albums).length).toBeGreaterThan(0)
@@ -32,7 +32,17 @@ describe('aphex-swift-bridge', () => {
 	it('gets album info', async () => {
 		const albumInfo = await aphexAlbumInfo('/Recents')
 
-		expect(Object.keys(albumInfo)).toMatchInlineSnapshot()
+		expect(Object.keys(albumInfo)).toMatchInlineSnapshot(`
+			[
+			  "dateEnd",
+			  "dateStart",
+			  "estimatedAssetCount",
+			  "subtype",
+			  "title",
+			  "type",
+			  "uuid",
+			]
+		`)
 	})
 
 	it('gets photo info for album', { timeout: 60_000 }, async () => {
@@ -66,5 +76,19 @@ describe('aphex-swift-bridge', () => {
 		expect(specificPhotoInfo.at(0)?.uuid).toBe(uuid)
 	})
 
-	// TODO export...
+	tempDirectoryFixture(
+		'exports single photo by uuid',
+		{ timeout: 60_000 },
+		async ({ tempDirectory }) => {
+			// Get a representative photo filename
+			const photoInfo = await aphexPhotoInfo('/Favorites')
+			expect(photoInfo.length).toBeGreaterThan(0)
+			const uuid = photoInfo.at(0)?.uuid
+			expect(uuid).toBeDefined()
+
+			// Export it
+			const exportReport = await aphexExport(uuid!, tempDirectory)
+			expect(exportReport.length).toBe(1)
+		},
+	)
 })

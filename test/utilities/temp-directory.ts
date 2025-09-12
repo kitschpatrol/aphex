@@ -12,7 +12,7 @@ type TempDirectoryFixture = {
 
 async function createTempDirectory() {
 	const osTempDirectory = os.tmpdir()
-	const tempDirectory = path.join(osTempDirectory, 'aphex.unit-test')
+	const tempDirectory = path.join(osTempDirectory, 'aphex.unit-test.')
 
 	return fs.mkdtemp(tempDirectory)
 }

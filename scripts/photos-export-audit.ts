@@ -37,7 +37,7 @@ async function exportViaAppleScriptGuiWrapped(
 
 	// No control over exact file name in the gui, so we copy to temp first
 	const tempDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.kitschpatrol.aphex.audit.${uuid}`),
+		path.join(os.tmpdir(), `com.kitschpatrol.aphex.audit.${uuid}.`),
 	)
 
 	const result = await exportViaAppleScriptGui(uuid, tempDirectory, {
