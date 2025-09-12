@@ -282,13 +282,91 @@ func getPhotoByName(name: String, albumMap: [String: String], caseSensitive: Boo
   }
 }
 
+// MARK: - All Photos
+
+func getAllPhotos() -> [PHAsset]? {
+  // This is pretty fast even for my 60k photo library
+  // It's JSON serialization that kills performance.
+  let fetchOptions = PHFetchOptions()
+  fetchOptions.predicate = NSPredicate(
+    format: "mediaType == %d",
+    PHAssetMediaType.image.rawValue
+  )
+
+  let fetchResult = PHAsset.fetchAssets(with: fetchOptions)
+  guard fetchResult.count > 0 else { return nil }
+
+  var assets = [PHAsset]()
+  assets.reserveCapacity(fetchResult.count)  // Pre-allocate memory
+  fetchResult.enumerateObjects { asset, _, _ in
+    assets.append(asset)
+  }
+
+  return assets
+}
+
+// MARK: - All Albums
+
+func getAllAlbums() -> [PHAssetCollection]? {
+  var allAlbums: [PHAssetCollection] = []
+
+  // Get all user collections (folders and user-created albums)
+  let userCollections = PHCollectionList.fetchTopLevelUserCollections(with: nil)
+  for i in 0..<userCollections.count {
+    let collection = userCollections.object(at: i)
+    if let list = collection as? PHCollectionList {
+      let albumsFromList = getAlbumsFromCollectionList(list)
+      allAlbums.append(contentsOf: albumsFromList)
+    } else if let album = collection as? PHAssetCollection {
+      allAlbums.append(album)
+    }
+  }
+
+  // Get all smart albums
+  let smartAlbums = PHAssetCollection.fetchAssetCollections(
+    with: .smartAlbum, subtype: .any, options: nil)
+  for i in 0..<smartAlbums.count {
+    let smartAlbum = smartAlbums.object(at: i)
+    allAlbums.append(smartAlbum)
+  }
+
+  // Get smart albums organized in collection lists
+  let allCollectionLists = PHCollectionList.fetchCollectionLists(
+    with: .smartFolder, subtype: .any, options: nil)
+  for i in 0..<allCollectionLists.count {
+    let collectionList = allCollectionLists.object(at: i)
+    let albumsFromList = getAlbumsFromCollectionList(collectionList)
+    allAlbums.append(contentsOf: albumsFromList)
+  }
+
+  return allAlbums.isEmpty ? nil : allAlbums
+}
+
+/// Recursive helper function to get all albums from a collection list
+func getAlbumsFromCollectionList(_ collectionList: PHCollectionList) -> [PHAssetCollection] {
+  var albums: [PHAssetCollection] = []
+  
+  let collections = PHCollection.fetchCollections(in: collectionList, options: nil)
+  for i in 0..<collections.count {
+    let collection = collections.object(at: i)
+    if let subList = collection as? PHCollectionList {
+      let albumsFromSubList = getAlbumsFromCollectionList(subList)
+      albums.append(contentsOf: albumsFromSubList)
+    } else if let album = collection as? PHAssetCollection {
+      albums.append(album)
+    }
+  }
+  
+  return albums
+}
+
 // MARK: - Combined Albums / UUIDs / Names
 
 public func getPhotos(
   identifiers: [String], albumMap: [String: String]? = nil, caseSensitive: Bool = false
 ) -> [PHAsset]? {
   guard !identifiers.isEmpty else {
-    return nil
+    return getAllPhotos()
   }
 
   // Get the album map once and reuse it

@@ -79,15 +79,15 @@ struct PhotoInfo: ParsableCommand {
 
     @Argument(
         help:
-            "Photo or album identifiers (UUIDs, filenames, album names, or photo paths)"
+            "Photo or album identifiers (UUIDs, filenames, album names, or photo paths). If no identifiers are provided, returns all photos in the library."
     )
-    var identifiers: [String]
+    var identifiers: [String] = []
 
     mutating func run() throws {
         try checkPhotosAccess()
 
         guard let photos = getPhotos(identifiers: identifiers, caseSensitive: caseSensitive) else {
-            throw ValidationError("No photos found for the provided identifiers")
+            throw ValidationError("No photos found")
         }
 
         let jsonString = try photos.toJSONString()
