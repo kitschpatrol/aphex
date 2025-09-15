@@ -1,6 +1,7 @@
 import { execa } from 'execa'
 import fse from 'fs-extra'
 import { slug as githubSlug } from 'github-slugger'
+import os from 'node:os'
 import path from 'node:path'
 
 /**
@@ -127,4 +128,33 @@ export function assertPathsExist(...filePaths: string[]): void {
 			throw new Error(`File not found: ${filePath}`)
 		}
 	}
+}
+
+/**
+ * Ensures the directory for a given file path exists, creating it if necessary.
+ * Expands '~' to the user's home directory.
+ * @param filePath - The full file path for which to ensure the directory exists
+ * @returns The fully expanded directory path which definitely exists
+ */
+export async function ensureDirectoryExists(filePath: string): Promise<string> {
+	const directory = path.dirname(filePath)
+	// Expand home directory for the entire file path
+	const expandedDirectory = directory.startsWith('~')
+		? path.join(os.homedir(), directory.slice(1))
+		: directory
+
+	await fse.ensureDir(expandedDirectory)
+	return expandedDirectory
+}
+
+/**
+ * Creates a temporary directory with an optional custom prefix based on provided labels
+ */
+export async function getTempDirectory(...labels: string[]): Promise<string> {
+	const prefix =
+		labels.length > 0
+			? `com.kitschpatrol.aphex.${labels.map((l) => l.toLowerCase()).join('.')}.`
+			: 'com.kitschpatrol.aphex.'
+
+	return fse.mkdtemp(path.join(os.tmpdir(), prefix))
 }
