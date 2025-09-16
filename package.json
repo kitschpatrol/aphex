@@ -44,6 +44,9 @@
 		"release": "bumpp --commit 'Release: %s' && pnpm run build && pnpm publish --otp $(op read 'op://Personal/Npmjs/one-time password?attribute=otp')",
 		"test": "vitest"
 	},
+	"dependencies": {
+		"type-fest": "^5.0.0"
+	},
 	"devDependencies": {
 		"@clack/prompts": "^0.11.0",
 		"@kitschpatrol/shared-config": "^5.7.0",
@@ -52,6 +55,7 @@
 		"defu": "^6.1.4",
 		"execa": "^9.6.0",
 		"exiftool-vendored": "^30.5.0",
+		"fast-equals": "^5.2.2",
 		"fs-extra": "^11.3.1",
 		"github-slugger": "^2.0.0",
 		"globby": "^14.1.0",
@@ -81,8 +85,5 @@
 	],
 	"publishConfig": {
 		"access": "public"
-	},
-	"dependencies": {
-		"type-fest": "^5.0.0"
 	}
 }

@@ -1,6 +1,6 @@
-import { defu } from 'defu'
 import { execa } from 'execa'
 import path from 'node:path'
+import { mergeDefaults } from '../../utilities/defu'
 import { getTempDirectory } from '../../utilities/file'
 
 export type ExportViaAppleScriptGuiOptions = {
@@ -59,7 +59,9 @@ export async function exportViaAppleScriptGui(
 		sequentialPrefix,
 		subfolderFormat,
 		tiffBitDepth,
-	} = defu(options, defaultExportViaAppleScriptGuiOptions)
+	} = options
+		? mergeDefaults(options, defaultExportViaAppleScriptGuiOptions)
+		: defaultExportViaAppleScriptGuiOptions
 
 	// Passed in order of appearance in the UI
 	// Due to the nature of the implementation, there's no streaming output, just

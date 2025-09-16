@@ -1,7 +1,7 @@
-import type { JsonObject } from 'type-fest'
-import { defu } from 'defu'
+import type { ExportOptions } from '..'
 import type { PhotoInfo } from '../utilities/image/aphex-swift-bridge'
-import type { ImageTags } from '../utilities/image/tags'
+import type { AphexMetadata, ImageTags, ValidateTagsResult } from '../utilities/image/tags'
+import { mergeDefaults } from '../utilities/defu'
 import { cloneTags, setTags, validateTags } from '../utilities/image/tags'
 import { resolvePhotoIdentifier } from './image-export'
 
@@ -22,9 +22,9 @@ export const defaultManageMetadataOptions: ManageMetadataOptions = {
 }
 
 export type ManageMetadataResult = {
-	tagsToEdited: Array<keyof ImageTags>
-	tagsToTarget: Array<keyof ImageTags>
-	valid: boolean | undefined
+	tagsToEdited: Array<keyof ImageTags> | undefined
+	tagsToTarget: Array<keyof ImageTags> | undefined
+	validationResult: undefined | ValidateTagsResult
 }
 
 /**
@@ -34,12 +34,15 @@ export async function manageMetadata(
 	identifier: PhotoInfo | string,
 	targetFile: string,
 	options?: Partial<ManageMetadataOptions>,
-	aphexMetadata?: JsonObject,
+	/** For Aphex Metadata object */
+	exportOptions?: ExportOptions,
 ): Promise<ManageMetadataResult> {
-	const resolvedOptions = defu(options, defaultManageMetadataOptions)
+	const resolvedOptions = options
+		? mergeDefaults(options, defaultManageMetadataOptions)
+		: defaultManageMetadataOptions
 	const photoInfo = await resolvePhotoIdentifier(identifier)
 
-	let tagsToTarget: Array<keyof ImageTags> = []
+	let tagsToTarget: Array<keyof ImageTags> | undefined
 	if (resolvedOptions.syncToTarget) {
 		tagsToTarget = await cloneTags(
 			photoInfo.original.filePath,
@@ -48,7 +51,7 @@ export async function manageMetadata(
 		)
 	}
 
-	let tagsToEdited: Array<keyof ImageTags> = []
+	let tagsToEdited: Array<keyof ImageTags> | undefined
 	if (photoInfo.edited && resolvedOptions.syncToEdited) {
 		tagsToEdited = await cloneTags(
 			photoInfo.original.filePath,
@@ -57,19 +60,24 @@ export async function manageMetadata(
 		)
 	}
 
-	if (aphexMetadata !== undefined && resolvedOptions.writeAphexMetadata) {
+	if (exportOptions !== undefined && resolvedOptions.writeAphexMetadata) {
+		const aphexMetadata: AphexMetadata = {
+			exportOptions,
+			photoInfo,
+		}
+
 		await setTags(targetFile, { aphexMetadata })
 	}
 
-	let valid: boolean | undefined
+	let validationResult: undefined | ValidateTagsResult
 	if (resolvedOptions.validate) {
-		valid = await validateTags(targetFile)
+		validationResult = await validateTags(targetFile)
 	}
 
 	const result: ManageMetadataResult = {
 		tagsToEdited,
 		tagsToTarget,
-		valid,
+		validationResult,
 	}
 
 	return result

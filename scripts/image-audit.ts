@@ -10,7 +10,6 @@ import { globby } from 'globby'
 import path from 'node:path'
 import prettyBytes from 'pretty-bytes'
 import prettyMs from 'pretty-ms'
-import type { ProcessMetadata } from '../src/pipeline/process'
 import type { ImageMimeType } from '../src/utilities/image/mime'
 import { getTags } from '../src/utilities/image/tags'
 

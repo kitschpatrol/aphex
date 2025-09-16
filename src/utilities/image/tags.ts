@@ -1,6 +1,6 @@
 import type { Tags } from 'exiftool-vendored'
-import type { JsonObject } from 'type-fest'
 import { exiftool } from 'exiftool-vendored'
+import type { ExportOptions } from '../../index'
 import type { PhotoInfo } from './aphex-swift-bridge'
 import { lookupImageMimeType } from './mime'
 
@@ -65,7 +65,7 @@ export async function getTagCount(imagePath: string): Promise<number> {
 	return Object.keys(data).length
 }
 
-type ValidateTagsResult = {
+export type ValidateTagsResult = {
 	issues: string[]
 	valid: boolean
 }
@@ -142,9 +142,14 @@ export async function validateTags(
 	return result
 }
 
+export type AphexMetadata = {
+	exportOptions: ExportOptions
+	photoInfo: PhotoInfo
+}
+
 // Custom subset that we actually use
 export type ImageTags = {
-	aphexMetadata?: JsonObject | undefined
+	aphexMetadata?: AphexMetadata | undefined
 	/** Human Name */
 	creator?: string | undefined
 	/** Organization */
@@ -249,12 +254,23 @@ export async function getTags(imagePath: string): Promise<ImageTags> {
 	}
 }
 
-function parseUserComment(userComment: string | undefined): JsonObject | undefined {
+function dateReviver(key: string, value: unknown) {
+	if (
+		(key === 'dateCreated' || key === 'dateModified' || key === 'dateStart' || key === 'dateEnd') &&
+		typeof value === 'string'
+	) {
+		return value ? new Date(value) : undefined
+	}
+	return value
+}
+
+function parseUserComment(userComment: string | undefined): AphexMetadata | undefined {
 	if (userComment === undefined) return undefined
 
 	try {
+		// TODO real validation...
 		// eslint-disable-next-line ts/no-unsafe-type-assertion
-		return JSON.parse(userComment) as JsonObject
+		return JSON.parse(userComment, dateReviver) as AphexMetadata
 	} catch {
 		console.error(`Error parsing UserComment JSON: ${userComment}`)
 		return undefined

@@ -1,9 +1,7 @@
-import defu from 'defu'
 import fse from 'fs-extra'
 import os from 'node:os'
 import path from 'node:path'
 import { Piscina } from 'piscina'
-import type { PhotoInfo } from '../utilities/image/aphex-swift-bridge'
 import type { ColorProfile } from '../utilities/image/color'
 import type {
 	CompressImageOptions,
@@ -13,7 +11,7 @@ import type {
 } from '../utilities/image/convert'
 import type { ImageInfo } from '../utilities/image/image'
 import type { ImageMimeType } from '../utilities/image/mime'
-import type { ExportApplePhotoOptions, ExportEngine } from './image-export'
+import { mergeDefaults } from '../utilities/defu'
 import { ensureDirectoryExists, getTempDirectory } from '../utilities/file'
 import { sipsTempCleanup } from '../utilities/general'
 import {
@@ -30,7 +28,7 @@ import {
 	resizePngToFit,
 } from '../utilities/image/convert'
 import { getImageInfo } from '../utilities/image/image'
-import { cloneTags, stripTags } from '../utilities/image/tags'
+import { stripTags } from '../utilities/image/tags'
 
 export type ProcessImageOptions = CompressImageOptions & {
 	/** Fallback color profile applied when source profile is not in preserve list */
@@ -110,7 +108,7 @@ export async function processPhotos(
 	options?: Partial<ProcessImageOptions>,
 ): Promise<ProcessImageResult[]> {
 	const resolvedOptions = options
-		? defu(options, defaultProcessImageOptions)
+		? mergeDefaults(options, defaultProcessImageOptions)
 		: defaultProcessImageOptions
 
 	const tempProcessOutputDirectory = await getTempDirectory('process', 'images')
