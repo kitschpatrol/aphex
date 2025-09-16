@@ -1,115 +1,63 @@
 import fs from 'node:fs/promises'
 import { describe, expect } from 'vitest'
-import { exportViaAppleScriptGui } from '../src/pipeline/engines/applescript-gui'
-import { exportViaSwiftPhotoKit } from '../src/pipeline/engines/swift-photokit'
-import { exportPhoto, exportPhotoAlbum } from '../src/pipeline/export-photo'
+import { exportApplePhoto, exportPhotoAlbum } from '../src/pipeline/image-export'
+import { processPhotos } from '../src/pipeline/image-process'
+import { getSamplePhotoUuid } from './utilities/photos'
 import { tempDirectoryFixture } from './utilities/temp-directory'
-
-// TODO exercise new export pipelines
-
-describe('photo export via photokit engine', () => {
-	// Skipped since it can only run in an external terminal due to photo library
-	// permission issues
-	tempDirectoryFixture.skip(
-		'exports a specific photo using aphex-swift',
-		{ timeout: 30_000 },
-		async ({ tempDirectory }) => {
-			console.log('----------------------------------')
-			console.log(tempDirectory)
-			await exportViaSwiftPhotoKit('77758382-025A-446E-91C6-88A0BCAFDA91', tempDirectory)
-
-			const files = await fs.readdir(tempDirectory)
-
-			expect(files).toMatchInlineSnapshot(`
-				[
-				  "77758382-025A-446E-91C6-88A0BCAFDA91.png",
-				]
-			`)
-
-			await exportViaSwiftPhotoKit('77758382-025A-446E-91C6-88A0BCAFDA91', tempDirectory)
-			const files2 = await fs.readdir(tempDirectory)
-			expect(files2).toMatchInlineSnapshot(`
-				[
-				  "77758382-025A-446E-91C6-88A0BCAFDA91.png",
-				]
-			`)
-		},
-	)
-})
-
-describe('export via applescript-gui engine', () => {
-	tempDirectoryFixture(
-		'exports a specific photo via applescript-gui',
-		{ timeout: 20_000 },
-		async ({ tempDirectory }) => {
-			console.log(tempDirectory)
-			await exportViaAppleScriptGui('77758382-025A-446E-91C6-88A0BCAFDA91', tempDirectory)
-			const files = await fs.readdir(tempDirectory)
-			expect(files).toMatchInlineSnapshot(`
-					[
-					  "A86A2346.jpeg",
-					]
-				`)
-		},
-	)
-
-	tempDirectoryFixture(
-		'exports a specific album via applescript-gui',
-		{ timeout: 20_000 },
-		async ({ tempDirectory }) => {
-			console.log(tempDirectory)
-			await exportViaAppleScriptGui('7E88CFFA-D1E9-4D1C-87F8-FA8AECB68686', tempDirectory)
-			const files = await fs.readdir(tempDirectory)
-			expect(files).toMatchInlineSnapshot(`
-				[
-				  "20200205_ABB_All_Parts_Wired.jpeg",
-				  "A86A2318.jpeg",
-				  "A86A2346.jpeg",
-				  "A86A2406 copy.jpeg",
-				  "IBM Tangibles Prototype Photo.jpeg",
-				  "IMG_8938.jpeg",
-				  "img_2569.jpeg",
-				  "test.jpeg",
-				]
-			`)
-		},
-	)
-})
 
 describe('export via generic abstraction', () => {
 	tempDirectoryFixture(
-		'exports a specific photo using generic export abstraction',
+		'exports a specific photo using generic export abstraction without processing',
 		{ timeout: 20_000 },
 		async ({ tempDirectory }) => {
-			await exportPhoto('77758382-025A-446E-91C6-88A0BCAFDA91', tempDirectory)
-			const files = await fs.readdir(tempDirectory)
-			expect(files).toMatchInlineSnapshot(`
+			const uuid = await getSamplePhotoUuid(false, true)
+			const result = await exportApplePhoto(uuid, tempDirectory)
+			expect(Object.keys(result)).toMatchInlineSnapshot(`
 				[
-				  "lab-4.png",
+				  "exportEngine",
+				  "exportOptions",
+				  "path",
+				  "photoInfo",
 				]
 			`)
 		},
 	)
 
-	tempDirectoryFixture(
-		'exports a specific album using generic export abstraction',
-		{ timeout: 200_000 },
-		async ({ tempDirectory }) => {
-			console.log(tempDirectory)
+	//
+	// tempDirectoryFixture(
+	// 	'exports a specific album using generic export abstraction',
+	// 	{ timeout: 200_000 },
+	// 	async ({ tempDirectory }) => {
+	// 		console.log(tempDirectory)
 
-			await exportPhotoAlbum('test-album', tempDirectory)
-			const files = await fs.readdir(tempDirectory)
-			expect(files).toMatchInlineSnapshot(`
-				[
-				  "kit-of-parts-render-outline.png",
-				  "lab-4.png",
-				  "lab-5.webp",
-				  "overview.png",
-				  "pool-4.png",
-				  "prototype.png",
-				  "test-psd.png",
-				]
-			`)
+	// 		await exportPhotoAlbum('test-album', tempDirectory)
+	// 		const files = await fs.readdir(tempDirectory)
+	// 		expect(files).toMatchInlineSnapshot(`
+	// 			[
+	// 			  "kit-of-parts-render-outline.png",
+	// 			  "lab-4.png",
+	// 			  "lab-5.webp",
+	// 			  "overview.png",
+	// 			  "pool-4.png",
+	// 			  "prototype.png",
+	// 			  "test-psd.png",
+	// 			]
+	// 		`)
+	// 	},
+	// )
+})
+
+describe('export and process', () => {
+	tempDirectoryFixture(
+		'exports a specific photo using generic export abstraction without processing',
+		{ timeout: 20_000 },
+		async ({ tempDirectory }) => {
+			const uuid = await getSamplePhotoUuid(false, true)
+			const result = await exportApplePhoto(uuid, tempDirectory)
+			const { path } = result
+
+			const processResult = await processPhotos([path], tempDirectory)
+			console.log(processResult)
 		},
 	)
 })

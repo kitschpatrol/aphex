@@ -81,5 +81,8 @@
 	],
 	"publishConfig": {
 		"access": "public"
+	},
+	"dependencies": {
+		"type-fest": "^5.0.0"
 	}
 }

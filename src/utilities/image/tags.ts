@@ -1,6 +1,6 @@
 import type { Tags } from 'exiftool-vendored'
+import type { JsonObject } from 'type-fest'
 import { exiftool } from 'exiftool-vendored'
-import type { ProcessMetadata } from '../../pipeline/process'
 import type { PhotoInfo } from './aphex-swift-bridge'
 import { lookupImageMimeType } from './mime'
 
@@ -65,6 +65,11 @@ export async function getTagCount(imagePath: string): Promise<number> {
 	return Object.keys(data).length
 }
 
+type ValidateTagsResult = {
+	issues: string[]
+	valid: boolean
+}
+
 /**
  * Validate that an image has the required tags
  */
@@ -75,11 +80,14 @@ export async function validateTags(
 	/** Must have at least one of these keys */
 	orKeys?: Array<keyof ImageTags>,
 	log = true,
-): Promise<boolean> {
+): Promise<ValidateTagsResult> {
+	const result: ValidateTagsResult = {
+		issues: [],
+		valid: true,
+	}
+
 	const tags =
 		typeof imagePathOrTags === 'string' ? await getTags(imagePathOrTags) : imagePathOrTags
-
-	let valid = true
 
 	// Check all keys if no "and" or "or" keys are specified
 	if (orKeys === undefined && andKeys === undefined) {
@@ -87,11 +95,12 @@ export async function validateTags(
 		const keysUnseen = allKeys.filter((key) => tags[key] === undefined)
 
 		if (keysUnseen.length > 0) {
+			result.issues.push(`Tags are missing keys: ${keysUnseen.join(', ')}`)
 			if (log) {
-				console.log(`Tags are missing keys: ${keysUnseen.join(', ')}`)
+				console.log(result.issues.at(-1))
 			}
 
-			valid = false
+			result.valid = false
 		}
 	}
 
@@ -99,8 +108,11 @@ export async function validateTags(
 		const orKeysSeen = orKeys.filter((key) => tags[key] !== undefined)
 
 		if (orKeysSeen.length === 0) {
-			console.log(`Tags should have at least one of the keys: ${orKeys.join(', ')}`)
-			valid = false
+			result.issues.push(`Tags should have at least one of the keys: ${orKeys.join(', ')}`)
+			if (log) {
+				console.log(result.issues.at(-1))
+			}
+			result.valid = false
 		}
 	}
 
@@ -108,28 +120,31 @@ export async function validateTags(
 		const andKeysUnseen = andKeys.filter((key) => tags[key] === undefined)
 
 		if (andKeysUnseen.length > 0) {
+			result.issues.push(`Tags are missing the keys: ${andKeysUnseen.join(', ')}`)
 			if (log) {
-				console.log(`Tags are missing the keys: ${andKeysUnseen.join(', ')}`)
+				console.log(result.issues.at(-1))
 			}
 
-			valid = false
+			result.valid = false
 		}
 	}
 
 	// Check labels if no value check is defined
 	if (tags.label !== undefined && !VALID_LABELS.includes(tags.label)) {
+		result.issues.push(`Tag value for 'label' is invalid: ${tags.label}`)
 		if (log) {
-			console.log(`Tag value for 'label' is invalid: ${tags.label}`)
+			console.log(result.issues.at(-1))
 		}
 
-		valid = false
+		result.valid = false
 	}
 
-	return valid
+	return result
 }
 
 // Custom subset that we actually use
 export type ImageTags = {
+	aphexMetadata?: JsonObject | undefined
 	/** Human Name */
 	creator?: string | undefined
 	/** Organization */
@@ -137,7 +152,6 @@ export type ImageTags = {
 	/** Image Type, e.g. 'animation', 'diagram', 'illustration', 'screenshot', 'image', 'photo', 'render', 'video' */
 	label?: Label | undefined
 	preservedFileName?: string | undefined
-	processMetadata?: ProcessMetadata | undefined
 }
 
 /**
@@ -227,20 +241,20 @@ export async function getTags(imagePath: string): Promise<ImageTags> {
 	}
 
 	return {
+		aphexMetadata: parseUserComment(userComment),
 		creator: creator === undefined ? undefined : typeof creator === 'string' ? creator : creator[0],
 		credit,
 		label: label !== undefined && isValidLabel(label) ? label : undefined,
 		preservedFileName,
-		processMetadata: parseUserComment(userComment),
 	}
 }
 
-function parseUserComment(userComment: string | undefined): ProcessMetadata | undefined {
+function parseUserComment(userComment: string | undefined): JsonObject | undefined {
 	if (userComment === undefined) return undefined
 
 	try {
 		// eslint-disable-next-line ts/no-unsafe-type-assertion
-		return JSON.parse(userComment) as ProcessMetadata
+		return JSON.parse(userComment) as JsonObject
 	} catch {
 		console.error(`Error parsing UserComment JSON: ${userComment}`)
 		return undefined
@@ -251,8 +265,8 @@ function parseUserComment(userComment: string | undefined): ProcessMetadata | un
  * Set the tags on an image
  */
 export async function setTags(imagePath: string, imageTags: ImageTags) {
-	const { creator, credit, label, preservedFileName, processMetadata } = imageTags
-	const userComment = processMetadata ? JSON.stringify(processMetadata) : undefined
+	const { aphexMetadata, creator, credit, label, preservedFileName } = imageTags
+	const userComment = aphexMetadata ? JSON.stringify(aphexMetadata) : undefined
 
 	// We explicitly use XMP metadata because it's compatible across all file types and not clobbered by Apple Photos
 	// Values explicitly passed as undefined will "erase" the value
@@ -264,7 +278,7 @@ export async function setTags(imagePath: string, imageTags: ImageTags) {
 		...('preservedFileName' in imageTags
 			? { 'XMP:PreservedFileName': preservedFileName ?? '' }
 			: {}),
-		...('processMetadata' in imageTags ? { 'XMP:UserComment': userComment ?? '' } : {}),
+		...('aphexMetadata' in imageTags ? { 'XMP:UserComment': userComment ?? '' } : {}),
 	}
 
 	await exiftool.write(imagePath, tags, {
@@ -295,9 +309,7 @@ export async function cloneTags(
 
 	const keys =
 		includeKeys ??
-		(['creator', 'credit', 'label', 'preservedFileName', 'processMetadata'] as Array<
-			keyof ImageTags
-		>)
+		(['creator', 'credit', 'label', 'preservedFileName', 'aphexMetadata'] as Array<keyof ImageTags>)
 
 	let tagsToAssign: ImageTags = {}
 	for (const key of keys) {

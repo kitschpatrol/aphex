@@ -1,92 +1,136 @@
-console.log('I am not an empty file!')
+import type { OmitDeep, Simplify } from 'type-fest'
+import defu from 'defu'
+import fse from 'fs-extra'
+import type { ExportApplePhotoOptions, ExportApplePhotoResult } from './pipeline/image-export'
+import type { ManageMetadataOptions, ManageMetadataResult } from './pipeline/image-metadata'
+import type { ProcessImageOptions, ProcessImageResult } from './pipeline/image-process'
+import type { PhotoInfo } from './utilities/image/aphex-swift-bridge'
+import { defaultExportApplePhotoOptions, exportApplePhoto } from './pipeline/image-export'
+import { defaultManageMetadataOptions, manageMetadata } from './pipeline/image-metadata'
+import { defaultProcessImageOptions, processPhotos } from './pipeline/image-process'
+import { ensureDirectoryExists, getTempDirectory } from './utilities/file'
+import { assertSingleElement } from './utilities/general'
 
-// import { exportViaAppleScriptGui } from './engines/applescript-gui'
-// import { exportViaFileSystem } from './engines/file-system'
-// import { exportViaOsxphotos } from './engines/osxphotos'
-// import { exportViaSwiftPhotoKit } from './engines/swift-photokit'
+type SyncOptions = {
+	deleteOthers: boolean
+}
 
-// export type { ExportPhotoOptions } from './utilities/image/apple-photos'
-// export { defaultExportPhotoOptions } from './utilities/image/apple-photos'
+const defaultSyncOptions: ExportOptions['syncOptions'] = 'disabled'
 
-// Type ExportOptions = {
-// 	engine?:
-// 		| 'applescript-gui'
-// 		| 'file-system'
-// 		| 'osxphotos'
-// 		| 'osxphotos-photokit'
-// 		| 'osxphotos-photos'
-// 		| 'swift-photokit'
-// 		| 'swift-photokit-orientation'
-// }
+type ExportOptions = {
+	exportOptions: ExportApplePhotoOptions
+	metadataOptions: 'disabled' | ManageMetadataOptions
+	processOptions: 'disabled' | ProcessImageOptions
+	syncOptions: 'disabled' | SyncOptions
+}
 
-// /**
-//  * Export an album to a directory.
-//  * @param album - The album to export.
-//  * @param destinationDirectory - The directory to export the album to.
-//  * @param options - Export options including which engine to use.
-//  * @returns The path to the exported album.
-//  */
-// export async function exportAlbum(
-// 	album: string,
-// 	destinationDirectory: string,
-// 	options?: ExportOptions,
-// ): Promise<string> {
-// 	const engine = options?.engine ?? 'applescript-gui'
+const defaultExportOptions: ExportOptions = {
+	exportOptions: defaultExportApplePhotoOptions,
+	metadataOptions: defaultManageMetadataOptions,
+	processOptions: defaultProcessImageOptions,
+	syncOptions: defaultSyncOptions,
+}
 
-// 	switch (engine) {
-// 		case 'applescript-gui': {
-// 			const results = await exportViaAppleScriptGui(album, destinationDirectory)
-// 			return results.join(', ')
-// 		}
-// 		case 'file-system':
-// 		case 'osxphotos':
-// 		case 'osxphotos-photokit':
-// 		case 'osxphotos-photos':
-// 		case 'swift-photokit':
-// 		case 'swift-photokit-orientation': {
-// 			throw new Error(`Album export not supported for engine: ${engine}`)
-// 		}
-// 	}
-// }
+/** Some fields omitted for relevance...  */
+type ExportResults = {
+	exportResult: Simplify<Omit<ExportApplePhotoResult, 'exportOptions' | 'path'>>
+	metadataResult: ManageMetadataResult | undefined
+	processResult:
+		| Simplify<OmitDeep<ProcessImageResult, 'input.path' | 'output.path' | 'path'>>
+		| undefined
+	// SyncResult: 'todo',
+}
 
-// /**
-//  * Export a photo to a directory.
-//  * @param uuid - The UUID of the photo to export.
-//  * @param destinationDirectory - The directory to export the photo to.
-//  * @param options - Export options including which engine to use.
-//  * @returns The path to the exported photo.
-//  */
-// export async function exportPhoto(
-// 	uuid: string,
-// 	destinationDirectory: string,
-// 	options?: ExportOptions,
-// ): Promise<string> {
-// 	const engine = options?.engine ?? 'file-system'
+type ExportResult = {
+	options: ExportOptions
+	path: string
+	results: ExportResults
+}
 
-// 	switch (engine) {
-// 		case 'applescript-gui': {
-// 			const results = await exportViaAppleScriptGui(uuid, destinationDirectory)
-// 			return results[0] // Return first exported photo path
-// 		}
-// 		case 'file-system': {
-// 			return exportViaFileSystem(uuid, destinationDirectory)
-// 		}
-// 		case 'osxphotos': {
-// 			return exportViaOsxphotos(uuid, destinationDirectory, { mode: 'export' })
-// 		}
-// 		case 'osxphotos-photokit': {
-// 			return exportViaOsxphotos(uuid, destinationDirectory, { mode: 'photokit' })
-// 		}
-// 		case 'osxphotos-photos': {
-// 			return exportViaOsxphotos(uuid, destinationDirectory, { mode: 'photos-export' })
-// 		}
-// 		case 'swift-photokit': {
-// 			return exportViaSwiftPhotoKit(uuid, destinationDirectory, { mode: 'requestimage' })
-// 		}
-// 		case 'swift-photokit-orientation': {
-// 			return exportViaSwiftPhotoKit(uuid, destinationDirectory, {
-// 				mode: 'requestimagedataandorientation',
-// 			})
-// 		}
-// 	}
-// }
+/**
+ * Export...
+ */
+export async function exportPhoto(
+	identifier: PhotoInfo | string,
+	destinationDirectory: string,
+	options?: Partial<ExportOptions>,
+): Promise<ExportResult> {
+	const resolvedOptions: ExportOptions = defu(options, defaultExportOptions)
+	const { exportOptions, metadataOptions, processOptions, syncOptions } = resolvedOptions
+
+	const resolvedDestinationDirectory = await ensureDirectoryExists(destinationDirectory)
+
+	if (syncOptions !== 'disabled') {
+		console.log('Sync not implemented')
+	}
+
+	const exportDirectory =
+		processOptions === 'disabled'
+			? resolvedDestinationDirectory
+			: await getTempDirectory('export-photo')
+	const exportResult = await exportApplePhoto(identifier, exportDirectory, exportOptions)
+
+	let processResult: ProcessImageResult | undefined
+	if (processOptions !== 'disabled') {
+		const processResults = await processPhotos(
+			[exportResult.path],
+			destinationDirectory,
+			processOptions,
+		)
+		assertSingleElement(processResults)
+		processResult = processResults[0]
+
+		// Clean up temp export directory
+		console.log(`Cleaning up: ${exportDirectory}`)
+		await fse.rm(exportDirectory, { force: true, recursive: true })
+	}
+
+	const finalImagePath = processResult?.path ?? exportResult.path
+
+	let metadataResult: ManageMetadataResult | undefined
+	if (metadataOptions !== 'disabled') {
+		metadataResult = await manageMetadata(
+			exportResult.photoInfo,
+			finalImagePath,
+			metadataOptions,
+			resolvedOptions,
+		)
+	}
+
+	const exportReport: ExportResult = {
+		options: resolvedOptions,
+		path: finalImagePath,
+		results: {
+			exportResult: cleanExportResults(exportResult),
+			metadataResult,
+			processResult: cleanProcessResults(processResult),
+		},
+	}
+
+	return exportReport
+}
+
+function cleanExportResults(result: ExportApplePhotoResult): ExportResults['exportResult'] {
+	return {
+		exportEngine: result.exportEngine,
+		photoInfo: result.photoInfo,
+	}
+}
+
+function cleanProcessResults(
+	result: ProcessImageResult | undefined,
+): ExportResults['processResult'] {
+	if (result === undefined) {
+		return undefined
+	}
+
+	const { input, output, path, ...rest } = result
+	const { path: inputPath, ...strippedInput } = input
+	const { path: outputPath, ...strippedOutput } = output
+
+	return {
+		...rest,
+		input: strippedInput,
+		output: strippedOutput,
+	}
+}

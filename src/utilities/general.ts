@@ -175,3 +175,12 @@ export function ensureArray<T>(value: T | T[] | undefined): T[] {
 
 	return Array.isArray(value) ? value : [value]
 }
+
+/**
+ * Ensure the length has a single item
+ */
+export function assertSingleElement<T>(array: T[]): asserts array is [T] {
+	if (array.length !== 1) {
+		throw new Error(`Expected array of length 1, got ${array.length}`)
+	}
+}

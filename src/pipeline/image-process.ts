@@ -1,3 +1,4 @@
+import defu from 'defu'
 import fse from 'fs-extra'
 import os from 'node:os'
 import path from 'node:path'
@@ -12,7 +13,8 @@ import type {
 } from '../utilities/image/convert'
 import type { ImageInfo } from '../utilities/image/image'
 import type { ImageMimeType } from '../utilities/image/mime'
-import type { ExportedPhoto, ExportEngine, ExportPhotoOptions } from './export-photo'
+import type { ExportApplePhotoOptions, ExportEngine } from './image-export'
+import { ensureDirectoryExists, getTempDirectory } from '../utilities/file'
 import { sipsTempCleanup } from '../utilities/general'
 import {
 	assignColorProfile,
@@ -20,7 +22,7 @@ import {
 	needsColorConversion,
 	normalizeColorProfile,
 } from '../utilities/image/color'
-import { calculateSimilarity, identicalImageExistsInDirectory } from '../utilities/image/compare'
+import { calculateSimilarity } from '../utilities/image/compare'
 import {
 	compressImage,
 	convertToPng,
@@ -28,7 +30,7 @@ import {
 	resizePngToFit,
 } from '../utilities/image/convert'
 import { getImageInfo } from '../utilities/image/image'
-import { cloneTags, getTags, setTags, stripTags } from '../utilities/image/tags'
+import { cloneTags, stripTags } from '../utilities/image/tags'
 
 export type ProcessImageOptions = CompressImageOptions & {
 	/** Fallback color profile applied when source profile is not in preserve list */
@@ -55,6 +57,7 @@ export type ProcessImageOptions = CompressImageOptions & {
 export type ProcessImageResult = {
 	input: ImageInfo
 	output: ImageInfo
+	path: string
 	report: {
 		color: Awaited<ReturnType<typeof normalizeColorProfile>>
 		compression: Awaited<ReturnType<typeof compressImage>>['compression']
@@ -66,12 +69,6 @@ export type ProcessImageResult = {
 			ssim: number
 		}
 	}
-}
-
-export type ProcessMetadata = ProcessImageResult & {
-	exportEngine: ExportEngine
-	options: { export: ExportPhotoOptions; process: ProcessImageOptions }
-	photoInfo: PhotoInfo
 }
 
 export const defaultProcessImageOptions: ProcessImageOptions = {
@@ -102,114 +99,73 @@ export const defaultProcessImageOptions: ProcessImageOptions = {
 	],
 }
 
+const SINGLE_FILE_SERIAL = true
+
 /**
  * Process one or more exported photos
  */
 export async function processPhotos(
-	exportedPhotos: ExportedPhoto[],
-	outputDirectory: string,
-	options: ProcessImageOptions,
+	imagePaths: string[],
+	destinationDirectory: string,
+	options?: Partial<ProcessImageOptions>,
 ): Promise<ProcessImageResult[]> {
-	await fse.ensureDir(outputDirectory)
+	const resolvedOptions = options
+		? defu(options, defaultProcessImageOptions)
+		: defaultProcessImageOptions
 
-	// Higher crashes the machine? Default 1.5x
-	const threads = Math.floor(os.availableParallelism() * 0.5)
-	console.log(`Using ${threads} threads for processing`)
-	const piscina = new Piscina({
-		filename: new URL('workers/process-image-worker.js', import.meta.url).href,
-		maxThreads: threads,
-		minThreads: threads,
-	})
+	const tempProcessOutputDirectory = await getTempDirectory('process', 'images')
+	let processImageResults: ProcessImageResult[]
 
-	// Process images in parallel
-	const tempProcessOutputDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.kitschpatrol.aphex.process.`),
-	)
+	// eslint-disable-next-line ts/no-unnecessary-condition
+	if (SINGLE_FILE_SERIAL && imagePaths.length === 1) {
+		// Single images processed on main thread, no observed speed advantage
+		// from skipping parallelization
+		processImageResults = [
+			await processImage(imagePaths[0], tempProcessOutputDirectory, resolvedOptions),
+		]
+	} else {
+		// Multiple images processed in parallel in background process
+		const threads = Math.floor(os.availableParallelism() * 0.5)
+		// Higher crashes the machine? Default 1.5x
+		// console.log(`Using ${threads} threads for processing`)
+		const piscina = new Piscina({
+			filename: new URL('workers/process-image-worker.js', import.meta.url).href,
+			maxThreads: threads,
+			minThreads: threads,
+		})
 
-	const processImageResults = await Promise.all<ProcessImageResult>(
-		exportedPhotos.map(async ({ path }) =>
-			// eslint-disable-next-line ts/no-unsafe-return
-			piscina.run({
-				destinationDirectory: tempProcessOutputDirectory,
-				options,
-				sourceImagePath: path,
-			}),
-		),
-	)
+		// Process images in parallel
+		processImageResults = await Promise.all<ProcessImageResult>(
+			imagePaths.map(async (path) =>
+				// eslint-disable-next-line ts/no-unsafe-return
+				piscina.run({
+					destinationDirectory: tempProcessOutputDirectory,
+					options: resolvedOptions,
+					sourceImagePath: path,
+				}),
+			),
+		)
+	}
 
-	// Copy processed images to output if they're different
-	let updatedImageCount = 0
+	// Copy processed images to output
+	const resolvedDestinationDirectory = await ensureDirectoryExists(destinationDirectory)
 	for (const result of processImageResults) {
-		const exportedPhoto = exportedPhotos.find(({ path }) => path === result.input.path)
-		if (exportedPhoto === undefined) {
-			throw new Error(
-				`Exported photo info not found for processed image with input "${result.input.path}"`,
-			)
-		}
-
-		// Write tags, pulling from the original image
-		const processingOutputPath = result.output.path
-		const finalOutputPath = path.join(outputDirectory, path.basename(result.output.path))
-		const { exportEngine, exportOptions, photoInfo } = exportedPhoto
-
-		const tags = await getTags(photoInfo.original.filePath)
-		result.output.path = finalOutputPath
-		tags.processMetadata = {
-			exportEngine,
-			options: {
-				export: exportOptions,
-				process: options,
-			},
-			photoInfo,
-			...result,
-		}
-
-		await setTags(processingOutputPath, tags)
-
-		// See if the processed image is actually different from what we had before
-		const identicalImageExists = await identicalImageExistsInDirectory(
-			processingOutputPath,
-			outputDirectory,
+		const finalOutputPath = path.join(
+			resolvedDestinationDirectory,
+			path.basename(result.output.path),
 		)
 
-		// Use original image if no material change
-		if (identicalImageExists) {
-			console.log(
-				`Image wasn't changed by processing, keeping original: "${path.basename(result.output.path)}"`,
-			)
-			continue
-		}
-
-		// Move to output directory
-		updatedImageCount += 1
-		console.log(`Image updated: "${path.basename(result.output.path)}"`)
-
-		// Delete original
-		await fse.rm(result.input.path, { force: true })
-
-		await fse.move(processingOutputPath, finalOutputPath, { overwrite: true })
-
-		// TODO separate step?
-		// Validate exif data
-		// const isValid = await validateTags(
-		// 	result.output.path,
-		// 	['processMetadata', 'preservedFileName', 'label'], // All required ("and")
-		// 	['credit', 'creator'], // One required ("or")
-		// )
-		// if (!isValid) {
-		// 	throw new Error(`Invalid XMP data for "${result.output.path}"`)
-		// }
+		await fse.move(result.path, finalOutputPath, { overwrite: true })
+		// Overwrite path...
+		result.path = finalOutputPath
 	}
 
 	// Clean up
 	await fse.rm(tempProcessOutputDirectory, { force: true, recursive: true })
-
-	console.log(
-		`Processed ${processImageResults.length} images and actually updated ${updatedImageCount}`,
-	)
-
-	const sipsTempFileCount = await sipsTempCleanup()
-	console.log(`Cleaned up ${sipsTempFileCount} probable SIPS temp files from "${os.tmpdir()}"`)
+	await sipsTempCleanup()
+	// Sips leave temp files...
+	// const sipsTempFileCount = await sipsTempCleanup()
+	// console.log(`Cleaned up ${sipsTempFileCount} probable SIPS temp files from "${os.tmpdir()}"`)
 
 	return processImageResults
 }
@@ -228,10 +184,6 @@ export async function processImage(
 	const startTime = performance.now()
 	const input = await getImageInfo(sourceImagePath)
 
-	const tempDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.kitschpatrol.aphex.process-image.`),
-	)
-
 	// Result will be updated as we go
 	const report: Partial<ProcessImageResult['report']> = {
 		date: new Date(),
@@ -240,6 +192,7 @@ export async function processImage(
 	// Always do lossless png compression first if passthrough is possible, in case that gets us under the target
 	// And strips out unnecessary alpha channels
 	let workingImagePath = sourceImagePath
+	const tempDirectory = await getTempDirectory('process', 'image')
 	if (options.passthroughFormats.includes('png') && input.mime === 'png') {
 		workingImagePath = await optimizePng(workingImagePath, tempDirectory)
 	}
@@ -321,12 +274,13 @@ export async function processImage(
 	await stripTags(workingImagePath)
 	await assignColorProfile(workingImagePath, normalizedColorProfile)
 
-	await cloneTags(sourceImagePath, workingImagePath, [
-		'creator',
-		'credit',
-		'label',
-		'preservedFileName',
-	])
+	// Happens later
+	// await cloneTags(sourceImagePath, workingImagePath, [
+	// 	'creator',
+	// 	'credit',
+	// 	'label',
+	// 	'preservedFileName',
+	// ])
 
 	// Who cares
 	// await cloneFileCreationTime(sourceImagePath, destinationImagePath)
@@ -364,6 +318,7 @@ export async function processImage(
 	return {
 		input,
 		output,
+		path: destinationImagePath,
 		report,
 	}
 }

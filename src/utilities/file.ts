@@ -137,11 +137,10 @@ export function assertPathsExist(...filePaths: string[]): void {
  * @returns The fully expanded directory path which definitely exists
  */
 export async function ensureDirectoryExists(filePath: string): Promise<string> {
-	const directory = path.dirname(filePath)
 	// Expand home directory for the entire file path
-	const expandedDirectory = directory.startsWith('~')
-		? path.join(os.homedir(), directory.slice(1))
-		: directory
+	const expandedDirectory = filePath.startsWith('~')
+		? path.join(os.homedir(), filePath.slice(1))
+		: filePath
 
 	await fse.ensureDir(expandedDirectory)
 	return expandedDirectory
