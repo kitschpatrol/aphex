@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { aphexPhotoInfo } from '../src/utilities/image/aphex-swift-bridge'
+import { aphexPhotoInfo } from '../src/aphex-swift/cli-bridge'
 import { getColorProfile } from '../src/utilities/image/color'
 import {
 	calculatePSNR,

@@ -3,18 +3,15 @@
 import { deepEqual } from 'fast-equals'
 import fse from 'fs-extra'
 import path from 'node:path'
+import type { AlbumInfo, PhotoInfo } from '../aphex-swift/cli-bridge'
 import type { ExportOptions } from '../index'
-import type { AlbumInfo, PhotoInfo } from '../utilities/image/aphex-swift-bridge'
 import type { ImageTags } from '../utilities/image/tags'
+import { resolveIdentifiers, resolvePhotoIdentifier } from '../aphex-swift/identifiers'
 import { defaultExportOptions, defaultSyncOptions } from '../index'
 import { mergeDefaults } from '../utilities/defu'
 import { stripExtension } from '../utilities/file'
 import { getTags } from '../utilities/image/tags'
-import {
-	getImagePathWithFileName,
-	resolveIdentifiers,
-	resolvePhotoIdentifier,
-} from './image-export'
+import { getImagePathWithFileName } from './image-export'
 
 // Diff strategy compares the matched file in the destination directory
 // to the file under export consideration in Photos.app
@@ -86,6 +83,8 @@ async function getDestinationFiles(destinationDirectory: string): Promise<Destin
 
 /**
  * Create a sync plan
+ *
+ * TODO how to handle non-image files?
  */
 export async function getSyncPlanForImages(
 	identifiers: Array<AlbumInfo | PhotoInfo | string>,
@@ -246,7 +245,6 @@ async function isDifferent(
 			case 'force-update': {
 				// Special case... normally handled by flag instead
 				return diffStrategy
-				break
 			}
 
 			case 'metadata-options': {

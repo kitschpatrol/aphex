@@ -1,17 +1,13 @@
-import type { OmitDeep, PickDeep, Simplify } from 'type-fest'
+import type { OmitDeep, Simplify } from 'type-fest'
 import fse from 'fs-extra'
 import path from 'node:path'
+import type { AlbumInfo, PhotoInfo } from './aphex-swift/cli-bridge'
 import type { ExportApplePhotoOptions, ExportApplePhotoResult } from './pipeline/image-export'
 import type { ManageMetadataOptions, ManageMetadataResult } from './pipeline/image-metadata'
 import type { ProcessImageOptions, ProcessImageResult } from './pipeline/image-process'
 import type { SyncOptions, SyncResult } from './pipeline/image-sync'
-import type { AlbumInfo, PhotoInfo } from './utilities/image/aphex-swift-bridge'
-import {
-	defaultExportApplePhotoOptions,
-	exportApplePhotos,
-	resolveIdentifiers,
-	resolvePhotoIdentifier,
-} from './pipeline/image-export'
+import { resolveIdentifiers, resolvePhotoIdentifier } from './aphex-swift/identifiers'
+import { defaultExportApplePhotoOptions, exportApplePhotos } from './pipeline/image-export'
 import { defaultManageMetadataOptions, manageMetadataBatch } from './pipeline/image-metadata'
 import { defaultProcessImageOptions, processPhotos } from './pipeline/image-process'
 import { getSyncPlanForImages } from './pipeline/image-sync'

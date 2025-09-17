@@ -19,8 +19,8 @@ import { confirm, log, select, spinner, text } from '@clack/prompts'
 import { exiftool } from 'exiftool-vendored'
 import { globby } from 'globby'
 import open from 'open'
-import type { PhotoInfo } from '../src/utilities/image/aphex-swift-bridge'
-import { aphexPhotoInfo } from '../src/utilities/image/aphex-swift-bridge'
+import type { PhotoInfo } from '../src/aphex-swift/cli-bridge'
+import { aphexPhotoInfo } from '../src/aphex-swift/cli-bridge'
 import {
 	cloneTags,
 	// Legacy:

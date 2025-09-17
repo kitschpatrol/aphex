@@ -1,5 +1,5 @@
 import { getTempDirectory } from '../../utilities/file'
-import { aphexExport } from '../../utilities/image/aphex-swift-bridge'
+import { aphexExport } from '../../aphex-swift/cli-bridge'
 
 /**
  * Export a photo via aphex-swift command line tool using PhotoKit

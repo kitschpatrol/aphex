@@ -1,26 +1,16 @@
-import {
-	assertNonEmptyStringAndNotWhitespace,
-	isNonEmptyStringAndNotWhitespace,
-} from '@sindresorhus/is'
+import { isNonEmptyStringAndNotWhitespace } from '@sindresorhus/is'
 import fse from 'fs-extra'
 import { slug as githubSlug } from 'github-slugger'
 import path from 'node:path'
-import type { AlbumInfo, PhotoInfo } from '../utilities/image/aphex-swift-bridge'
+import type { AlbumInfo, PhotoInfo } from '../aphex-swift/cli-bridge'
 import type { ImageMimeType } from '../utilities/image/mime'
 import type { ExportViaAppleScriptGuiOptions } from './engines/applescript-gui'
-import type { ProcessImageOptions } from './image-process'
+import { resolveIdentifiers, resolvePhotoIdentifier } from '../aphex-swift/identifiers'
 import { mergeDefaults } from '../utilities/defu'
 import { ensureDirectoryExists, normalizeExtension } from '../utilities/file'
 import { assertSingleElement } from '../utilities/general'
-import {
-	aphexAlbumInfo,
-	aphexPhotoInfo,
-	isAlbumInfo,
-	isPhotoInfo,
-} from '../utilities/image/aphex-swift-bridge'
 import { hasAlpha } from '../utilities/image/image'
 import { lookupImageMimeType } from '../utilities/image/mime'
-import { getTags } from '../utilities/image/tags'
 import { exportViaAppleScript } from './engines/applescript'
 import { exportViaAppleScriptGui } from './engines/applescript-gui'
 import { exportViaFileSystem } from './engines/file-system'
@@ -40,16 +30,24 @@ export type ExportApplePhotoOptions = {
 	fileNameSluggify: boolean
 }
 
+export type ExportApplePhotoResult = {
+	exportEngine: ExportEngine
+	exportOptions: ExportApplePhotoOptions
+	path: string
+	photoInfo: PhotoInfo
+}
+
 export const defaultExportApplePhotoOptions: ExportApplePhotoOptions = {
 	appleScriptGuiOptions: {
 		colorProfile: 'sRGB',
-		//
-		// fileName: undefined, // Set later
+		// Set later
+		// fileName: undefined,
 		includeLocation: false,
 		includeMetadata: false,
-		//
+		// Set later
 		// maxSizeType: undefined,
-		// maxSizeValue: undefined, // Pro Display XDR res is 6016x3384
+		// Pro Display XDR res is 6016x3384
+		// maxSizeValue: undefined,
 		photoKind: 'PNG',
 		photoSize: 'Full Size',
 	},
@@ -96,82 +94,6 @@ export const defaultExportApplePhotoOptions: ExportApplePhotoOptions = {
 	fileNameNormalizeExtensions: true,
 	fileNamePrecedence: ['title', 'fileName', 'uuid'],
 	fileNameSluggify: true,
-}
-
-// ------------------------------
-
-/**
- * Takes a mix of photos, albums, strings, all resolved to a single array of PhotoInfo objects
- */
-export async function resolveIdentifiers(
-	identifiers: Array<AlbumInfo | PhotoInfo | string>,
-): Promise<PhotoInfo[]> {
-	const photoInfos = identifiers.filter((identifier) => isPhotoInfo(identifier))
-	const identifierAlbumUuids = identifiers
-		.filter((identifier) => isAlbumInfo(identifier))
-		.map((identifier) => identifier.uuid)
-	const identifierStrings = identifiers.filter((identifier) => typeof identifier === 'string')
-
-	photoInfos.push(...(await aphexPhotoInfo([...identifierAlbumUuids, ...identifierStrings])))
-
-	if (photoInfos.length === 0) {
-		throw new Error(
-			`No photos found for identifiers "${identifiers.map((identifier) => JSON.stringify(identifier)).join(', ')}"`,
-		)
-	}
-
-	// Ensure unique by uuid
-	const seen = new Set<string>()
-	const unique = photoInfos.filter((photo) => {
-		if (seen.has(photo.uuid)) return false
-		seen.add(photo.uuid)
-		return true
-	})
-
-	return unique
-}
-
-/**
- * Albums
- */
-export async function resolveAlbumIdentifier(identifier: AlbumInfo | string): Promise<AlbumInfo> {
-	if (isAlbumInfo(identifier)) {
-		return identifier
-	}
-
-	const aphexAlbumInfoResult = await aphexAlbumInfo(identifier)
-	if (aphexAlbumInfoResult.length === 0) {
-		throw new Error(`No album found for identifier "${identifier}"`)
-	}
-	if (aphexAlbumInfoResult.length > 1) {
-		throw new Error(`Multiple albums found for identifier "${identifier} — is it a photo?"`)
-	}
-
-	return aphexAlbumInfoResult[0]
-}
-
-/**
- * Get photo info if needed, and throw errors if it's not a photo
- */
-export async function resolvePhotoIdentifier(identifier: PhotoInfo | string): Promise<PhotoInfo> {
-	if (isPhotoInfo(identifier)) {
-		return identifier
-	}
-	const aphexPhotoInfoResult = await aphexPhotoInfo(identifier)
-	if (aphexPhotoInfoResult.length === 0) {
-		throw new Error(`No photo asset found for identifier "${identifier}"`)
-	}
-	if (aphexPhotoInfoResult.length > 1) {
-		throw new Error(`Multiple photo assets found for identifier "${identifier} — is it an album?"`)
-	}
-	return aphexPhotoInfoResult[0]
-}
-
-export type ExportApplePhotoResult = {
-	exportEngine: ExportEngine
-	exportOptions: ExportApplePhotoOptions
-	path: string
-	photoInfo: PhotoInfo
 }
 
 /**
@@ -311,83 +233,6 @@ export function getImagePathWithFileName(
 
 	throw new Error("No valid filename option found, can't name image")
 }
-
-// /**
-//  * Export a single photo
-//  */
-// export async function exportPhoto(
-// 	identifier: PhotoInfo | string,
-// 	destinationDirectory: string,
-// 	exportOptions?: ExportPhotoOptions,
-// 	processOptions?: Partial<ProcessImageOptions>,
-// 	validateOptions?: Partial<ValidateTagsOptions>,
-// ): Promise<ExportedPhoto> {
-// 	// Populate options...
-// 	const resolvedExportOptions = mergeDefaults(exportOptions, defaultExportPhotoOptions)
-// 	const resolvedProcessOptions = processOptions
-// 		? mergeDefaults(processOptions, defaultProcessImageOptions)
-// 		: undefined
-// 	const resolvedValidateOptions = validateOptions
-// 		? mergeDefaults(validateOptions, defaultValidateTagsOptions)
-// 		: undefined
-
-// 	const engine = await getEngineForPhoto(photoInfo, resolvedExportOptions)
-
-// 	const exportedPhoto: ExportedPhoto = {
-// 		exportEngine: engine,
-// 		exportOptions: resolvedExportOptions,
-// 		path: '', // Will be set later
-// 		photoInfo,
-// 		processOptions: resolvedProcessOptions,
-// 		validateOptions: resolvedValidateOptions,
-// 	}
-
-// 	switch (engine) {
-// 		case 'file-system': {
-// 			const exportedPath = await exportViaFileSystem(photoInfo, destinationDirectory)
-// 			exportedPhoto.path = exportedPath
-// 			break
-// 		}
-// 		case 'photos-gui': {
-// 			const [exportedPath] = await exportViaAppleScriptGui(
-// 				photoInfo.uuid,
-// 				destinationDirectory,
-// 				resolvedExportOptions.appleScriptGuiOptions,
-// 			)
-
-// 			exportedPhoto.path = exportedPath
-
-// 			// Copy relevant metadata from the original photo since photos-gui doesn't preserve it
-// 			await cloneTags(photoInfo.original.filePath, exportedPhoto.path, [
-// 				'credit',
-// 				'creator',
-// 				'preservedFileName',
-// 			])
-
-// 			break
-// 		}
-// 		case 'swift-photokit': {
-// 			const exportedPath = await exportViaSwiftPhotoKit(photoInfo.uuid, destinationDirectory)
-// 			exportedPhoto.path = exportedPath
-// 			break
-// 		}
-// 	}
-
-// 	if (resolvedProcessOptions !== undefined) {
-// 		const [result] = await processPhotos(
-// 			[exportedPhoto],
-// 			destinationDirectory,
-// 			resolvedProcessOptions,
-// 		)
-
-// 		exportedPhoto.path = result.output.path
-// 	}
-
-// 	if (resolvedValidateOptions !== undefined) {
-// 	}
-
-// 	return exportedPhoto
-// }
 
 async function getEngineForPhoto(
 	photoInfo: PhotoInfo,
@@ -703,102 +548,19 @@ async function getEngineForPhoto(
 // 	return exportedPhotos
 // }
 
-/**
- * Sync a single album to a folder, deleting any images that are no longer in the album
- *
- * TODO this could be much simpler? Needs dynamic exif metadata handling.
- */
-async function shouldKeepImage(
-	filename: string,
-	exportDirectory: string,
-	albumPhotoInfo: PhotoInfo[],
-	exportOptions?: ExportApplePhotoOptions,
-	processOptions?: ProcessImageOptions,
-): Promise<boolean> {
-	if (lookupImageMimeType(filename) === undefined) {
-		console.log(`Detected non-image file "${filename}"`)
-		return false
-	}
+// // Titles MUST be present and MUST be unique
+// function findPhotoInfoByTitleFileName(
+// 	titleFileName: string,
+// 	photoInfoArray: PhotoInfo[],
+// ): PhotoInfo | undefined {
+// 	const titleFromFileName = path.basename(titleFileName, path.extname(titleFileName))
+// 	const photoInfo = photoInfoArray.find(({ original, title }) => {
+// 		assertNonEmptyStringAndNotWhitespace(title)
+// 		return (
+// 			titleFromFileName === title ||
+// 			titleFromFileName === path.basename(original.fileName, path.extname(original.fileName))
+// 		)
+// 	})
 
-	const existingImageTags = await getTags(path.join(exportDirectory, filename))
-
-	const photoInfo = albumPhotoInfo.find(
-		({ uuid }) => uuid === existingImageTags.aphexMetadata?.photoInfo.uuid,
-	)
-
-	// Delete images that aren't in the album
-	if (photoInfo === undefined) {
-		console.log(`Found non-album image: "${filename}"`)
-		return false
-	}
-
-	// Delete images without  process metadata (should never happen, but helps type system)
-	if (existingImageTags.aphexMetadata === undefined) {
-		console.log(`Found unprocessed image: "${filename}"`)
-		return false
-	}
-
-	// Delete images that have been modified or have different export or processing options
-	if (existingImageTags.aphexMetadata.photoInfo.dateModified !== photoInfo.dateModified) {
-		console.log(`Found outdated image: "${filename}"`)
-		return false
-	}
-
-	if (
-		JSON.stringify(existingImageTags.aphexMetadata.photoInfo.edited ?? {}) !==
-		JSON.stringify(photoInfo.edited ?? {})
-	) {
-		console.log(`Found image with change in edit status: "${filename}"`)
-		console.log(existingImageTags.aphexMetadata.photoInfo.edited)
-		console.log(photoInfo.edited)
-		return false
-	}
-
-	if (
-		exportOptions !== undefined &&
-		JSON.stringify(existingImageTags.aphexMetadata.options.export) !== JSON.stringify(exportOptions)
-	) {
-		console.log(`Found image with change in export options: "${filename}"`)
-		return false
-	}
-
-	if (
-		processOptions !== undefined &&
-		JSON.stringify(existingImageTags.aphexMetadata.options.process) !==
-			JSON.stringify(processOptions)
-	) {
-		console.log(`Found image with change in processing options: "${filename}"`)
-		return false
-	}
-
-	// Finally, check for new metadata (in the original image)
-	const albumImageTags = await getTags(photoInfo.original.filePath)
-	if (
-		existingImageTags.credit !== albumImageTags.credit ||
-		existingImageTags.creator !== albumImageTags.creator ||
-		existingImageTags.preservedFileName !== albumImageTags.preservedFileName
-	) {
-		console.log(`Found image with updated metadata: "${filename}"`)
-		return false
-	}
-
-	console.log(`Found unchanged image: "${filename}"`)
-	return true
-}
-
-// Titles MUST be present and MUST be unique
-function findPhotoInfoByTitleFileName(
-	titleFileName: string,
-	photoInfoArray: PhotoInfo[],
-): PhotoInfo | undefined {
-	const titleFromFileName = path.basename(titleFileName, path.extname(titleFileName))
-	const photoInfo = photoInfoArray.find(({ original, title }) => {
-		assertNonEmptyStringAndNotWhitespace(title)
-		return (
-			titleFromFileName === title ||
-			titleFromFileName === path.basename(original.fileName, path.extname(original.fileName))
-		)
-	})
-
-	return photoInfo
-}
+// 	return photoInfo
+// }

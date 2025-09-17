@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-	aphexAlbumInfo,
-	aphexExport,
-	aphexPhotoInfo,
-} from '../src/utilities/image/aphex-swift-bridge'
+import { aphexAlbumInfo, aphexExport, aphexPhotoInfo } from '../src/aphex-swift/cli-bridge'
 import { tempDirectoryFixture } from './utilities/temp-directory'
 
 // Assumes your system library:

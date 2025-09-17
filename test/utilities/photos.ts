@@ -2,7 +2,7 @@ import fse from 'fs-extra'
 import path from 'node:path'
 import { stripExtension } from '../../src/utilities/file'
 import { ensureArray } from '../../src/utilities/general'
-import { aphexPhotoInfo } from '../../src/utilities/image/aphex-swift-bridge'
+import { aphexPhotoInfo } from '../../src/aphex-swift/cli-bridge'
 
 /**
  * Gets a sample photo UUID from the user's Photos library.

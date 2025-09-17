@@ -18,7 +18,7 @@ func logError(_ message: String) {
 @main
 struct aphex: ParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "A multi-command CLI tool for managing photo albums",
+        abstract: "Query and export images and albums from your macOS Photos.app library",
         subcommands: [AlbumInfo.self, PhotoInfo.self, Export.self]
     )
 }
@@ -55,7 +55,7 @@ struct PhotoInfo: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "photo-info",
         abstract:
-            "Get photo asset information for given identifiers (UUID, filename, album name, or photo path)"
+            "Get photo asset information for given identifiers (UUID, file name, image title, album name, or photo path)"
     )
 
     @Flag(name: .shortAndLong, help: "Case sensitive matching")
@@ -63,7 +63,7 @@ struct PhotoInfo: ParsableCommand {
 
     @Argument(
         help:
-            "Photo or album identifiers (UUIDs, filenames, album names, or photo paths). If no identifiers are provided, returns all photos in the library."
+            "Photo or album identifiers (UUIDs, file names, album names, image titles, or photo paths). If no identifiers are provided, returns all photos in the library."
     )
     var identifiers: [String] = []
 

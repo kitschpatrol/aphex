@@ -1,9 +1,9 @@
 import type { ExportOptions } from '..'
-import type { PhotoInfo } from '../utilities/image/aphex-swift-bridge'
+import type { PhotoInfo } from '../aphex-swift/cli-bridge'
 import type { AphexMetadata, ImageTags, ValidateTagsResult } from '../utilities/image/tags'
+import { resolveIdentifiers, resolvePhotoIdentifier } from '../aphex-swift/identifiers'
 import { mergeDefaults } from '../utilities/defu'
 import { cloneTags, setTags, validateTags } from '../utilities/image/tags'
-import { resolveIdentifiers, resolvePhotoIdentifier } from './image-export'
 
 export type ManageMetadataOptions = {
 	syncToEdited: boolean

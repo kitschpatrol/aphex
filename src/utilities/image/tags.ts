@@ -1,7 +1,7 @@
 import type { Tags } from 'exiftool-vendored'
 import { exiftool } from 'exiftool-vendored'
+import type { PhotoInfo } from '../../aphex-swift/cli-bridge'
 import type { ExportOptions } from '../../index'
-import type { PhotoInfo } from './aphex-swift-bridge'
 import { lookupImageMimeType } from './mime'
 
 export const VALID_LABELS = [

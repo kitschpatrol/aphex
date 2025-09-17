@@ -2,7 +2,7 @@ import is, { assert } from '@sindresorhus/is'
 import { execa } from 'execa'
 import path from 'node:path'
 import { packageDirectorySync } from 'package-directory'
-import { ensureArray } from '../general'
+import { ensureArray } from '../utilities/general'
 
 /**
  * TypeScript type definition for ResourceInfo from the Swift implementation
