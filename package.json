@@ -36,13 +36,11 @@
 		"dist/*"
 	],
 	"scripts": {
-		"build": "tsdown",
-		"build:native": "cd native/aphex-swift && ./build.sh",
+		"build": "pnpm run --sequential /^build:/",
+		"build:1-lib": "tsdown && cp ./src/pipeline/engines/applescript-gui.applescript ./dist",
+		"build:2-native": "cd native/aphex-swift && ./build.sh",
 		"clean": "git rm -f pnpm-lock.yaml ; git clean -fdX",
 		"fix": "ksc fix",
-		"image-audit": "./scripts/image-audit.ts",
-		"image-update-album-interactive": "./src/image-update.ts && ./src/image-update-extensions.ts",
-		"image-update-credits-interactive": "./src/image-credits.ts",
 		"lint": "ksc lint",
 		"release": "bumpp --commit 'Release: %s' && pnpm run build && pnpm publish --otp $(op read 'op://Personal/Npmjs/one-time password?attribute=otp')",
 		"test": "vitest"

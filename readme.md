@@ -162,3 +162,13 @@ Editing in Photos.app destroys alpha channels.
 Editing in Pixelmator destroys alpha channels
 Editing in Photoshop destroys alpha channels
 Editing always destroys alpha channels?
+
+Legacy scripts:
+
+```json
+{
+  "image-audit": "./scripts/image-audit.ts",
+  "image-update-album-interactive": "./src/image-update.ts && ./src/image-update-extensions.ts",
+  "image-update-credits-interactive": "./src/image-credits.ts"
+}
+```

@@ -21,7 +21,7 @@ TODO `photos://` or similar URL scheme support?
 <!-- cli-help { cliCommand: "./dist/aphex-swift" }  -->
 
 ```txt
-OVERVIEW: A multi-command CLI tool for managing photo albums
+OVERVIEW: Query and export images and albums from your macOS Photos.app library
 
 USAGE: aphex <subcommand>
 
@@ -32,7 +32,8 @@ SUBCOMMANDS:
   album-info              Get album information for given identifiers (UUID,
                           album name, or album path)
   photo-info              Get photo asset information for given identifiers
-                          (UUID, filename, album name, or photo path)
+                          (UUID, file name, image title, album name, or photo
+                          path)
   export                  Export photos for given identifiers to a destination
                           directory
 
@@ -46,15 +47,16 @@ SUBCOMMANDS:
 <!-- cli-help { cliCommand: "./dist/aphex-swift", helpFlag: "photo-info --help" }  -->
 
 ```txt
-OVERVIEW: Get photo asset information for given identifiers (UUID, filename,
-album name, or photo path)
+OVERVIEW: Get photo asset information for given identifiers (UUID, file name,
+image title, album name, or photo path)
 
 USAGE: aphex photo-info [--case-sensitive] [<identifiers> ...]
 
 ARGUMENTS:
-  <identifiers>           Photo or album identifiers (UUIDs, filenames, album
-                          names, or photo paths). If no identifiers are
-                          provided, returns all photos in the library.
+  <identifiers>           Photo or album identifiers (UUIDs, file names, album
+                          names, image titles, or photo paths). If no
+                          identifiers are provided, returns all photos in the
+                          library.
 
 OPTIONS:
   -c, --case-sensitive    Case sensitive matching
