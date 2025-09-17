@@ -15,10 +15,19 @@ func logError(_ message: String) {
     }
 }
 
+func getVersion() -> String {
+    #if DEBUG
+    return "dev"
+    #else
+    return PACKAGE_VERSION
+    #endif
+}
+
 @main
 struct aphex: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Query and export images and albums from your macOS Photos.app library",
+        version: getVersion(),
         subcommands: [AlbumInfo.self, PhotoInfo.self, Export.self]
     )
 }

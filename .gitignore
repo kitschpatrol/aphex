@@ -21,4 +21,5 @@ vendor/
 
 # Customizations
 /native/aphex-swift/.build
+/native/aphex-swift/Sources/Version.swift
 __pycache__
