@@ -184,6 +184,9 @@ export async function aphexPhotoInfo(
 	caseSensitive = false,
 ): Promise<PhotoInfo[]> {
 	const identifiersArray = ensureArray(identifiers)
+	if (identifiersArray.length === 0) {
+		return []
+	}
 
 	const result = await execa(
 		'./aphex-swift',
@@ -211,6 +214,9 @@ export async function aphexAlbumInfo(
 	caseSensitive = false,
 ): Promise<AlbumInfo[]> {
 	const identifiersArray = ensureArray(identifiers)
+	if (identifiersArray.length === 0) {
+		return []
+	}
 
 	const result = await execa(
 		'./aphex-swift',
@@ -239,6 +245,9 @@ export async function aphexExport(
 	caseSensitive = false,
 ): Promise<string[]> {
 	const identifiersArray = ensureArray(identifiers)
+	if (identifiersArray.length === 0) {
+		return []
+	}
 
 	const result = await execa(
 		'./aphex-swift',

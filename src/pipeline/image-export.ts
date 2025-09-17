@@ -4,30 +4,29 @@ import {
 } from '@sindresorhus/is'
 import fse from 'fs-extra'
 import { slug as githubSlug } from 'github-slugger'
-import os from 'node:os'
 import path from 'node:path'
-import type { PhotoInfo } from '../utilities/image/aphex-swift-bridge'
+import type { AlbumInfo, PhotoInfo } from '../utilities/image/aphex-swift-bridge'
 import type { ImageMimeType } from '../utilities/image/mime'
 import type { ExportViaAppleScriptGuiOptions } from './engines/applescript-gui'
 import type { ProcessImageOptions } from './image-process'
 import { mergeDefaults } from '../utilities/defu'
 import { ensureDirectoryExists, normalizeExtension } from '../utilities/file'
-import { aphexAlbumInfo, aphexPhotoInfo, isPhotoInfo } from '../utilities/image/aphex-swift-bridge'
+import { assertSingleElement } from '../utilities/general'
+import {
+	aphexAlbumInfo,
+	aphexPhotoInfo,
+	isAlbumInfo,
+	isPhotoInfo,
+} from '../utilities/image/aphex-swift-bridge'
 import { hasAlpha } from '../utilities/image/image'
 import { lookupImageMimeType } from '../utilities/image/mime'
-import { cloneTags, getTags } from '../utilities/image/tags'
+import { getTags } from '../utilities/image/tags'
 import { exportViaAppleScript } from './engines/applescript'
 import { exportViaAppleScriptGui } from './engines/applescript-gui'
 import { exportViaFileSystem } from './engines/file-system'
 import { exportViaSwiftPhotoKit } from './engines/swift-photokit'
-import { defaultProcessImageOptions, processPhotos } from './image-process'
 
-export type ExportEngine =
-	| 'applescript'
-	| 'file-system'
-	| 'photos-gui'
-	| 'skipped' // Special case if sync obviated exporting the file...
-	| 'swift-photokit'
+export type ExportEngine = 'applescript' | 'file-system' | 'photos-gui' | 'swift-photokit'
 export type ExportEngineOptions = ExportEngine | Partial<Record<ImageMimeType, ExportEngine>>
 
 export type ExportApplePhotoOptions = {
@@ -102,9 +101,57 @@ export const defaultExportApplePhotoOptions: ExportApplePhotoOptions = {
 // ------------------------------
 
 /**
+ * Takes a mix of photos, albums, strings, all resolved to a single array of PhotoInfo objects
+ */
+export async function resolveIdentifiers(
+	identifiers: Array<AlbumInfo | PhotoInfo | string>,
+): Promise<PhotoInfo[]> {
+	const photoInfos = identifiers.filter((identifier) => isPhotoInfo(identifier))
+	const identifierAlbumUuids = identifiers
+		.filter((identifier) => isAlbumInfo(identifier))
+		.map((identifier) => identifier.uuid)
+	const identifierStrings = identifiers.filter((identifier) => typeof identifier === 'string')
+
+	photoInfos.push(...(await aphexPhotoInfo([...identifierAlbumUuids, ...identifierStrings])))
+
+	if (photoInfos.length === 0) {
+		throw new Error(
+			`No photos found for identifiers "${identifiers.map((identifier) => JSON.stringify(identifier)).join(', ')}"`,
+		)
+	}
+
+	// Ensure unique by uuid
+	const seen = new Set<string>()
+	const unique = photoInfos.filter((photo) => {
+		if (seen.has(photo.uuid)) return false
+		seen.add(photo.uuid)
+		return true
+	})
+
+	return unique
+}
+
+/**
+ * Albums
+ */
+export async function resolveAlbumIdentifier(identifier: AlbumInfo | string): Promise<AlbumInfo> {
+	if (isAlbumInfo(identifier)) {
+		return identifier
+	}
+
+	const aphexAlbumInfoResult = await aphexAlbumInfo(identifier)
+	if (aphexAlbumInfoResult.length === 0) {
+		throw new Error(`No album found for identifier "${identifier}"`)
+	}
+	if (aphexAlbumInfoResult.length > 1) {
+		throw new Error(`Multiple albums found for identifier "${identifier} — is it a photo?"`)
+	}
+
+	return aphexAlbumInfoResult[0]
+}
+
+/**
  * Get photo info if needed, and throw errors if it's not a photo
- * @param identifier
- * @returns
  */
 export async function resolvePhotoIdentifier(identifier: PhotoInfo | string): Promise<PhotoInfo> {
 	if (isPhotoInfo(identifier)) {
@@ -135,72 +182,93 @@ export async function exportApplePhoto(
 	destinationDirectory: string,
 	options?: ExportApplePhotoOptions,
 ): Promise<ExportApplePhotoResult> {
+	const result = await exportApplePhotos(
+		[await resolvePhotoIdentifier(identifier)],
+		destinationDirectory,
+		options,
+	)
+	assertSingleElement(result)
+	return result[0]
+}
+
+/**
+ * Export a batch of photos
+ */
+export async function exportApplePhotos(
+	identifiers: Array<AlbumInfo | PhotoInfo | string>,
+	destinationDirectory: string,
+	options?: ExportApplePhotoOptions,
+): Promise<ExportApplePhotoResult[]> {
 	const resolvedOptions = options
 		? mergeDefaults(options, defaultExportApplePhotoOptions)
 		: defaultExportApplePhotoOptions
-	const photoInfo = await resolvePhotoIdentifier(identifier)
-	const engine = await getEngineForPhoto(photoInfo, resolvedOptions)
+	const photoInfos = await resolveIdentifiers(identifiers)
+	const exportedPhotos: ExportApplePhotoResult[] = []
 
-	const exportedPhoto: ExportApplePhotoResult = {
-		exportEngine: engine,
-		exportOptions: resolvedOptions,
-		path: '', // Will be set later
-		photoInfo,
+	// TODO batch / album optimization...
+	for (const photoInfo of photoInfos) {
+		const engine = await getEngineForPhoto(photoInfo, resolvedOptions)
+
+		const exportedPhoto: ExportApplePhotoResult = {
+			exportEngine: engine,
+			exportOptions: resolvedOptions,
+			path: '', // Will be set later
+			photoInfo,
+		}
+
+		switch (engine) {
+			case 'applescript': {
+				exportedPhoto.path = await exportViaAppleScript(photoInfo.uuid)
+				break
+			}
+			case 'file-system': {
+				exportedPhoto.path = await exportViaFileSystem(photoInfo)
+				break
+			}
+			case 'photos-gui': {
+				const [exportedPath] = await exportViaAppleScriptGui(
+					photoInfo.uuid,
+					resolvedOptions.appleScriptGuiOptions,
+				)
+
+				exportedPhoto.path = exportedPath
+
+				// TODO necessary?
+				// Copy relevant metadata from the original photo since photos-gui doesn't preserve it
+				// await cloneTags(photoInfo.original.filePath, exportedPhoto.path, [
+				// 	'credit',
+				// 	'creator',
+				// 	'preservedFileName',
+				// ])
+				break
+			}
+			case 'swift-photokit': {
+				exportedPhoto.path = await exportViaSwiftPhotoKit(photoInfo.uuid)
+				break
+			}
+		}
+
+		// Normalize and move to final destination...
+		const resolvedDestinationDirectory = await ensureDirectoryExists(destinationDirectory)
+		const normalizedDestinationPath = getImagePathWithFileName(
+			photoInfo,
+			path.join(resolvedDestinationDirectory, path.basename(exportedPhoto.path)),
+			resolvedOptions.fileNameSluggify,
+			resolvedOptions.fileNameNormalizeExtensions,
+			resolvedOptions.fileNamePrecedence,
+		)
+
+		await fse.rename(exportedPhoto.path, normalizedDestinationPath)
+
+		// Clean up temp directory
+		const tempDirectory = path.dirname(exportedPhoto.path)
+		await fse.rm(tempDirectory, { force: true, recursive: true })
+
+		exportedPhoto.path = normalizedDestinationPath
+		exportedPhotos.push(exportedPhoto)
 	}
 
-	switch (engine) {
-		case 'applescript': {
-			exportedPhoto.path = await exportViaAppleScript(photoInfo.uuid)
-			break
-		}
-		case 'file-system': {
-			exportedPhoto.path = await exportViaFileSystem(photoInfo)
-			break
-		}
-		case 'photos-gui': {
-			const [exportedPath] = await exportViaAppleScriptGui(
-				photoInfo.uuid,
-				resolvedOptions.appleScriptGuiOptions,
-			)
-
-			exportedPhoto.path = exportedPath
-
-			// TODO necessary?
-			// Copy relevant metadata from the original photo since photos-gui doesn't preserve it
-			// await cloneTags(photoInfo.original.filePath, exportedPhoto.path, [
-			// 	'credit',
-			// 	'creator',
-			// 	'preservedFileName',
-			// ])
-			break
-		}
-		case 'swift-photokit': {
-			exportedPhoto.path = await exportViaSwiftPhotoKit(photoInfo.uuid)
-			break
-		}
-		case 'skipped': {
-			throw new Error("'skipped' is for result annotation only")
-		}
-	}
-
-	// Normalize and move to final destination...
-	const resolvedDestinationDirectory = await ensureDirectoryExists(destinationDirectory)
-	const normalizedDestinationPath = getImagePathWithFileName(
-		photoInfo,
-		path.join(resolvedDestinationDirectory, path.basename(exportedPhoto.path)),
-		resolvedOptions.fileNameSluggify,
-		resolvedOptions.fileNameNormalizeExtensions,
-		resolvedOptions.fileNamePrecedence,
-	)
-
-	await fse.rename(exportedPhoto.path, normalizedDestinationPath)
-
-	// Clean up temp directory
-	const tempDirectory = path.dirname(exportedPhoto.path)
-	await fse.rm(tempDirectory, { force: true, recursive: true })
-
-	exportedPhoto.path = normalizedDestinationPath
-	return exportedPhoto
+	return exportedPhotos
 }
 
 type FileNameOptions = 'fileName' | 'title' | 'uuid'

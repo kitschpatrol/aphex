@@ -4,18 +4,17 @@ import { deepEqual } from 'fast-equals'
 import fse from 'fs-extra'
 import path from 'node:path'
 import type { ExportOptions } from '../index'
-import type { PhotoInfo } from '../utilities/image/aphex-swift-bridge'
+import type { AlbumInfo, PhotoInfo } from '../utilities/image/aphex-swift-bridge'
 import type { ImageTags } from '../utilities/image/tags'
 import { defaultExportOptions, defaultSyncOptions } from '../index'
 import { mergeDefaults } from '../utilities/defu'
 import { stripExtension } from '../utilities/file'
 import { getTags } from '../utilities/image/tags'
-import { getImagePathWithFileName, resolvePhotoIdentifier } from './image-export'
-
-// Match strategy finds the existing target file to perform the diff on
-// fro the files in the destination directory
-// TODO actually implement, currently only file-name
-export type MatchStrategy = 'file-name' | 'uuid'
+import {
+	getImagePathWithFileName,
+	resolveIdentifiers,
+	resolvePhotoIdentifier,
+} from './image-export'
 
 // Diff strategy compares the matched file in the destination directory
 // to the file under export consideration in Photos.app
@@ -25,6 +24,7 @@ export type DiffStrategy =
 	| 'exif-tags'
 	| 'export-options'
 	| 'file-name'
+	| 'force-update' // Special case
 	| 'metadata-options'
 	| 'photo-info'
 	| 'process-options'
@@ -34,23 +34,61 @@ export type SyncOptions = {
 	deleteTarget: boolean
 	diffStrategies: DiffStrategy[]
 	forceUpdate: boolean
-	matchStrategies: MatchStrategy[]
 }
 
 export type SyncResult = {
-	// TODO implement
-	diffedVia: DiffStrategy | undefined
-	matchedVia: MatchStrategy | undefined
+	plan: Array<{
+		diffedVia: DiffStrategy | undefined
+		matchFilePath: string | undefined
+		photoInfo: PhotoInfo
+		status: 'changed' | 'new' | 'unchanged'
+	}>
 	toDelete: string[]
-	toKeep: string[]
-	toWrite: PhotoInfo[]
+}
+
+/**
+ * Create a sync plan for a single photo
+ */
+export async function getSyncPlanForImage(
+	identifier: PhotoInfo | string,
+	destinationDirectory: string,
+	options?: Partial<SyncOptions>,
+	exportOptions?: Partial<ExportOptions>,
+): Promise<SyncResult> {
+	return getSyncPlanForImages(
+		[await resolvePhotoIdentifier(identifier)],
+		destinationDirectory,
+		options,
+		exportOptions,
+	)
+}
+
+type DestinationFile = {
+	filePath: string
+	tags: ImageTags | undefined
+}
+
+// TODO theoretically limit to file name matches to do fewer tag lookups, but not really worth it...
+async function getDestinationFiles(destinationDirectory: string): Promise<DestinationFile[]> {
+	const entries = await fse.readdir(destinationDirectory, { withFileTypes: true })
+	const files = entries.filter((entry) => entry.isFile())
+
+	return Promise.all(
+		files.map(async (file): Promise<DestinationFile> => {
+			const filePath = path.join(destinationDirectory, file.name)
+			return {
+				filePath,
+				tags: await getTags(filePath),
+			}
+		}),
+	)
 }
 
 /**
  * Create a sync plan
  */
-export async function getSyncPlanForImage(
-	identifier: PhotoInfo | string,
+export async function getSyncPlanForImages(
+	identifiers: Array<AlbumInfo | PhotoInfo | string>,
 	destinationDirectory: string,
 	options?: Partial<SyncOptions>,
 	/** Need whole export options configuration for effective diffing */
@@ -61,121 +99,88 @@ export async function getSyncPlanForImage(
 		? mergeDefaults(exportOptions, defaultExportOptions)
 		: defaultExportOptions
 
+	const photoInfos = await resolveIdentifiers(identifiers)
+
 	const syncResult: SyncResult = {
-		diffedVia: undefined,
-		matchedVia: undefined,
+		plan: [],
 		toDelete: [],
-		toKeep: [],
-		toWrite: [],
 	}
 
-	// Figure out final name of current file
-	const sourcePhotoInfo = await resolvePhotoIdentifier(identifier)
-	const sourcePhotoFileName = getImagePathWithFileName(
-		sourcePhotoInfo,
-		'', // Skip full path
-		resolvedExportOptions.exportOptions.fileNameSluggify,
-		resolvedExportOptions.exportOptions.fileNameNormalizeExtensions,
-		resolvedExportOptions.exportOptions.fileNamePrecedence,
-	)
+	// Get files in the destination directory and their tag data...
+	const destinationFiles = await getDestinationFiles(destinationDirectory)
 
-	// Compare to files in the destination directory...
-	const destinationFiles = await fse.readdir(destinationDirectory, { withFileTypes: true })
-	const destinationFilePaths = destinationFiles
-		.filter((file) => file.isFile())
-		.map((file) => path.join(file.parentPath, file.name))
+	for (const sourcePhotoInfo of photoInfos) {
+		const matchingDestinationFile = destinationFiles.find(
+			(file) => file.tags?.aphexMetadata?.photoInfo.uuid === sourcePhotoInfo.uuid,
+		)
 
-	const matchResult = await findTarget(
-		resolvedOptions.matchStrategies,
-		sourcePhotoInfo,
-		sourcePhotoFileName,
-		destinationFilePaths,
-	)
+		// No file name matches, return early
+		// TODO more aggressive metadata UUID scraping strategy?
+		if (matchingDestinationFile === undefined) {
+			syncResult.plan.push({
+				diffedVia: undefined,
+				matchFilePath: undefined,
+				photoInfo: sourcePhotoInfo,
+				status: 'new',
+			})
+			continue
+		}
 
+		const sourcePhotoFileBaseName = stripExtension(
+			getImagePathWithFileName(
+				sourcePhotoInfo,
+				'', // Skip full path
+				resolvedExportOptions.exportOptions.fileNameSluggify,
+				resolvedExportOptions.exportOptions.fileNameNormalizeExtensions,
+				resolvedExportOptions.exportOptions.fileNamePrecedence,
+			),
+		)
+
+		const differenceFound = await isDifferent(
+			resolvedOptions.diffStrategies,
+			sourcePhotoInfo,
+			sourcePhotoFileBaseName,
+			matchingDestinationFile.filePath,
+			matchingDestinationFile.tags,
+			resolvedExportOptions,
+			resolvedOptions.forceUpdate,
+		)
+
+		if (differenceFound) {
+			if (resolvedOptions.deleteTarget) {
+				syncResult.toDelete.push(matchingDestinationFile.filePath)
+			}
+			syncResult.plan.push({
+				diffedVia: differenceFound,
+				matchFilePath: matchingDestinationFile.filePath,
+				photoInfo: sourcePhotoInfo,
+				status: 'changed',
+			})
+			continue
+		}
+
+		syncResult.plan.push({
+			diffedVia: undefined,
+			matchFilePath: matchingDestinationFile.filePath,
+			photoInfo: sourcePhotoInfo,
+			status: 'unchanged',
+		})
+	}
+
+	// Figure out deletion
 	if (resolvedOptions.deleteOthers) {
-		syncResult.toDelete = matchResult
-			? destinationFilePaths.filter((file) => file !== matchResult.targetPhotoFilePath)
-			: destinationFilePaths
+		syncResult.toDelete = [
+			...syncResult.toDelete,
+			...destinationFiles
+				.filter((file) => !syncResult.plan.some((plan) => plan.matchFilePath === file.filePath))
+				.map((file) => file.filePath),
+		]
 	}
 
-	// No file name matches, return early
-	// TODO more aggressive metadata UUID scraping strategy?
-	if (matchResult === undefined) {
-		syncResult.toWrite.push(sourcePhotoInfo)
-		return syncResult
-	}
-
-	const { matchStrategy, targetPhotoFilePath } = matchResult
-	syncResult.matchedVia = matchStrategy
-
-	console.log(resolvedOptions.diffStrategies)
-	const differenceFound = await isDifferent(
-		resolvedOptions.diffStrategies,
-		sourcePhotoInfo,
-		resolvedExportOptions,
-		sourcePhotoFileName,
-		targetPhotoFilePath,
-	)
-
-	if (differenceFound) {
-		syncResult.toWrite.push(sourcePhotoInfo)
-		syncResult.toDelete.push(targetPhotoFilePath)
-		syncResult.diffedVia = differenceFound
-	} else {
-		syncResult.toKeep.push(targetPhotoFilePath)
-	}
+	// Ensure toDelete is unique
+	syncResult.toDelete = [...new Set(syncResult.toDelete)]
 
 	return syncResult
-}
-
-async function findTarget(
-	matchStrategies: MatchStrategy[],
-	sourcePhotoInfo: PhotoInfo,
-	sourcePhotoFileName: string,
-	targetDirectoryFiles: string[],
-): Promise<
-	| undefined
-	| {
-			matchStrategy: MatchStrategy
-			targetPhotoFilePath: string
-	  }
-> {
-	for (const matchStrategy of matchStrategies) {
-		switch (matchStrategy) {
-			case 'file-name': {
-				const sourcePhotoBaseName = stripExtension(sourcePhotoFileName)
-				const targetPhotoFilePath = targetDirectoryFiles.find(
-					(file) => stripExtension(path.basename(file)) === sourcePhotoBaseName,
-				)
-
-				if (targetPhotoFilePath !== undefined) {
-					return {
-						matchStrategy,
-						targetPhotoFilePath,
-					}
-				}
-
-				break
-			}
-			case 'uuid': {
-				// Probably slow...
-				for (const targetPhotoFilePath of targetDirectoryFiles) {
-					const { aphexMetadata } = await getTags(targetPhotoFilePath)
-
-					if (aphexMetadata?.photoInfo.uuid === sourcePhotoInfo.uuid) {
-						return {
-							matchStrategy,
-							targetPhotoFilePath,
-						}
-					}
-				}
-
-				break
-			}
-		}
-	}
-
-	return undefined
 }
 
 /**
@@ -185,25 +190,30 @@ async function findTarget(
 async function isDifferent(
 	diffStrategies: DiffStrategy[],
 	sourcePhotoInfo: PhotoInfo,
+	sourcePhotoFileBaseName: string,
+	matchPhotoFilePath: string,
+	matchPhotoTags: ImageTags | undefined,
 	exportOptions: ExportOptions,
-	sourcePhotoFileName: string,
-	targetPhotoFilePath: string,
+	forceUpdate: boolean,
 ): Promise<DiffStrategy | false> {
 	// Soft memoization...
 	let sourceTags: ImageTags | undefined
-	let targetTags: ImageTags | undefined
+
+	if (forceUpdate) {
+		return 'force-update'
+	}
 
 	for (const diffStrategy of diffStrategies) {
 		switch (diffStrategy) {
 			case 'exif-tags': {
-				targetTags ??= await getTags(targetPhotoFilePath)
 				sourceTags ??= await getTags(sourcePhotoInfo.original.filePath)
 
 				if (
-					sourceTags.credit !== targetTags.credit ||
-					sourceTags.creator !== targetTags.creator ||
-					sourceTags.preservedFileName !== targetTags.preservedFileName ||
-					sourceTags.label !== targetTags.label
+					matchPhotoTags === undefined ||
+					sourceTags.credit !== matchPhotoTags.credit ||
+					sourceTags.creator !== matchPhotoTags.creator ||
+					sourceTags.preservedFileName !== matchPhotoTags.preservedFileName ||
+					sourceTags.label !== matchPhotoTags.label
 				) {
 					return diffStrategy
 				}
@@ -212,11 +222,11 @@ async function isDifferent(
 			}
 
 			case 'export-options': {
-				targetTags ??= await getTags(targetPhotoFilePath)
 				if (
+					matchPhotoTags === undefined ||
 					!deepEqual(
 						exportOptions.exportOptions,
-						targetTags.aphexMetadata?.exportOptions.exportOptions,
+						matchPhotoTags.aphexMetadata?.exportOptions.exportOptions,
 					)
 				) {
 					return diffStrategy
@@ -226,19 +236,26 @@ async function isDifferent(
 
 			case 'file-name': {
 				// Ignore extension because it's too much work to figure out the final file extension
-				// after processing. This means that until there are
-				if (stripExtension(path.basename(targetPhotoFilePath)) !== sourcePhotoFileName) {
+				// But this can still change if the "title" changes in a source photo...
+				if (stripExtension(path.basename(matchPhotoFilePath)) !== sourcePhotoFileBaseName) {
 					return diffStrategy
 				}
 				break
 			}
 
+			case 'force-update': {
+				// Special case... normally handled by flag instead
+				return diffStrategy
+				break
+			}
+
 			case 'metadata-options': {
-				targetTags ??= await getTags(targetPhotoFilePath)
+				sourceTags ??= await getTags(sourcePhotoInfo.original.filePath)
 				if (
+					matchPhotoTags === undefined ||
 					!deepEqual(
-						exportOptions.processOptions,
-						targetTags.aphexMetadata?.exportOptions.processOptions,
+						exportOptions.metadataOptions,
+						matchPhotoTags.aphexMetadata?.exportOptions.metadataOptions,
 					)
 				) {
 					return diffStrategy
@@ -247,20 +264,22 @@ async function isDifferent(
 			}
 
 			case 'photo-info': {
-				targetTags ??= await getTags(targetPhotoFilePath)
-				if (!deepEqual(sourcePhotoInfo, targetTags.aphexMetadata?.photoInfo)) {
+				if (
+					matchPhotoTags === undefined ||
+					!deepEqual(sourcePhotoInfo, matchPhotoTags.aphexMetadata?.photoInfo)
+				) {
 					return diffStrategy
 				}
 				break
 			}
 
 			case 'process-options': {
-				targetTags ??= await getTags(targetPhotoFilePath)
 				// We skip sync options since they shouldn't affect the exported image!
 				if (
+					matchPhotoTags === undefined ||
 					!deepEqual(
 						exportOptions.processOptions,
-						targetTags.aphexMetadata?.exportOptions.processOptions,
+						matchPhotoTags.aphexMetadata?.exportOptions.processOptions,
 					)
 				) {
 					return diffStrategy
