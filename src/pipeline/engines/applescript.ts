@@ -2,6 +2,8 @@ import { execa } from 'execa'
 import path from 'node:path'
 import { getTempDirectory } from '../../utilities/file'
 
+// @case-police-ignore appleScript
+
 // https://github.com/RhetTbull/PhotoScript/blob/0501c48d9e56a1bdd840abf8166d3cd9da120953/photoscript/__init__.py#L32
 const UUID_SUFFIX_PHOTO = '/L0/001'
 // const UUID_SUFFIX_ALBUM = '/L0/040'

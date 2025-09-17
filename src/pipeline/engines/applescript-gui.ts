@@ -1,6 +1,7 @@
 import { execa } from 'execa'
 import path from 'node:path'
 import { mergeDefaults } from '../../utilities/defu'
+import { getDirname } from '../../utilities/dirname'
 import { getTempDirectory } from '../../utilities/file'
 
 export type ExportViaAppleScriptGuiOptions = {
@@ -66,7 +67,7 @@ export async function exportViaAppleScriptGui(
 	// Passed in order of appearance in the UI
 	// Due to the nature of the implementation, there's no streaming output, just
 	// a report at the end
-	const appleScriptPath = path.join(import.meta.dirname, './applescript-gui.applescript')
+	const appleScriptPath = path.join(getDirname(import.meta), './applescript-gui.applescript')
 	const { failed, stderr } = await execa('osascript', [
 		appleScriptPath,
 		uuid,

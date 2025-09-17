@@ -99,14 +99,14 @@ async function imageCredits() {
 
 		// Keep stuff below -------------------
 		const tags = await getTags(filePath)
-		const tagsValid = await validateTags(
+		const { valid } = await validateTags(
 			tags,
 			['preservedFileName', 'label'],
 			['creator', 'credit'],
 			false,
 		)
 
-		if (!tagsValid) {
+		if (!valid) {
 			photosWithInvalidTags.push(photo)
 		}
 	}
@@ -231,14 +231,14 @@ async function imageCredits() {
 	let processedImagesUpdated = 0
 	let processedImagesFound = 0
 	for (const processedImagePath of processedImagePaths) {
-		const { processMetadata } = await getTags(processedImagePath)
+		const { aphexMetadata } = await getTags(processedImagePath)
 
-		if (processMetadata === undefined) {
+		if (aphexMetadata === undefined) {
 			log.warn(`No process metadata found for processed image: ${processedImagePath}`)
 			continue
 		}
 
-		const { photoInfo } = processMetadata
+		const { photoInfo } = aphexMetadata
 
 		// if (photoInfo.uuid === undefined) {
 		// 	log.warn(`Photos UUId not found for processed image: ${processedImagePath}`)

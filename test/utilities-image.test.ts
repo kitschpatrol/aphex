@@ -24,8 +24,8 @@ async function getColorProfileArray(files: string[], directory = ''): Promise<st
 async function getExifArray(files: string[], directory = ''): Promise<string[]> {
 	return Promise.all(
 		files.map(async (file) => {
-			const validExif = await validateTags(path.join(directory, file))
-			return `${file}: ${validExif ? 'valid' : 'invalid'}`
+			const { valid } = await validateTags(path.join(directory, file))
+			return `${file}: ${valid ? 'valid' : 'invalid'}`
 		}),
 	)
 }

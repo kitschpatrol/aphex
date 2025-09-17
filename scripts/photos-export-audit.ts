@@ -12,8 +12,7 @@
 import { exiftool } from 'exiftool-vendored'
 import fse from 'fs-extra'
 import { markdownTable } from 'markdown-table'
-import os from 'node:os'
-import path from 'node:path'
+import path, { basename, dirname } from 'node:path'
 import type { ColorProfile } from '../src/utilities/image/color'
 import type { ImageInfo } from '../src/utilities/image/image'
 import type { ImageMimeType } from '../src/utilities/image/mime'
@@ -30,17 +29,9 @@ import { getTagCount } from '../src/utilities/image/tags'
 
 async function exportViaAppleScriptGuiWrapped(
 	uuid: string,
-	destinationDirectory: string,
 	format: 'jpeg-high' | 'jpeg-max' | 'png',
 ): Promise<string> {
-	await fse.mkdir(destinationDirectory, { recursive: true })
-
-	// No control over exact file name in the gui, so we copy to temp first
-	const tempDirectory = await fse.mkdtemp(
-		path.join(os.tmpdir(), `com.kitschpatrol.aphex.audit.${uuid}.`),
-	)
-
-	const result = await exportViaAppleScriptGui(uuid, tempDirectory, {
+	const result = await exportViaAppleScriptGui(uuid, {
 		colorProfile: 'Original',
 		fileName: 'Use Title',
 		includeLocation: true,
@@ -50,12 +41,17 @@ async function exportViaAppleScriptGuiWrapped(
 		photoSize: 'Full Size',
 	})
 
-	const tempPath = result[0]
+	return result[0]
+}
 
-	const destinationPath = path.join(destinationDirectory, `${uuid}${path.extname(tempPath)}`)
-	await fse.copyFile(tempPath, destinationPath)
-	await fse.rm(tempDirectory, { force: true, recursive: true })
-	return destinationPath
+async function moveResult(
+	sourceFilePath: string,
+	destinationDirectoryPath: string,
+): Promise<string> {
+	// Clean up old directory
+	await fse.move(sourceFilePath, destinationDirectoryPath)
+	await fse.rm(dirname(sourceFilePath))
+	return path.join(destinationDirectoryPath, basename(sourceFilePath))
 }
 
 async function exportPhotos(destination: string, uuid: string): Promise<string[]> {
@@ -67,38 +63,28 @@ async function exportPhotos(destination: string, uuid: string): Promise<string[]
 
 	exportedFiles.push(
 		// File System
-		await exportViaFileSystem(
-			uuid, //
+		await moveResult(
+			await exportViaFileSystem(uuid, false), //
 			path.join(destination, 'file-system'),
-			false,
 		),
-
-		await exportViaFileSystem(
-			uuid, //
+		await moveResult(
+			await exportViaFileSystem(uuid, true),
 			path.join(destination, 'original-file-system'),
-			true,
 		),
-
-		await exportViaAppleScriptGuiWrapped(
-			uuid, //
+		await moveResult(
+			await exportViaAppleScriptGuiWrapped(uuid, 'jpeg-high'),
 			path.join(destination, 'photos-gui-jpeg-high'),
-			'jpeg-high',
 		),
-
-		await exportViaAppleScriptGuiWrapped(
-			uuid, //
+		await moveResult(
+			await exportViaAppleScriptGuiWrapped(uuid, 'jpeg-max'),
 			path.join(destination, 'photos-gui-jpeg-max'),
-			'jpeg-max',
 		),
-
-		await exportViaAppleScriptGuiWrapped(
-			uuid, //
+		await moveResult(
+			await exportViaAppleScriptGuiWrapped(uuid, 'png'),
 			path.join(destination, 'photos-gui-png'),
-			'png',
 		),
-
-		await exportViaSwiftPhotoKit(
-			uuid, //
+		await moveResult(
+			await exportViaSwiftPhotoKit(uuid), //
 			path.join(destination, 'swift-photo-kit'),
 		),
 	)

@@ -7,11 +7,9 @@ export default cspellConfig({
 		'codesign',
 		'defu',
 		'importx',
-		'Recents',
 		'Kabir',
 		'metaimage',
 		'Oberai',
-		'requestimage',
-		'requestimagedataandorientation',
+		'Recents',
 	],
 })

@@ -183,8 +183,8 @@ describe('image processing', () => {
 			// Expect files to have retained their metadata
 			const exif = await Promise.all(
 				pathPairs.map(async ([sourceFile, outputFile]) => {
-					const validExif = await validateTags(outputFile)
-					return `${path.basename(sourceFile)} --> ${path.basename(outputFile)}: ${validExif ? 'valid' : 'invalid'}`
+					const { issues, valid } = await validateTags(outputFile)
+					return `${path.basename(sourceFile)} --> ${path.basename(outputFile)}: ${valid ? 'valid' : `invalid: ${issues.join(', ')}`}`
 				}),
 			)
 			expect(exif).toMatchInlineSnapshot(`

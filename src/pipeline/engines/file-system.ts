@@ -1,8 +1,8 @@
 import fse from 'fs-extra'
 import path from 'node:path'
 import type { PhotoInfo } from '../../aphex-swift/cli-bridge'
-import { getTempDirectory } from '../../utilities/file'
 import { aphexPhotoInfo, isPhotoInfo } from '../../aphex-swift/cli-bridge'
+import { getTempDirectory } from '../../utilities/file'
 
 /**
  * Export a photo via direct file system copy of the original or edited file to a temporary directory
