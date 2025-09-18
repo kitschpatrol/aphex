@@ -144,7 +144,8 @@ export async function convertColorProfile(imagePath: string, profile: ColorProfi
 	const mime = lookupImageMimeType(imagePath, true)
 
 	if (['png', 'psd', 'tif'].includes(mime)) {
-		console.log(`Converting ${path.basename(imagePath)} from ${currentProfile} to ${profile}`)
+		//
+		// console.log(`Converting ${path.basename(imagePath)} from ${currentProfile} to ${profile}`)
 		// TODO clean up temp (sips does not respect TMPDIR)
 		await execa('sips', ['--matchTo', getPathToColorProfile(profile), imagePath])
 	} else if (['avif', 'gif', 'heic', 'jpeg', 'webp'].includes(mime)) {

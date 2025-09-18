@@ -74,8 +74,6 @@ export async function exportPhoto(
 ): Promise<ExportResult> {
 	const photoInfo = await resolvePhotoIdentifier(identifier)
 
-	console.log(photoInfo)
-
 	const result = await exportPhotos([photoInfo], destinationDirectory, options)
 	assertSingleElement(result)
 	return result[0]
@@ -187,7 +185,6 @@ export async function exportPhotos(
 		)
 
 		// Clean up temp export directory
-		console.log(`Cleaning up: ${exportDirectory}`)
 		await fse.rm(exportDirectory, { force: true, recursive: true })
 
 		// Update export results with the processed paths
