@@ -2,6 +2,9 @@ import Foundation
 import ObjectiveC
 import Photos
 
+// Define this flag in your build settings or at the top of the file
+// #define USE_ASSET_MODIFICATION_DATE
+
 /// Represents comprehensive resource information from PHAssetResource
 struct ResourceInfo: Codable {
   let contentType: String
@@ -38,11 +41,6 @@ struct CodablePHAsset: Codable {
     }
     self.dateCreated = dateCreated
 
-    guard let dateModified = asset.modificationDate else {
-      throw CodablePHAssetError.dateModifiedNotAvailable(resource: asset.debugDescription)
-    }
-    self.dateModified = dateModified
-
     self.favorite = asset.isFavorite
     self.hidden = asset.isHidden
 
@@ -64,15 +62,46 @@ struct CodablePHAsset: Codable {
     self.original = try ResourceInfo(from: originalResource, asset: asset)
 
     // Find edited resource if adjustments exist
+    var editedInfo: ResourceInfo? = nil
     if asset.hasAdjustments {
       if let editedResource = resources.first(where: { $0.type == .fullSizePhoto }) {
-        self.edited = try ResourceInfo(from: editedResource, asset: asset)
-      } else {
-        self.edited = nil
+        editedInfo = try ResourceInfo(from: editedResource, asset: asset)
       }
-    } else {
-      self.edited = nil
     }
+    self.edited = editedInfo
+
+    // Set dateModified based on compilation flag
+    #if USE_ASSET_MODIFICATION_DATE
+      // Original behavior: use PHAsset.modificationDate
+      guard let dateModified = asset.modificationDate else {
+        throw CodablePHAssetError.dateModifiedNotAvailable(resource: asset.debugDescription)
+      }
+      self.dateModified = dateModified
+    #else
+      // New behavior: use max of file modification timestamps
+      var dates: [Date] = []
+
+      // Get original file modification date
+      if let originalModDate = getFileModificationDate(at: self.original.filePath) {
+        dates.append(originalModDate)
+      }
+
+      // Get edited file modification date if available
+      if let editedFilePath = editedInfo?.filePath,
+        let editedModDate = getFileModificationDate(at: editedFilePath)
+      {
+        dates.append(editedModDate)
+      }
+
+      // Get the maximum date
+      guard let maxDate = dates.max() else {
+        throw CodablePHAssetError.dateModifiedNotAvailable(
+          resource: "No file timestamps available for original or edited resources"
+        )
+      }
+
+      self.dateModified = maxDate
+    #endif
   }
 
   // MARK: - JSON Export
@@ -124,6 +153,19 @@ extension ResourceInfo {
   }
 }
 
+// MARK: - File System Helpers
+/// Gets the modification date of a file at the given path
+func getFileModificationDate(at path: String) -> Date? {
+  let fileManager = FileManager.default
+  do {
+    let attributes = try fileManager.attributesOfItem(atPath: path)
+    return attributes[.modificationDate] as? Date
+  } catch {
+    print("Warning: Could not get modification date for file at path: \(path), error: \(error)")
+    return nil
+  }
+}
+
 // MARK: - Error Types
 enum CodablePHAssetError: LocalizedError {
   case originalResourceNotFound
@@ -168,6 +210,14 @@ extension Array where Element == PHAsset {
 
 // MARK: - Usage Example
 /*
+ To use the old behavior (PHAsset.modificationDate), define USE_ASSET_MODIFICATION_DATE
+ in your build settings:
+ - In Xcode: Build Settings > Swift Compiler - Custom Flags > Other Swift Flags
+ - Add: -D USE_ASSET_MODIFICATION_DATE
+
+ Or define at the top of this file:
+ #define USE_ASSET_MODIFICATION_DATE
+
  Single asset:
  let asset: PHAsset = // ... fetch your asset
  let codableAsset = try CodablePHAsset(from: asset)
