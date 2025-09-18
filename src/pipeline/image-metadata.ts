@@ -2,7 +2,7 @@ import type { ExportOptions } from '..'
 import type { PhotoInfo } from '../aphex-swift/cli-bridge'
 import type { AphexMetadata, ImageTags, ValidateTagsResult } from '../utilities/image/tags'
 import { resolveIdentifiers, resolvePhotoIdentifier } from '../aphex-swift/identifiers'
-import { mergeDefaults } from '../utilities/defu'
+import { mergeDefaults } from '../utilities/defaults'
 import { cloneTags, setTags, validateTags } from '../utilities/image/tags'
 
 export type ManageMetadataOptions = {

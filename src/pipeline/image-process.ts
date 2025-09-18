@@ -11,7 +11,7 @@ import type {
 } from '../utilities/image/convert'
 import type { ImageInfo } from '../utilities/image/image'
 import type { ImageMimeType } from '../utilities/image/mime'
-import { mergeDefaults } from '../utilities/defu'
+import { mergeDefaults } from '../utilities/defaults'
 import { ensureDirectoryExists, getTempDirectory } from '../utilities/file'
 import { sipsTempCleanup } from '../utilities/general'
 import {

@@ -1,8 +1,7 @@
 import is, { assert } from '@sindresorhus/is'
 import { execa } from 'execa'
-import path from 'node:path'
-import { packageDirectorySync } from 'package-directory'
 import { ensureArray } from '../utilities/general'
+import { getPackageBasePath } from '../utilities/paths'
 
 /**
  * TypeScript type definition for ResourceInfo from the Swift implementation
@@ -192,7 +191,7 @@ export async function aphexPhotoInfo(
 		'./aphex-swift',
 		['photo-info', ...identifiersArray, ...(caseSensitive ? ['--case-sensitive'] : [])],
 		{
-			cwd: getDistributionPath(),
+			cwd: getPackageBasePath(import.meta),
 		},
 	)
 
@@ -222,7 +221,7 @@ export async function aphexAlbumInfo(
 		'./aphex-swift',
 		['album-info', ...identifiersArray, ...(caseSensitive ? ['--case-sensitive'] : [])],
 		{
-			cwd: getDistributionPath(),
+			cwd: getPackageBasePath(import.meta),
 		},
 	)
 
@@ -259,7 +258,7 @@ export async function aphexExport(
 			...(caseSensitive ? ['--case-sensitive'] : []),
 		],
 		{
-			cwd: getDistributionPath(),
+			cwd: getPackageBasePath(import.meta),
 		},
 	)
 
@@ -270,14 +269,6 @@ export async function aphexExport(
 	} catch {
 		throw new Error(`Error exporting: ${result.stdout}`)
 	}
-}
-
-function getDistributionPath(): string {
-	const packageRoot = packageDirectorySync()
-	if (!packageRoot) {
-		throw new Error('Package root not found')
-	}
-	return path.join(packageRoot, 'dist')
 }
 
 function dateReviver(key: string, value: unknown) {

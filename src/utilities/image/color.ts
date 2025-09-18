@@ -1,6 +1,7 @@
 import { execa } from 'execa'
 import { exiftool } from 'exiftool-vendored'
 import path from 'node:path'
+import { getPackageAssetsPath } from '../paths'
 import { lookupImageMimeType } from './mime'
 
 const validColorProfiles = [
@@ -88,22 +89,24 @@ export async function getColorProfile(imagePath: string): Promise<ColorProfile> 
  * Get the path to a color profile
  */
 export function getPathToColorProfile(profile: ColorProfile): string {
+	const basePath = path.join(getPackageAssetsPath(import.meta), 'profiles')
+
 	// eslint-disable-next-line ts/switch-exhaustiveness-check
 	switch (profile) {
 		case 'Adobe RGB (1998)': {
-			return './profiles/AdobeRGB1998.icc'
+			return path.join(basePath, 'AdobeRGB1998.icc')
 		}
 
 		case 'Display P3': {
-			return './profiles/Display P3.icc'
+			return path.join(basePath, 'Display P3.icc')
 		}
 
 		case 'ProPhoto RGB': {
-			return './profiles/ProPhoto.icm'
+			return path.join(basePath, 'ProPhoto.icm')
 		}
 
 		case 'sRGB IEC61966-2.1': {
-			return './profiles/sRGB Profile.icc'
+			return path.join(basePath, 'sRGB Profile.icc')
 		}
 
 		default: {

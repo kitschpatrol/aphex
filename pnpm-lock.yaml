@@ -60,9 +60,6 @@ importers:
       open:
         specifier: ^10.2.0
         version: 10.2.0
-      package-directory:
-        specifier: ^8.1.0
-        version: 8.1.0
       piscina:
         specifier: ^5.1.3
         version: 5.1.3
@@ -3670,10 +3667,6 @@ packages:
   pac-resolver@7.0.1:
     resolution: {integrity: sha512-5NPgf87AT2STgwa2ntRMr45jTKrYBGkVU36yT0ig/n/GMAa3oPqhZfIQ2kMEimReg0+t9kZViDVZ83qfVUlckg==}
     engines: {node: '>= 14'}
-
-  package-directory@8.1.0:
-    resolution: {integrity: sha512-qHKRW0pw3lYdZMQVkjDBqh8HlamH/LCww2PH7OWEp4Qrt3SFeYMNpnJrQzlSnGrDD5zGR51XqBh7FnNCdVNEHA==}
-    engines: {node: '>=18'}
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
@@ -9439,10 +9432,6 @@ snapshots:
       degenerator: 5.0.1
       netmask: 2.0.2
 
-  package-directory@8.1.0:
-    dependencies:
-      find-up-simple: 1.0.1
-
   package-json-from-dist@1.0.1: {}
 
   package-json-validator@0.30.0:
@@ -10612,7 +10601,7 @@ snapshots:
       esrap: 2.1.0
       is-reference: 3.0.3
       locate-character: 3.0.0
-      magic-string: 0.30.18
+      magic-string: 0.30.19
       zimmerframe: 1.1.2
 
   svg-tags@1.0.0: {}

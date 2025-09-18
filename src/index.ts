@@ -11,7 +11,7 @@ import { defaultExportApplePhotoOptions, exportApplePhotos } from './pipeline/im
 import { defaultManageMetadataOptions, manageMetadataBatch } from './pipeline/image-metadata'
 import { defaultProcessImageOptions, processPhotos } from './pipeline/image-process'
 import { getSyncPlanForImages } from './pipeline/image-sync'
-import { mergeDefaults } from './utilities/defu'
+import { mergeDefaults } from './utilities/defaults'
 import { ensureDirectoryExists, getTempDirectory, stripExtension } from './utilities/file'
 import { assertSingleElement } from './utilities/general'
 
