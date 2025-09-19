@@ -12,11 +12,25 @@ Works _only_ with the active system-level Apple photos library. There is no way 
 
 Returns JSON by default for easy parsing in scripts.
 
-TODO `photos://` or similar URL scheme support?
+## Installation
+
+The tool is bundled as a binary with the `@kitschpatrol/aphex` NPM package.
+
+To install globally:
+
+```sh
+npm install -g @kitschpatrol/aphex
+```
+
+Confirm availability on your path:
+
+```sh
+aphex --help
+```
 
 ## Usage
 
-### Command: `aphex-swift`
+### Command: `aphex`
 
 <!-- cli-help { cliCommand: "./dist/aphex-swift" }  -->
 
@@ -42,7 +56,7 @@ SUBCOMMANDS:
 
 <!-- /cli-help -->
 
-### Subcommand: `aphex-swift photo-info`
+### Subcommand: `aphex photo-info`
 
 <!-- cli-help { cliCommand: "./dist/aphex-swift", helpFlag: "photo-info --help" }  -->
 
@@ -66,7 +80,7 @@ OPTIONS:
 
 <!-- /cli-help -->
 
-### Subcommand: `aphex-swift album-info`
+### Subcommand: `aphex album-info`
 
 <!-- cli-help { cliCommand: "./dist/aphex-swift", helpFlag: "album-info --help" }  -->
 
@@ -89,7 +103,7 @@ OPTIONS:
 
 <!-- /cli-help -->
 
-### Subcommand: `aphex-swift export`
+### Subcommand: `aphex export`
 
 <!-- cli-help { cliCommand: "./dist/aphex-swift", helpFlag: "export --help" }  -->
 
@@ -114,9 +128,21 @@ OPTIONS:
 
 ## Examples
 
+### Export an album
+
+Assuming you've installed the package globally, and have an album named "test-album" in your photo library.
+
+```sh
+aphex export "test-album" --destination "/Users/mika/Desktop" | jq
+```
+
+Or use `swift run` during development:
+
 ```sh
 swift run aphex-swift export "test-album" --destination "/Users/mika/Desktop" | jq
 ```
+
+Piping to [jq](https://jqlang.org/) isn't required, but it cleans up the JSON output.
 
 <!-- license -->
 
