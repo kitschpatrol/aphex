@@ -19,11 +19,13 @@
 
 Aphex is a TypeScript library for exporting images and albums from your local macOS Photos.app library via a Node-compatible runtime.
 
-It makes it simple to export high-quality versions of specific photos or albums from your Photos.app library via a path-like syntax. It can also (optionally) perform image resizing, compression, metadata migration, metadata validation, and color space normalization as requested.
+It makes it simple to export high-quality versions of specific photos or albums from your Photos.app library via a path-like syntax. It can also (optionally) perform image resizing, compression, metadata migration, metadata validation, and color space normalization.
 
 I created this library for integration in static website content management asset pipelines, and to attempt to work around some issues related to [exporting high-quality versions of edited images](https://github.com/RhetTbull/osxphotos/discussions/1522) from the Photos.app library. (See the [unplugin-aphex](https://github.com/kitschpatrol/unplugin-aphex) project for an additional layer of integration with various build tools.)
 
 This repository also embeds the `aphex-swift` CLI project, which provides a minimal and performant wrapper around parts of Apple's PhotoKit framework. It's not intended for direct use, instead it provides just enough functionality to support the parts of the methods provided by the `aphex` TypeScript library that can only be implemented natively.
+
+The name "Aphex" is a concatenation of Apple Photos Export.
 
 ## Caveats
 
