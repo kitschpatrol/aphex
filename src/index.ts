@@ -15,6 +15,11 @@ import { mergeDefaults } from './utilities/defaults'
 import { ensureDirectoryExists, getTempDirectory, stripExtension } from './utilities/file'
 import { assertSingleElement } from './utilities/general'
 
+export {
+	aphexAlbumInfo as getAlbumInfo,
+	aphexPhotoInfo as getPhotoInfo,
+} from './aphex-swift/cli-bridge'
+
 export type ExportOptions = {
 	exportOptions: ExportApplePhotoOptions
 	metadataOptions: 'disabled' | ManageMetadataOptions
