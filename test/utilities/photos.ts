@@ -1,3 +1,4 @@
+import { isDate } from '@sindresorhus/is'
 import fse from 'fs-extra'
 import path from 'node:path'
 import { aphexPhotoInfo } from '../../src/aphex-swift/cli-bridge'
@@ -57,4 +58,27 @@ export async function entropicRename(original: string | string[]): Promise<strin
 		await fse.rename(original, entropicPath)
 	}
 	return entropicPaths
+}
+
+/**
+ * Recursively replace all non-object/array values with an empty string,
+ * preserving the original array/object shape. This is intentionally typed
+ * with `unknown` to avoid unsafe generic assertions when transforming
+ * arbitrary data structures in tests.
+ *
+ * Example:
+ *   keyTree({ a: 1, b: [2, { c: 3 }] }) -> { a: '', b: ['', { c: '' }] }
+ */
+export function keyTree(input: unknown): unknown {
+	if (Array.isArray(input)) {
+		return input.map((item) => keyTree(item))
+	}
+	if (input !== null && typeof input === 'object' && !isDate(input)) {
+		const result: Record<string, unknown> = {}
+		for (const [key, value] of Object.entries(input)) {
+			result[key] = keyTree(value)
+		}
+		return result
+	}
+	return ''
 }
