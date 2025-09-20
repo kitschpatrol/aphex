@@ -1,8 +1,8 @@
 import { execa } from 'execa'
 import path from 'node:path'
 import { mergeDefaults } from '../../utilities/defaults'
-import { getPackageAssetsPath } from '../../utilities/paths'
 import { getTempDirectory } from '../../utilities/file'
+import { getPackageAssetsPath } from '../../utilities/paths'
 
 export type ExportViaAppleScriptGuiOptions = {
 	colorProfile?: 'AdobeRGB' | 'Display P3' | 'Most Compatible' | 'Original' | 'sRGB'

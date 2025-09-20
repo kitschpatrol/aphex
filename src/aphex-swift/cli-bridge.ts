@@ -1,7 +1,7 @@
 import is, { assert } from '@sindresorhus/is'
 import { execa } from 'execa'
 import { ensureArray } from '../utilities/general'
-import { getPackageBasePath } from '../utilities/paths'
+import { getPackageBinPath } from '../utilities/paths'
 
 /**
  * TypeScript type definition for ResourceInfo from the Swift implementation
@@ -191,7 +191,7 @@ export async function aphexPhotoInfo(
 		'./aphex-swift',
 		['photo-info', ...identifiersArray, ...(caseSensitive ? ['--case-sensitive'] : [])],
 		{
-			cwd: getPackageBasePath(import.meta),
+			cwd: getPackageBinPath(import.meta),
 		},
 	)
 
@@ -205,7 +205,7 @@ export async function aphexPhotoInfo(
 }
 
 /**
- * Export photos for given identifiers to a destination directory
+ * Get album info
  * @throws
  */
 export async function aphexAlbumInfo(
@@ -221,7 +221,7 @@ export async function aphexAlbumInfo(
 		'./aphex-swift',
 		['album-info', ...identifiersArray, ...(caseSensitive ? ['--case-sensitive'] : [])],
 		{
-			cwd: getPackageBasePath(import.meta),
+			cwd: getPackageBinPath(import.meta),
 		},
 	)
 
@@ -258,7 +258,7 @@ export async function aphexExport(
 			...(caseSensitive ? ['--case-sensitive'] : []),
 		],
 		{
-			cwd: getPackageBasePath(import.meta),
+			cwd: getPackageBinPath(import.meta),
 		},
 	)
 
