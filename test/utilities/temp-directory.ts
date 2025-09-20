@@ -10,7 +10,7 @@ type TempDirectoryFixture = {
 }
 
 const cleanUp = false
-const openDirectory = true
+const openDirectory = false
 
 export const tempDirectoryFixture = test.extend<TempDirectoryFixture>({
 	// eslint-disable-next-line no-empty-pattern

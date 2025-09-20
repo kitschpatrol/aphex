@@ -2,6 +2,7 @@ import { execa } from 'execa'
 import fse from 'fs-extra'
 import os from 'node:os'
 import path from 'node:path'
+import type { ColorProfile } from './color'
 import { getSizeBytes, getSlugFilename } from '../file'
 import { getColorProfile, getPathToColorProfile } from './color'
 import { getImageDimensions } from './image'
@@ -21,6 +22,7 @@ export async function optimizePng(
 		'--scale16',
 		'--alpha',
 		'--preserve',
+		'--nc', // Keeps color profile... otherwise stripped
 		'--out',
 		destinationImagePath,
 		imagePath,
@@ -273,11 +275,20 @@ export async function convertToPng(
 
 		// TODO webp issues?
 		// TODO clean up temp (sips does not respect TMPDIR)
+
+		// Special case to preserve color Profile in PSDs...
+		// Display P3 was changing to sRGB... this keeps it?
+		const restoreColorProfile: ColorProfile | undefined =
+			mime === 'psd' ? await getColorProfile(sourceImagePath) : undefined
+
 		await execa('sips', [
 			...resizeArgs,
 			'--setProperty',
 			'format',
 			'png',
+			...(restoreColorProfile && restoreColorProfile !== 'None'
+				? ['--setProperty', 'profile', getPathToColorProfile(restoreColorProfile)]
+				: []),
 			sourceImagePath,
 			'--out',
 			destinationImagePath,
