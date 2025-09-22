@@ -129,6 +129,7 @@ export async function getSyncPlanForImages(
 				sourcePhotoInfo,
 				'', // Skip full path
 				resolvedExportOptions.exportOptions.fileNameSluggify,
+				resolvedExportOptions.exportOptions.fileNameAppendUuidFragment,
 				resolvedExportOptions.exportOptions.fileNameNormalizeExtensions,
 				resolvedExportOptions.exportOptions.fileNamePrecedence,
 			),

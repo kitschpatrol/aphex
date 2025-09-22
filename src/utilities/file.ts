@@ -21,6 +21,7 @@ export async function getSizeBytes(filePath: string): Promise<number> {
 
 /**
  * Normalizes file extensions, particularly for image files
+ * Converts to lowercase.
  * Converts .jpg to .jpeg and .tif to .tiff
  */
 export function normalizeExtension(filePath: string): string {
@@ -38,7 +39,7 @@ export function normalizeExtension(filePath: string): string {
 		}
 
 		default: {
-			return filePath
+			return path.join(directory, `${fileBase}${fileExtension}`)
 		}
 	}
 }

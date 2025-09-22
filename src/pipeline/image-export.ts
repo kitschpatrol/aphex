@@ -26,6 +26,11 @@ export type ExportApplePhotoOptions = {
 	engineEditedAlpha: ExportEngineOptions
 	engineOriginal: ExportEngineOptions
 	engineOriginalAlpha: ExportEngineOptions
+	/**
+	 * Append a few digits from the image's local identifier in Photos.app, useful to avoid name collisions if exporting multiple album-worth of photos.
+	 * Only applies to `FileNameOptions` `title` or `uuid`. This is NOT the same as a content hash.
+	 */
+	fileNameAppendUuidFragment: boolean
 	fileNameNormalizeExtensions: boolean
 	fileNamePrecedence: FileNameOptions[]
 	fileNameSluggify: boolean
@@ -94,6 +99,7 @@ export const defaultExportApplePhotoOptions: ExportApplePhotoOptions = {
 	// Photos-gui does not preserve alpha channels, so we need to always use photokit?
 	// TODO what about raw formats?
 	engineOriginalAlpha: 'swift-photokit',
+	fileNameAppendUuidFragment: false,
 	fileNameNormalizeExtensions: true,
 	fileNamePrecedence: ['title', 'fileName', 'uuid'],
 	fileNameSluggify: true,
@@ -177,6 +183,7 @@ export async function exportApplePhotos(
 			photoInfo,
 			path.join(resolvedDestinationDirectory, path.basename(exportedPhoto.path)),
 			resolvedOptions.fileNameSluggify,
+			resolvedOptions.fileNameAppendUuidFragment,
 			resolvedOptions.fileNameNormalizeExtensions,
 			resolvedOptions.fileNamePrecedence,
 		)
@@ -201,6 +208,7 @@ export function getImagePathWithFileName(
 	photoInfo: PhotoInfo,
 	filePath: string,
 	sluggify = true,
+	fileNameAppendUuidFragment = false,
 	normalizeExtensions = true,
 	namingStrategyPrecedence: FileNameOptions[] = ['title', 'fileName', 'uuid'],
 ): string {
@@ -215,17 +223,25 @@ export function getImagePathWithFileName(
 					photoInfo.original.fileName,
 					path.extname(photoInfo.original.fileName),
 				)
-				const processedName = sluggify ? githubSlug(nameWithoutExtension) : nameWithoutExtension
+				const uuidFragment = fileNameAppendUuidFragment ? `-${photoInfo.uuid.slice(-8)}` : ''
+				const processedName = sluggify
+					? githubSlug(`${nameWithoutExtension}${uuidFragment}`)
+					: `${nameWithoutExtension}${uuidFragment}`
 				return path.join(basePath, `${processedName}${extension}`)
 			}
 			case 'title': {
 				if (isNonEmptyStringAndNotWhitespace(photoInfo.title)) {
-					const processedTitle = sluggify ? githubSlug(photoInfo.title) : photoInfo.title
+					const title = sluggify ? githubSlug(photoInfo.title) : photoInfo.title
+					const uuidFragment = fileNameAppendUuidFragment ? `-${photoInfo.uuid.slice(-8)}` : ''
+					const processedTitle = sluggify
+						? githubSlug(`${title}${uuidFragment}`)
+						: `${title}${uuidFragment}`
 					return path.join(basePath, `${processedTitle}${extension}`)
 				}
 				break
 			}
 			case 'uuid': {
+				// Don't append UUID fragment if the filename is already a UUID
 				const processedUuid = sluggify ? githubSlug(photoInfo.uuid) : photoInfo.uuid
 				return path.join(basePath, `${processedUuid}${extension}`)
 			}
