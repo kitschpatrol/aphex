@@ -1,3 +1,4 @@
+import type { PartialDeep } from 'type-fest'
 import { isNonEmptyStringAndNotWhitespace } from '@sindresorhus/is'
 import fse from 'fs-extra'
 import { slug as githubSlug } from 'github-slugger'
@@ -40,16 +41,18 @@ export type ExportApplePhotoResult = {
 export const defaultExportApplePhotoOptions: ExportApplePhotoOptions = {
 	appleScriptGuiOptions: {
 		colorProfile: 'sRGB',
-		// Set later
-		// fileName: undefined,
+		fileName: 'Use File Name',
 		includeLocation: false,
 		includeMetadata: false,
-		// Set later
-		// maxSizeType: undefined,
+		jpegQuality: 'Maximum',
+		maxSizeType: 'Dimension',
 		// Pro Display XDR res is 6016x3384
-		// maxSizeValue: undefined,
+		maxSizeValue: Number.MAX_SAFE_INTEGER,
 		photoKind: 'PNG',
 		photoSize: 'Full Size',
+		sequentialPrefix: '',
+		subfolderFormat: 'None',
+		tiffBitDepth: 8,
 	},
 	// If a single engine is passed, it's used for all cases regardless of the
 	// '.[].path'` to find all original image formats in your library.
@@ -119,11 +122,9 @@ export async function exportApplePhoto(
 export async function exportApplePhotos(
 	identifiers: Array<AlbumInfo | PhotoInfo | string>,
 	destinationDirectory: string,
-	options?: ExportApplePhotoOptions,
+	options?: PartialDeep<ExportApplePhotoOptions>,
 ): Promise<ExportApplePhotoResult[]> {
-	const resolvedOptions = options
-		? mergeDefaults(options, defaultExportApplePhotoOptions)
-		: defaultExportApplePhotoOptions
+	const resolvedOptions = mergeDefaults(options, defaultExportApplePhotoOptions)
 	const photoInfos = await resolveIdentifiers(identifiers)
 	const exportedPhotos: ExportApplePhotoResult[] = []
 

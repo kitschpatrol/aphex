@@ -1,3 +1,4 @@
+import type { PartialDeep } from 'type-fest'
 import type { ExportOptions } from '..'
 import type { PhotoInfo } from '../aphex-swift/cli-bridge'
 import type { AphexMetadata, ImageTags, ValidateTagsResult } from '../utilities/image/tags'
@@ -34,7 +35,7 @@ export type ManageMetadataResult = {
 export async function manageMetadataBatch(
 	identifiers: Array<PhotoInfo | string>,
 	targetFilePaths: string[],
-	options?: Partial<ManageMetadataOptions>,
+	options?: PartialDeep<ManageMetadataOptions>,
 	exportOptions?: ExportOptions,
 ): Promise<ManageMetadataResult[]> {
 	const photoInfos = await resolveIdentifiers(identifiers)
@@ -56,13 +57,11 @@ export async function manageMetadataBatch(
 export async function manageMetadata(
 	identifier: PhotoInfo | string,
 	targetFilePath: string,
-	options?: Partial<ManageMetadataOptions>,
+	options?: PartialDeep<ManageMetadataOptions>,
 	/** For Aphex Metadata object */
 	exportOptions?: ExportOptions,
 ): Promise<ManageMetadataResult> {
-	const resolvedOptions = options
-		? mergeDefaults(options, defaultManageMetadataOptions)
-		: defaultManageMetadataOptions
+	const resolvedOptions = mergeDefaults(options, defaultManageMetadataOptions)
 	const photoInfo = await resolvePhotoIdentifier(identifier)
 
 	let tagsToTarget: Array<keyof ImageTags> | undefined

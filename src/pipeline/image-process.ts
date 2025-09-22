@@ -1,3 +1,4 @@
+import type { PartialDeep } from 'type-fest'
 import fse from 'fs-extra'
 import os from 'node:os'
 import path from 'node:path'
@@ -82,7 +83,7 @@ export const defaultProcessImageOptions: ProcessImageOptions = {
 		width: Number.MAX_SAFE_INTEGER,
 		height: Number.MAX_SAFE_INTEGER,
 	},
-	maxFileSizeBytes: 25_000_000,
+	maxFileSizeBytes: Number.MAX_SAFE_INTEGER,
 	nearLosslessFormat: 'none', // 'webp'... Meh
 	nearLosslessFormatAlpha: 'none', // Webp's near lossless compression screws up alpha areas
 	passthroughFormats: [],
@@ -105,11 +106,9 @@ const SINGLE_FILE_SERIAL = false
 export async function processPhotos(
 	imagePaths: string[],
 	destinationDirectory: string,
-	options?: Partial<ProcessImageOptions>,
+	options?: PartialDeep<ProcessImageOptions>,
 ): Promise<ProcessImageResult[]> {
-	const resolvedOptions = options
-		? mergeDefaults(options, defaultProcessImageOptions)
-		: defaultProcessImageOptions
+	const resolvedOptions = mergeDefaults(options, defaultProcessImageOptions)
 
 	const tempProcessOutputDirectory = await getTempDirectory('process', 'images')
 	let processImageResults: ProcessImageResult[]

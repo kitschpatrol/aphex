@@ -94,7 +94,7 @@ Aphex provides two main export functions, one for individual photos, and one tha
 function exportPhoto(
   identifier: PhotoInfo | string,
   destinationDirectory: string,
-  options?: Partial<ExportOptions>,
+  options?: PartialDeep<ExportOptions>,
 ): Promise<ExportResult>
 ```
 
@@ -104,7 +104,7 @@ function exportPhoto(
 function exportPhotos(
   identifiers: Array<AlbumInfo | PhotoInfo | string>,
   destinationDirectory: string,
-  options?: Partial<ExportOptions>,
+  options?: PartialDeep<ExportOptions>,
 ): Promise<ExportResult[]>
 ```
 

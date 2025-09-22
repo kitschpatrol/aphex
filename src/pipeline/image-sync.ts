@@ -1,5 +1,6 @@
 /* eslint-disable complexity */
 
+import type { PartialDeep } from 'type-fest'
 import { deepEqual } from 'fast-equals'
 import fse from 'fs-extra'
 import path from 'node:path'
@@ -49,8 +50,8 @@ export type SyncResult = {
 export async function getSyncPlanForImage(
 	identifier: PhotoInfo | string,
 	destinationDirectory: string,
-	options?: Partial<SyncOptions>,
-	exportOptions?: Partial<ExportOptions>,
+	options?: PartialDeep<SyncOptions>,
+	exportOptions?: PartialDeep<ExportOptions>,
 ): Promise<SyncResult> {
 	return getSyncPlanForImages(
 		[await resolvePhotoIdentifier(identifier)],
@@ -89,14 +90,13 @@ async function getDestinationFiles(destinationDirectory: string): Promise<Destin
 export async function getSyncPlanForImages(
 	identifiers: Array<AlbumInfo | PhotoInfo | string>,
 	destinationDirectory: string,
-	options?: Partial<SyncOptions>,
+	options?: PartialDeep<SyncOptions>,
 	/** Need whole export options configuration for effective diffing */
-	exportOptions?: Partial<ExportOptions>,
+	exportOptions?: PartialDeep<ExportOptions>,
 ): Promise<SyncResult> {
-	const resolvedOptions = options ? mergeDefaults(options, defaultSyncOptions) : defaultSyncOptions
-	const resolvedExportOptions = exportOptions
-		? mergeDefaults(exportOptions, defaultExportOptions)
-		: defaultExportOptions
+	const resolvedOptions = mergeDefaults(options, defaultSyncOptions)
+	// TODO don't apply defaults to export options?
+	const resolvedExportOptions = mergeDefaults(exportOptions, defaultExportOptions)
 
 	const photoInfos = await resolveIdentifiers(identifiers)
 
@@ -109,12 +109,11 @@ export async function getSyncPlanForImages(
 	const destinationFiles = await getDestinationFiles(destinationDirectory)
 
 	for (const sourcePhotoInfo of photoInfos) {
+		// Match against UUID, insensitive to file names, formats, etc.
 		const matchingDestinationFile = destinationFiles.find(
 			(file) => file.tags?.aphexMetadata?.photoInfo.uuid === sourcePhotoInfo.uuid,
 		)
 
-		// No file name matches, return early
-		// TODO more aggressive metadata UUID scraping strategy?
 		if (matchingDestinationFile === undefined) {
 			syncResult.plan.push({
 				diffedVia: undefined,

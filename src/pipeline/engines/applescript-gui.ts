@@ -1,25 +1,65 @@
+import type { PartialDeep } from 'type-fest'
 import { execa } from 'execa'
 import path from 'node:path'
 import { mergeDefaults } from '../../utilities/defaults'
 import { getTempDirectory } from '../../utilities/file'
 import { getPackageAssetsPath } from '../../utilities/paths'
 
+/**
+ * Mirrors the export UI in Note that note that some options are contingent on others.
+ *
+ * The AppleScript implementation is smart about only "clicking" the necessary
+ * options in the GUI.
+ */
 export type ExportViaAppleScriptGuiOptions = {
-	colorProfile?: 'AdobeRGB' | 'Display P3' | 'Most Compatible' | 'Original' | 'sRGB'
-	fileName?: 'Album Name With Number' | 'Sequential' | 'Use File Name' | 'Use Title'
-	includeLocation?: boolean
-	includeMetadata?: boolean
-	jpegQuality?: 'High' | 'Low (smallest Size)' | 'Maximum' | 'Medium'
-	maxSizeType?: 'Dimension' | 'Height' | 'Width'
-	maxSizeValue?: number
-	photoKind?: 'HEIC' | 'JPEG' | 'PNG' | 'TIFF'
-	photoSize?: 'Custom' | 'Full Size' | 'Large' | 'Medium' | 'Small'
-	sequentialPrefix?: string
-	subfolderFormat?: 'Moment Name' | 'None'
-	tiffBitDepth?: 8 | 16
+	/** "Color Profile" Drop Down */
+	colorProfile: 'AdobeRGB' | 'Display P3' | 'Most Compatible' | 'Original' | 'sRGB'
+	/** "File Name" Drop Down */
+	fileName: 'Album Name With Number' | 'Sequential' | 'Use File Name' | 'Use Title'
+	/** "Include Location Information" Checkbox */
+	includeLocation: boolean
+	/** "Include Title, Keywords, and Caption" Checkbox */
+	includeMetadata: boolean
+	/**
+	 * "JPEG Quality" Drop Down
+	 *
+	 * Only applies if `photoKind` is `JPEG`
+	 */
+	jpegQuality: 'High' | 'Low (smallest Size)' | 'Maximum' | 'Medium'
+	/**
+	 * "Size Max" Drop Down
+	 *
+	 * Only applies if `photoSize` is `Custom`
+	 */
+	maxSizeType: 'Dimension' | 'Height' | 'Width'
+	/**
+	 * "Size Max of" text field
+	 *
+	 * Only applies if `photoSize` is `Custom`
+	 */
+	maxSizeValue: number
+	/** "Photo Kind" Drop Down */
+	photoKind: 'HEIC' | 'JPEG' | 'PNG' | 'TIFF'
+	/** "Size" Drop Down */
+	photoSize: 'Custom' | 'Full Size' | 'Large' | 'Medium' | 'Small'
+	/**
+	 * "Sequential Prefix" Text Field
+	 *
+	 * Only applies if `fileName` is `Sequential`
+	 */
+	sequentialPrefix: string
+	/** "Subfolder Format" Drop Down */
+	subfolderFormat: 'Moment Name' | 'None'
+	/**
+	 * "16 Bit" Checkbox
+	 *
+	 * Only applies if `photoKind` is `TIFF`
+	 */
+	tiffBitDepth: 8 | 16
 }
 
-const defaultExportViaAppleScriptGuiOptions: Required<ExportViaAppleScriptGuiOptions> = {
+/** Apple's defaults, but these are overridden by Aphex by default */
+const defaultExportViaAppleScriptGuiOptions: ExportViaAppleScriptGuiOptions = {
 	colorProfile: 'Most Compatible',
 	fileName: 'Use File Name',
 	includeLocation: true,
@@ -43,7 +83,7 @@ export async function exportViaAppleScriptGui(
 	 * UUID of either a photo or an album
 	 */
 	uuid: string,
-	options?: ExportViaAppleScriptGuiOptions,
+	options?: PartialDeep<ExportViaAppleScriptGuiOptions>,
 ): Promise<string[]> {
 	const tempDirectory = await getTempDirectory('engine', 'applescript-gui')
 
@@ -60,9 +100,7 @@ export async function exportViaAppleScriptGui(
 		sequentialPrefix,
 		subfolderFormat,
 		tiffBitDepth,
-	} = options
-		? mergeDefaults(options, defaultExportViaAppleScriptGuiOptions)
-		: defaultExportViaAppleScriptGuiOptions
+	} = mergeDefaults(options, defaultExportViaAppleScriptGuiOptions)
 
 	// Passed in order of appearance in the UI
 	// Due to the nature of the implementation, there's no streaming output, just

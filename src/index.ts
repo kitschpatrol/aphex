@@ -1,4 +1,4 @@
-import type { OmitDeep, Simplify } from 'type-fest'
+import type { OmitDeep, PartialDeep, Simplify } from 'type-fest'
 import fse from 'fs-extra'
 import path from 'node:path'
 import type { AlbumInfo, PhotoInfo } from './aphex-swift/cli-bridge'
@@ -19,6 +19,16 @@ export {
 	aphexAlbumInfo as getAlbumInfo,
 	aphexPhotoInfo as getPhotoInfo,
 } from './aphex-swift/cli-bridge'
+
+/**
+ * Helper for deep merging ExportOptions object against library defaults.
+ * Exported for unplugin-aphex.
+ */
+export function mergeDefaultExportOptions(
+	options: PartialDeep<ExportOptions> | undefined,
+): ExportOptions {
+	return mergeDefaults(options, defaultExportOptions)
+}
 
 export type ExportOptions = {
 	exportOptions: ExportApplePhotoOptions
@@ -62,7 +72,7 @@ type ExportResults = {
 	syncResult: Simplify<Omit<SyncResult['plan'][number], 'photoInfo'>> | undefined
 }
 
-type ExportResult = {
+export type ExportResult = {
 	options: ExportOptions
 	path: string
 	photoInfo: PhotoInfo
@@ -75,10 +85,9 @@ type ExportResult = {
 export async function exportPhoto(
 	identifier: PhotoInfo | string,
 	destinationDirectory: string,
-	options?: Partial<ExportOptions>,
+	options?: PartialDeep<ExportOptions>,
 ): Promise<ExportResult> {
 	const photoInfo = await resolvePhotoIdentifier(identifier)
-
 	const result = await exportPhotos([photoInfo], destinationDirectory, options)
 	assertSingleElement(result)
 	return result[0]
@@ -90,11 +99,9 @@ export async function exportPhoto(
 export async function exportPhotos(
 	identifiers: Array<AlbumInfo | PhotoInfo | string>,
 	destinationDirectory: string,
-	options?: Partial<ExportOptions>,
+	options?: PartialDeep<ExportOptions>,
 ): Promise<ExportResult[]> {
-	const resolvedOptions: ExportOptions = options
-		? mergeDefaults(options, defaultExportOptions)
-		: defaultExportOptions
+	const resolvedOptions = mergeDefaultExportOptions(options)
 	const { exportOptions, metadataOptions, processOptions, syncOptions } = resolvedOptions
 	const resolvedDestinationDirectory = await ensureDirectoryExists(destinationDirectory)
 	const photoInfos = await resolveIdentifiers(identifiers)
