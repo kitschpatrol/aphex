@@ -20,6 +20,9 @@ export {
 	aphexPhotoInfo as getPhotoInfo,
 } from './aphex-swift/cli-bridge'
 
+// Re-exported for the worker...
+export { processImage } from './pipeline/image-process'
+
 /**
  * Helper for deep merging ExportOptions object against library defaults.
  * Exported for unplugin-aphex.

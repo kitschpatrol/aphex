@@ -98,7 +98,7 @@ export const defaultProcessImageOptions: ProcessImageOptions = {
 	],
 }
 
-const SINGLE_FILE_SERIAL = false
+const SINGLE_FILE_SERIAL = true
 
 /**
  * Process one or more exported photos
@@ -133,7 +133,7 @@ export async function processPhotos(
 				// eslint-disable-next-line ts/naming-convention
 				PISCINA_WORKER_META_URL: import.meta.url,
 			},
-			filename: new URL('workers/process-image-worker.js', import.meta.url).href,
+			filename: new URL('../workers/process-image-worker.js', import.meta.url).href,
 			maxThreads: threads,
 			minThreads: threads,
 		})
