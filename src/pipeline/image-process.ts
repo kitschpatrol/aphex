@@ -97,7 +97,7 @@ export const defaultProcessImageOptions: ProcessImageOptions = {
 	],
 }
 
-const SINGLE_FILE_SERIAL = true
+const SINGLE_FILE_SERIAL = false
 
 /**
  * Process one or more exported photos
@@ -127,6 +127,13 @@ export async function processPhotos(
 		// Higher crashes the machine? Default 1.5x
 		// console.log(`Using ${threads} threads for processing`)
 		const piscina = new Piscina({
+			env: {
+				...process.env,
+				// We have to pass the import context manually for the
+				// getDirname calls inside image process
+				// eslint-disable-next-line ts/naming-convention
+				PISCINA_WORKER_META_URL: import.meta.url,
+			},
 			filename: new URL('workers/process-image-worker.js', import.meta.url).href,
 			maxThreads: threads,
 			minThreads: threads,
