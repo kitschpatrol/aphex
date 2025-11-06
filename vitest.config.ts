@@ -15,11 +15,8 @@ export default defineConfig({
 				statements: 80,
 			},
 		},
+		isolate: false,
+		maxWorkers: 1,
 		pool: 'forks',
-		poolOptions: {
-			forks: {
-				singleFork: true,
-			},
-		},
 	},
 })

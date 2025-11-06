@@ -176,7 +176,7 @@ export function assertAlbumInfoArray(value: unknown): asserts value is AlbumInfo
 
 /**
  * Get photo asset information for given identifiers (ID, filename, album name, or photo path)
- * @throws
+ * @throws {Error} If the command fails
  */
 export async function aphexPhotoInfo(
 	identifiers: string | string[],
@@ -206,7 +206,7 @@ export async function aphexPhotoInfo(
 
 /**
  * Get album info
- * @throws
+ * @throws {Error} If the command fails
  */
 export async function aphexAlbumInfo(
 	identifiers: string | string[],
@@ -236,7 +236,7 @@ export async function aphexAlbumInfo(
 
 /**
  * Export photos for given identifiers to a destination directory
- * @throws
+ * @throws {Error} If the command fails
  */
 export async function aphexExport(
 	identifiers: string | string[],

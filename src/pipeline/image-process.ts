@@ -42,8 +42,8 @@ export type ProcessImageOptions = CompressImageOptions & {
 	lossyFormatAlpha: LossyFormat
 	/** Maximum pixel dimensions before triggering resize (width OR height) */
 	maxDimensionsPixels: {
-		height: number
 		width: number
+		height: number
 	}
 	/** Near-lossless format used specifically for images with alpha channels */
 	nearLosslessFormatAlpha: NearLosslessFormat

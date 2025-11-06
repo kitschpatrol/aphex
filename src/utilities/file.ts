@@ -68,7 +68,7 @@ export function sluggifyFilenameInPath(filePath: string): string {
 
 /**
  * Retrieves the creation date of a file
- * @throws Error if the file doesn't exist or can't be accessed
+ * @throws {Error} if the file doesn't exist or can't be accessed
  */
 export async function getFileCreationTime(filePath: string): Promise<Date> {
 	try {
@@ -121,7 +121,7 @@ export async function creationDatesMatch(file1: string, file2: string): Promise<
 
 /**
  * Verifies if all provided file paths exist
- * @throws Error if any file path doesn't exist
+ * @throws {Error} If any file path doesn't exist
  */
 export function assertPathsExist(...filePaths: string[]): void {
 	for (const filePath of filePaths) {

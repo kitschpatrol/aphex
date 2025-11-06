@@ -95,7 +95,7 @@ export function fitInside(
 	sourceHeight: number,
 	maxWidth: number,
 	maxHeight: number,
-): { height: number; width: number } {
+): { width: number; height: number } {
 	if (sourceWidth <= maxWidth && sourceHeight <= maxHeight) {
 		return {
 			width: sourceWidth,

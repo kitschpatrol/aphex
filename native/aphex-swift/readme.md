@@ -40,6 +40,7 @@ OVERVIEW: Query and export images and albums from your macOS Photos.app library
 USAGE: aphex <subcommand>
 
 OPTIONS:
+  --version               Show the version.
   -h, --help              Show help information.
 
 SUBCOMMANDS:
@@ -74,6 +75,7 @@ ARGUMENTS:
 
 OPTIONS:
   -c, --case-sensitive    Case sensitive matching
+  --version               Show the version.
   -h, --help              Show help information.
 
 ```
@@ -97,6 +99,7 @@ ARGUMENTS:
 
 OPTIONS:
   -c, --case-sensitive    Case sensitive matching
+  --version               Show the version.
   -h, --help              Show help information.
 
 ```
@@ -120,6 +123,7 @@ OPTIONS:
   -c, --case-sensitive    Case sensitive matching
   -d, --destination <destination>
                           Destination directory for exported photos
+  --version               Show the version.
   -h, --help              Show help information.
 
 ```

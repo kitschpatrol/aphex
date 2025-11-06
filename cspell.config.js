@@ -1,15 +1,5 @@
 import { cspellConfig } from '@kitschpatrol/cspell-config'
 
 export default cspellConfig({
-	words: [
-		'aphex',
-		'Bentele',
-		'codesign',
-		'defu',
-		'importx',
-		'Kabir',
-		'metaimage',
-		'Oberai',
-		'Recents',
-	],
+	words: ['codesign', 'metaimage'],
 })

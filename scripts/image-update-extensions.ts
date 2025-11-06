@@ -13,8 +13,8 @@ import { lookupImageMimeType } from '../src/utilities/image/mime'
  * Updates the extensions of image paths in text files based on the provided
  * glob patterns.
  * @param imageGlobs - An array of glob patterns to match image files.
- * @param fileGlobs - An array of glob patterns to match text files. @returns A
- * promise that resolves to an array of file paths that were updated.
+ * @param fileGlobs - An array of glob patterns to match text files.
+ * @returns A promise that resolves to an array of file paths that were updated.
  *
  * This function performs the following steps:
  * 1. Uses the `globby` library to find image paths and text file paths based on
@@ -40,7 +40,7 @@ async function updateImageExtensions(imageGlobs: string[], fileGlobs: string[]):
 
 	const imagePathRegexArray = newImagePaths.map((filePath) => {
 		const rawFileName = stripExtension(filePath)
-		return new RegExp(`${escapeRegExp(rawFileName)}\\.\\w{3,4}`, 'g')
+		return new RegExp(String.raw`${escapeRegExp(rawFileName)}\.\w{3,4}`, 'g')
 	})
 
 	const updatedFiles: string[] = []

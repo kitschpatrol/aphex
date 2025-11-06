@@ -74,6 +74,12 @@ tccutil reset Photos com.microsoft.VSCode
 
 Adapt the application identifiers (e.g. `com.microsoft.VSCode`) as required to suit your situation.
 
+To get an application's bundle identifier:
+
+```sh
+osascript -e 'id of app "Cursor"'
+```
+
 ## Usage
 
 Aphex tries to be generous in what it accepts as valid image identifiers.

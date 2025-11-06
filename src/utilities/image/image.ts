@@ -10,7 +10,7 @@ import { getTags } from './tags'
 export type ImageInfo = {
 	alpha: boolean
 	colorProfile: string
-	dimensionsPixels: { height: number; width: number }
+	dimensionsPixels: { width: number; height: number }
 	mime: ImageMimeType
 	path: string
 	sizeBytes: number
@@ -36,8 +36,8 @@ export async function getImageInfo(imagePath: string): Promise<ImageInfo> {
  * Get the dimensions of an image
  */
 export async function getImageDimensions(imagePath: string): Promise<{
-	height: number
 	width: number
+	height: number
 }> {
 	// Probably throws?
 	const { width, height } = await imageSizeFromFile(imagePath)

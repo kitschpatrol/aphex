@@ -61,6 +61,7 @@ async function exportPhotos(destination: string, uuid: string): Promise<string[]
 	// Collect the paths of all exported and copied files
 	const exportedFiles: string[] = []
 
+	// eslint-disable-next-line unicorn/no-immediate-mutation
 	exportedFiles.push(
 		// File System
 		await moveResult(

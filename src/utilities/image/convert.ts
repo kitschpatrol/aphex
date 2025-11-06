@@ -405,7 +405,6 @@ export type CompressImageOptions = {
 	 * When false, images smaller than maxFileSizeBytes are copied without modification.
 	 */
 	forceCompression: boolean
-
 	/**
 	 * Format to use for lossless compression (first attempt).
 	 * - 'avif': Best compression but slower encoding
@@ -414,7 +413,6 @@ export type CompressImageOptions = {
 	 * - 'none': Skip lossless compression
 	 */
 	losslessFormat: LosslessFormat
-
 	/**
 	 * Format to use for lossy compression (final fallback).
 	 * - 'avif': Best compression but very slow encoding
@@ -423,7 +421,6 @@ export type CompressImageOptions = {
 	 * - 'none': Skip lossy compression (may result in oversized files)
 	 */
 	lossyFormat: LossyFormat
-
 	/**
 	 * Quality level for lossy compression (0-1 scale).
 	 * - 0: Lowest quality, smallest file size
@@ -431,14 +428,12 @@ export type CompressImageOptions = {
 	 * - Recommended range: 0.85-0.96 for high-quality images
 	 */
 	lossyQuality: number
-
 	/**
 	 * Maximum allowed file size in bytes.
 	 * Images exceeding this size will be compressed using the configured formats.
 	 * The compression process stops when this target is met or all options are exhausted.
 	 */
 	maxFileSizeBytes: number
-
 	/**
 	 * Format to use for near-lossless compression (second attempt).
 	 * - 'webp': Only format currently supporting near-lossless mode
