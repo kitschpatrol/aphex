@@ -1,7 +1,7 @@
 {
 	"name": "@kitschpatrol/aphex",
 	"version": "0.0.0",
-	"description": "Apple Photos Export. TypeScript library to export and process images and albums from your macOS Photos.app library.",
+	"description": "Apple Photos Export. TypeScript library and CLI tool to export and process images and albums from your macOS Photos.app library.",
 	"keywords": [
 		"apple",
 		"apple-photos",
@@ -49,16 +49,16 @@
 		"test:coverage": "vitest run --coverage"
 	},
 	"dependencies": {
-		"piscina": "^5.1.3",
+		"piscina": "^5.1.4",
 		"type-fest": "^5.2.0"
 	},
 	"devDependencies": {
 		"@clack/prompts": "^0.11.0",
-		"@kitschpatrol/shared-config": "^5.8.1",
+		"@kitschpatrol/shared-config": "^5.8.3",
 		"@sindresorhus/is": "^7.1.1",
 		"@types/fs-extra": "^11.0.4",
 		"@types/node": "~20.19.24",
-		"@vitest/coverage-v8": "^4.0.7",
+		"@vitest/coverage-v8": "^4.0.8",
 		"defu": "^6.1.4",
 		"execa": "^9.6.0",
 		"exiftool-vendored": "^31.3.0",
@@ -75,11 +75,11 @@
 		"prettier": "^3.6.2",
 		"pretty-bytes": "^7.1.0",
 		"pretty-ms": "^9.3.0",
-		"tsdown": "^0.16.0",
+		"tsdown": "^0.16.1",
 		"tsx": "^4.20.6",
-		"vitest": "^4.0.7"
+		"vitest": "^4.0.8"
 	},
-	"packageManager": "pnpm@10.20.0",
+	"packageManager": "pnpm@10.21.0",
 	"engines": {
 		"node": ">=20.19.0"
 	},

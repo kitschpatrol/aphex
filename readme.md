@@ -15,7 +15,7 @@
 
 <!-- short-description -->
 
-**Apple Photos Export. TypeScript library to export and process images and albums from your macOS Photos.app library.**
+**Apple Photos Export. TypeScript library and CLI tool to export and process images and albums from your macOS Photos.app library.**
 
 <!-- /short-description -->
 
@@ -35,7 +35,7 @@ The name "Aphex" is a concatenation of Apple Photos Export.
 
 This project is open-sourced as a curiosity and for my own convenience, but I suspect it's too niche to be of wide interest or utility. I don't currently plan to spend time adding features for more general use-cases.
 
-It won't work in CI pipelines. It can only target the system's active Photos.app library. It (probably) won't work if you store your photos in iCloud.
+It won't work in CI pipelines. It can only target the system's active Photos.app library. It might not work if you store your photos in iCloud. (I don't.)
 
 If you are looking for a proper Photos.app mass-export or backup solution, **I highly recommend using [osxphotos](https://github.com/RhetTbull/osxphotos) instead**.
 
@@ -88,7 +88,7 @@ It imagines the contents of your Photos.app library as a hierarchical file syste
 
 This lets you access specific photos in specific albums via a path-like syntax.
 
-Be warned that exporting unedited images is very fast, but exporting _edited_ images can be very (very) slow, since an alternate AppleScript-based export strategy is required to ensure maximum quality.
+Be warned that exporting unedited images is very fast, but exporting _edited_ images can be very (very) slow, since an alternate AppleScript-based export strategy is enabled by default to ensure maximum quality.
 
 By default, different export strategies are used for different types of images. The default configuration prioritizes image quality over export speed.
 
@@ -144,7 +144,7 @@ function getAlbumInfo(
 
 ##### Exporting a photo by filename
 
-Let's assume you have an album named "Trip" in your Photos.app library containing a photo with the filename "IMG_1922.jpeg":
+Let's assume you have an album named "Trip" in your Photos.app library containing a photo with the filename "IMG\_1922.jpeg":
 
 ```ts
 const result = await exportPhoto('Trip/IMG_1922.jpeg', '~/Desktop')
@@ -261,6 +261,8 @@ This is an unofficial library and is not affiliated with or blessed by Apple Inc
 The core export commands maintain a "read only" relationship with your library.
 
 None of the code paths should modify the contents of your Photos.app library. But regardless, strange things can happen — please back up your Photos.app library before using this tool.
+
+This tool has _not_ been tested with iCloud-based Photos libraries.
 
 <!-- license -->
 
