@@ -144,7 +144,7 @@ function getAlbumInfo(
 
 ##### Exporting a photo by filename
 
-Let's assume you have an album named "Trip" in your Photos.app library containing a photo with the filename "IMG\_1922.jpeg":
+Let's assume you have an album named "Trip" in your Photos.app library containing a photo with the filename "IMG_1922.jpeg":
 
 ```ts
 const result = await exportPhoto('Trip/IMG_1922.jpeg', '~/Desktop')
@@ -244,7 +244,7 @@ Also, this library bundles a bunch of generically useful image processing functi
 
 Thank you to [Rhet Turnbull](https://github.com/RhetTbull) for creating [osxphotos](https://github.com/RhetTbull/osxphotos), which informed some of the export pipelines in this library.
 
-Aphex borrows a technique from [Andreas Bentele](https://www.bentele-software.de/)'s [PhotosExporter](https://github.com/abentele/PhotosExporter) for extracting semi-private values from `PHAssetResource` objects.
+Aphex borrows a technique from [Andreas Bentele](https://github.com/abentele)'s [PhotosExporter](https://github.com/abentele/PhotosExporter) for extracting semi-private values from `PHAssetResource` objects.
 
 <!-- contributing -->
 
