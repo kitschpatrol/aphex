@@ -258,7 +258,7 @@ function cleanExportResults(result: ExportApplePhotoResult): ExportResults['expo
 }
 
 function cleanMetadataResults(result: ManageMetadataResult): ExportResults['metadataResult'] {
-	const { photoInfo, ...rest } = result
+	const { photoInfo: _, ...rest } = result
 
 	return {
 		...rest,
@@ -266,7 +266,7 @@ function cleanMetadataResults(result: ManageMetadataResult): ExportResults['meta
 }
 
 function cleanSyncResult(result: SyncResult['plan'][number]): ExportResults['syncResult'] {
-	const { photoInfo, ...rest } = result
+	const { photoInfo: _, ...rest } = result
 	return { ...rest }
 }
 
@@ -277,9 +277,9 @@ function cleanProcessResults(
 		return undefined
 	}
 
-	const { input, output, path, ...rest } = result
-	const { path: inputPath, ...strippedInput } = input
-	const { path: outputPath, ...strippedOutput } = output
+	const { input, output, path: _path, ...rest } = result
+	const { path: _inputPath, ...strippedInput } = input
+	const { path: _outputPath, ...strippedOutput } = output
 
 	return {
 		...rest,
