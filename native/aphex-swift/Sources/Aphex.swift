@@ -96,8 +96,8 @@ struct Export: ParsableCommand {
     @Flag(name: .shortAndLong, help: "Case sensitive matching")
     var caseSensitive = false
 
-    @Option(name: .shortAndLong, help: "Destination directory for exported photos")
-    var destination: String
+    @Option(name: .shortAndLong, help: "Destination directory for exported photos (defaults to current directory)")
+    var destination: String?
 
     @Argument(
         help:
@@ -108,7 +108,8 @@ struct Export: ParsableCommand {
     mutating func run() throws {
         try checkPhotosAccess()
 
-        let expandedPath = NSString(string: destination).expandingTildeInPath
+        let destinationPath = destination ?? FileManager.default.currentDirectoryPath
+        let expandedPath = NSString(string: destinationPath).expandingTildeInPath
         let destinationURL = URL(fileURLWithPath: expandedPath)
 
         guard
