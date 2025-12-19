@@ -429,18 +429,19 @@ func exportPhotoAsset(asset: PHAsset, destination: URL) throws -> URL? {
       ])
   }
 
-  // Determine the final export URL
-  let finalDestination: URL
-
   // Check if destination is a directory or a file path
   var isDirectory: ObjCBool = false
+  let destinationDirectory: URL
+  let explicitFilename: String?
+  
   if FileManager.default.fileExists(atPath: destination.path, isDirectory: &isDirectory) {
     if isDirectory.boolValue {
-      // Destination is a directory - generate filename
-      finalDestination = try generateFilename(for: asset, in: destination)
+      destinationDirectory = destination
+      explicitFilename = nil
     } else {
       // Destination is an existing file - use as-is
-      finalDestination = destination
+      destinationDirectory = destination.deletingLastPathComponent()
+      explicitFilename = destination.lastPathComponent
     }
   } else {
     // Path doesn't exist - check if it has an extension
@@ -461,8 +462,24 @@ func exportPhotoAsset(asset: PHAsset, destination: URL) throws -> URL? {
             NSLocalizedDescriptionKey: "Parent directory does not exist: \(parentDirectory.path)"
           ])
       }
-      finalDestination = destination
+      destinationDirectory = parentDirectory
+      explicitFilename = destination.lastPathComponent
     }
+  }
+
+  // Determine which resource will be exported and get its UTI
+  let resources = PHAssetResource.assetResources(for: asset)
+  let exportedUTI: String
+  if asset.hasAdjustments, let editedResource = resources.first(where: { $0.type == .fullSizePhoto }) {
+    // Edited version will be exported
+    exportedUTI = editedResource.uniformTypeIdentifier
+  } else if let originalResource = resources.first(where: { $0.type == .photo }) {
+    // Original version will be exported
+    exportedUTI = originalResource.uniformTypeIdentifier
+  } else {
+    throw NSError(
+      domain: "ExportError", code: 6,
+      userInfo: [NSLocalizedDescriptionKey: "Could not determine resource type for photo asset"])
   }
 
   var exportedURL: URL?
@@ -485,11 +502,29 @@ func exportPhotoAsset(asset: PHAsset, destination: URL) throws -> URL? {
       return
     }
 
+    // Determine the final destination URL
+    let finalDestination: URL
+    if let filename = explicitFilename {
+      // Use the explicit filename provided
+      finalDestination = destinationDirectory.appendingPathComponent(filename)
+    } else {
+      // Generate filename based on asset title/filename and actual UTI
+      do {
+        finalDestination = try generateFilename(
+          for: asset, 
+          in: destinationDirectory, 
+          uti: exportedUTI
+        )
+      } catch {
+        exportError = error
+        return
+      }
+    }
+
     // Write the image data to the destination URL
     do {
       try data.write(to: finalDestination)
       exportedURL = finalDestination
-      // print("Image exported successfully to \(finalDestination.path)")
     } catch {
       exportError = error
     }
@@ -504,7 +539,7 @@ func exportPhotoAsset(asset: PHAsset, destination: URL) throws -> URL? {
 }
 
 // Helper function to generate a filename for an asset
-private func generateFilename(for asset: PHAsset, in directory: URL) throws -> URL {
+private func generateFilename(for asset: PHAsset, in directory: URL, uti: String?) throws -> URL {
   // Only handle photo assets
   guard asset.mediaType == .image else {
     throw NSError(
@@ -514,34 +549,56 @@ private func generateFilename(for asset: PHAsset, in directory: URL) throws -> U
       ])
   }
 
-  // Get the original file extension
-  let resources = PHAssetResource.assetResources(for: asset)
-  guard let originalResource = resources.first(where: { $0.type == .photo })
-  else {
-    throw NSError(
-      domain: "ExportError", code: 4,
-      userInfo: [NSLocalizedDescriptionKey: "Could not determine file type for photo asset"])
-  }
-
-  let originalFilename = originalResource.originalFilename
-  let fileExtension = (originalFilename as NSString).pathExtension
-
-  // Try to use title first, then fall back to original filename
+  // Get the base filename: title if available, otherwise original filename without extension
   let baseFilename: String
   if let title = asset.value(forKey: "title") as? String, !title.isEmpty {
-    baseFilename = title
+    // Remove any file extension from the title
+    baseFilename = (title as NSString).deletingPathExtension
   } else {
-    // Use original filename without extension
-    baseFilename = (originalFilename as NSString).deletingPathExtension
+    // Fall back to original filename without extension
+    let resources = PHAssetResource.assetResources(for: asset)
+    if let originalResource = resources.first(where: { $0.type == .photo }) {
+      let originalFilename = originalResource.originalFilename
+      baseFilename = (originalFilename as NSString).deletingPathExtension
+    } else {
+      throw NSError(
+        domain: "ExportError", code: 4,
+        userInfo: [NSLocalizedDescriptionKey: "Could not determine filename for photo asset"])
+    }
   }
 
   // Clean the filename (remove invalid characters)
-  let cleanFilename = cleanFilename(baseFilename)
+  let cleanBase = cleanFilename(baseFilename)
+
+  // Determine the file extension based on the actual UTI of the exported data
+  let fileExtension = uti.flatMap { utiToFileExtension($0) } ?? "jpeg"
 
   // Construct final filename with extension
-  let filename = fileExtension.isEmpty ? cleanFilename : "\(cleanFilename).\(fileExtension)"
+  let filename = "\(cleanBase).\(fileExtension)"
 
   return directory.appendingPathComponent(filename)
+}
+
+// Helper function to map UTI (Uniform Type Identifier) to file extension
+private func utiToFileExtension(_ uti: String) -> String {
+  // Map common image UTIs to their file extensions
+  let utiMap: [String: String] = [
+    "public.jpeg": "jpeg",
+    "public.jpeg-2000": "jp2",
+    "public.png": "png",
+    "public.heic": "heic",
+    "public.heif": "heif",
+    "public.tiff": "tiff",
+    "public.avif": "avif",
+    "com.compuserve.gif": "gif",
+    "com.microsoft.bmp": "bmp",
+    "com.microsoft.ico": "ico",
+    "public.webp": "webp",
+    "com.adobe.photoshop-image": "psd",
+    "com.adobe.raw-image": "dng"
+  ]
+  
+  return utiMap[uti] ?? "jpeg"
 }
 
 // Helper function to clean filename by removing invalid characters
