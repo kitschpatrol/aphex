@@ -58,12 +58,12 @@
 		"@sindresorhus/is": "^7.1.1",
 		"@types/fs-extra": "^11.0.4",
 		"@types/node": "~20.19.27",
-		"@vitest/coverage-v8": "^4.0.15",
+		"@vitest/coverage-v8": "^4.0.16",
 		"defu": "^6.1.4",
 		"execa": "^9.6.1",
-		"exiftool-vendored": "^34.0.0",
+		"exiftool-vendored": "^34.1.0",
 		"fast-equals": "^5.4.0",
-		"fs-extra": "^11.3.2",
+		"fs-extra": "^11.3.3",
 		"github-slugger": "^2.0.0",
 		"globby": "^16.0.0",
 		"image-size": "^2.0.2",
@@ -75,9 +75,9 @@
 		"prettier": "^3.7.4",
 		"pretty-bytes": "^7.1.0",
 		"pretty-ms": "^9.3.0",
-		"tsdown": "^0.18.0",
+		"tsdown": "^0.18.1",
 		"tsx": "^4.21.0",
-		"vitest": "^4.0.15"
+		"vitest": "^4.0.16"
 	},
 	"packageManager": "pnpm@10.26.0",
 	"engines": {
