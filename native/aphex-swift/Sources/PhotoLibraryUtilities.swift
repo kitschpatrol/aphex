@@ -388,7 +388,7 @@ public func getAlbums(
 
 public func exportPhotos(
   identifiers: [String], destination: URL, albumMap: [String: String]? = nil,
-  caseSensitive: Bool = false
+  caseSensitive: Bool = false, originals: Bool = false
 ) -> [URL]? {
   guard !identifiers.isEmpty else {
     return nil
@@ -408,7 +408,7 @@ public func exportPhotos(
     guard photo.mediaType == .image else { continue }
 
     do {
-      if let exportedUrl = try exportPhotoAsset(asset: photo, destination: destination) {
+      if let exportedUrl = try exportPhotoAsset(asset: photo, destination: destination, originals: originals) {
         allUrls.append(exportedUrl)
       }
     } catch {
@@ -419,7 +419,7 @@ public func exportPhotos(
   return allUrls.isEmpty ? nil : allUrls
 }
 
-func exportPhotoAsset(asset: PHAsset, destination: URL) throws -> URL? {
+func exportPhotoAsset(asset: PHAsset, destination: URL, originals: Bool = false) throws -> URL? {
   // Only export photo assets
   guard asset.mediaType == .image else {
     throw NSError(
@@ -467,8 +467,43 @@ func exportPhotoAsset(asset: PHAsset, destination: URL) throws -> URL? {
     }
   }
 
-  // Determine which resource will be exported and get its UTI
+  // Get asset resources
   let resources = PHAssetResource.assetResources(for: asset)
+  
+  // If originals flag is set, copy the original file directly
+  if originals {
+    guard let originalResource = resources.first(where: { $0.type == .photo }) else {
+      throw NSError(
+        domain: "ExportError", code: 6,
+        userInfo: [NSLocalizedDescriptionKey: "Could not find original resource for photo asset"])
+    }
+    
+    // Get the original file path
+    guard let originalPath = originalResource.value(forKey: "privateFileURL") as? URL else {
+      throw NSError(
+        domain: "ExportError", code: 7,
+        userInfo: [NSLocalizedDescriptionKey: "Could not determine file path for original resource"])
+    }
+    
+    // Determine the final destination URL
+    let finalDestination: URL
+    if let filename = explicitFilename {
+      finalDestination = destinationDirectory.appendingPathComponent(filename)
+    } else {
+      finalDestination = try generateFilename(
+        for: asset, 
+        in: destinationDirectory, 
+        uti: originalResource.uniformTypeIdentifier
+      )
+    }
+    
+    // Copy the original file directly
+    try FileManager.default.copyItem(at: originalPath, to: finalDestination)
+    return finalDestination
+  }
+
+  // Default behavior: export edited version if available, otherwise original
+  // Determine which resource will be exported and get its UTI
   let exportedUTI: String
   if asset.hasAdjustments, let editedResource = resources.first(where: { $0.type == .fullSizePhoto }) {
     // Edited version will be exported

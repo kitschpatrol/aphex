@@ -96,6 +96,9 @@ struct Export: ParsableCommand {
     @Flag(name: .shortAndLong, help: "Case sensitive matching")
     var caseSensitive = false
 
+    @Flag(name: .shortAndLong, help: "Always export original files (ignoring edits)")
+    var originals = false
+
     @Option(name: .shortAndLong, help: "Destination directory for exported photos (defaults to current directory)")
     var destination: String?
 
@@ -116,7 +119,8 @@ struct Export: ParsableCommand {
             let exportedURLs = exportPhotos(
                 identifiers: identifiers,
                 destination: destinationURL,
-                caseSensitive: caseSensitive
+                caseSensitive: caseSensitive,
+                originals: originals
             )
         else {
             throw ValidationError("No photos found for the provided identifiers or export failed")
