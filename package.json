@@ -39,7 +39,7 @@
 	],
 	"scripts": {
 		"build": "pnpm run --sequential /^build:/",
-		"build:1-lib": "tsdown --no-fixed-extension --copy ./src/assets",
+		"build:1-lib": "tsdown --no-fixed-extension --copy ./src/assets --copy ./src/workers",
 		"build:2-native": "cd native/aphex-swift && ./build.sh",
 		"clean": "git rm -f pnpm-lock.yaml ; git clean -fdX",
 		"fix": "ksc fix ; mdat readme ./native/aphex-swift/readme.md",
@@ -49,6 +49,7 @@
 		"test:coverage": "vitest run --coverage"
 	},
 	"dependencies": {
+		"importx": "^0.5.2",
 		"piscina": "^5.1.4",
 		"type-fest": "^5.3.1"
 	},
@@ -67,7 +68,6 @@
 		"github-slugger": "^2.0.0",
 		"globby": "^16.0.0",
 		"image-size": "^2.0.2",
-		"importx": "^0.5.2",
 		"markdown-table": "^3.0.4",
 		"mdat-plugin-cli-help": "^1.0.4",
 		"mrmime": "^2.0.1",

@@ -30,6 +30,7 @@ import {
 } from '../utilities/image/convert'
 import { getImageInfo } from '../utilities/image/image'
 import { stripTags } from '../utilities/image/tags'
+import { getPackageWorkersPath } from '../utilities/paths'
 
 export type ProcessImageOptions = CompressImageOptions & {
 	/** Fallback color profile applied when source profile is not in preserve list */
@@ -133,7 +134,10 @@ export async function processPhotos(
 				// eslint-disable-next-line ts/naming-convention
 				PISCINA_WORKER_META_URL: import.meta.url,
 			},
-			filename: new URL('../workers/process-image-worker.js', import.meta.url).href,
+			filename: new URL(
+				path.join(getPackageWorkersPath(import.meta), 'process-image-worker.js'),
+				'file://',
+			).href,
 			maxThreads: threads,
 			minThreads: threads,
 		})

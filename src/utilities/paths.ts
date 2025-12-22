@@ -23,7 +23,7 @@ export function getPackageBasePath(meta: ImportMeta): string {
 }
 
 /**
- * Asset directory path of package or distribution folder (Copied to by)
+ * Asset directory path of package or distribution folder (Copied by tsdown)
  */
 export function getPackageAssetsPath(meta: ImportMeta): string {
 	const dirname = getDirname(meta)
@@ -33,7 +33,17 @@ export function getPackageAssetsPath(meta: ImportMeta): string {
 }
 
 /**
- * Binary directory path of package or distribution folder
+ * Asset directory path of package or distribution folder (Copied by tsdown)
+ */
+export function getPackageWorkersPath(meta: ImportMeta): string {
+	const dirname = getDirname(meta)
+	return path.basename(dirname) === 'dist'
+		? path.join(dirname, 'workers')
+		: path.join('src', 'workers')
+}
+
+/**
+ * Binary directory path of package or distribution folder (Copied by native build script)
  */
 export function getPackageBinPath(meta: ImportMeta): string {
 	const dirname = getDirname(meta)
