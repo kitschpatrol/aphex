@@ -242,6 +242,7 @@ export async function aphexExport(
 	identifiers: string | string[],
 	destination: string,
 	caseSensitive = false,
+	originals = false,
 ): Promise<string[]> {
 	const identifiersArray = ensureArray(identifiers)
 	if (identifiersArray.length === 0) {
@@ -256,6 +257,7 @@ export async function aphexExport(
 			'--destination',
 			destination,
 			...(caseSensitive ? ['--case-sensitive'] : []),
+			...(originals ? ['--originals'] : []),
 		],
 		{
 			cwd: getPackageBinPath(import.meta),
