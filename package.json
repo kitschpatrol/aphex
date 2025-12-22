@@ -63,10 +63,10 @@
 		"defu": "^6.1.4",
 		"execa": "^9.6.1",
 		"exiftool-vendored": "^34.1.0",
-		"fast-equals": "^5.4.0",
+		"fast-equals": "^6.0.0",
 		"fs-extra": "^11.3.3",
 		"github-slugger": "^2.0.0",
-		"globby": "^16.0.0",
+		"globby": "^16.1.0",
 		"image-size": "^2.0.2",
 		"markdown-table": "^3.0.4",
 		"mdat-plugin-cli-help": "^1.0.4",
@@ -75,11 +75,11 @@
 		"prettier": "^3.7.4",
 		"pretty-bytes": "^7.1.0",
 		"pretty-ms": "^9.3.0",
-		"tsdown": "^0.18.1",
+		"tsdown": "^0.18.2",
 		"tsx": "^4.21.0",
 		"vitest": "^4.0.16"
 	},
-	"packageManager": "pnpm@10.26.0",
+	"packageManager": "pnpm@10.26.1",
 	"engines": {
 		"node": ">=20.19.0"
 	},
