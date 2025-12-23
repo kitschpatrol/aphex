@@ -11,6 +11,9 @@ importers:
       importx:
         specifier: ^0.5.2
         version: 0.5.2
+      lognow:
+        specifier: ^0.4.1
+        version: 0.4.1
       piscina:
         specifier: ^5.1.4
         version: 5.1.4
@@ -60,9 +63,6 @@ importers:
       image-size:
         specifier: ^2.0.2
         version: 2.0.2
-      lognow:
-        specifier: ^0.4.1
-        version: 0.4.1
       markdown-table:
         specifier: ^3.0.4
         version: 3.0.4
