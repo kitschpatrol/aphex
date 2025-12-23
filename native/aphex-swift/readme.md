@@ -51,6 +51,8 @@ SUBCOMMANDS:
                           path)
   export                  Export photos for given identifiers to a destination
                           directory
+  interactive             Start an interactive session that accepts commands
+                          from stdin
 
   See 'aphex help <subcommand>' for detailed help.
 ```
@@ -113,7 +115,7 @@ OPTIONS:
 ```txt
 OVERVIEW: Export photos for given identifiers to a destination directory
 
-USAGE: aphex export [--case-sensitive] --destination <destination> <identifiers> ...
+USAGE: aphex export [--case-sensitive] [--originals] [--destination <destination>] <identifiers> ...
 
 ARGUMENTS:
   <identifiers>           Photo or album identifiers (UUIDs, filenames, album
@@ -121,8 +123,10 @@ ARGUMENTS:
 
 OPTIONS:
   -c, --case-sensitive    Case sensitive matching
+  -o, --originals         Always export original files (ignoring edits)
   -d, --destination <destination>
-                          Destination directory for exported photos
+                          Destination directory for exported photos (defaults
+                          to current directory)
   --version               Show the version.
   -h, --help              Show help information.
 

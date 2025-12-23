@@ -1,7 +1,196 @@
+import type { ChildProcess } from 'node:child_process'
 import is, { assert } from '@sindresorhus/is'
 import { execa } from 'execa'
+import { spawn } from 'node:child_process'
 import { ensureArray } from '../utilities/general'
 import { getPackageBinPath } from '../utilities/paths'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Interactive Session Singleton
+// ─────────────────────────────────────────────────────────────────────────────
+
+type PendingRequest = {
+	buffer: string
+	reject: (error: Error) => void
+	resolve: (value: string) => void
+}
+
+let interactiveProcess: ChildProcess | undefined
+let currentRequest: PendingRequest | undefined
+
+/**
+ * Start an interactive session with aphex-swift.
+ * Commands will be sent to this persistent process instead of spawning new ones.
+ * @throws {Error} If the session is already active or fails to start
+ */
+export async function interactiveSessionStart(): Promise<void> {
+	if (interactiveProcess !== undefined) {
+		throw new Error('Interactive session is already active')
+	}
+
+	const binPath = getPackageBinPath(import.meta)
+
+	interactiveProcess = spawn('./aphex-swift', ['interactive'], {
+		cwd: binPath,
+		stdio: ['pipe', 'pipe', 'pipe'],
+	})
+
+	// Handle stdout - accumulate data and try to parse JSON
+	interactiveProcess.stdout?.on('data', (data: Uint8Array) => {
+		if (currentRequest === undefined) {
+			// No pending request, this shouldn't happen but ignore it
+			return
+		}
+
+		currentRequest.buffer += data.toString()
+
+		// Try to parse the buffer as complete JSON
+		try {
+			// Attempt to parse - if successful, we have a complete response
+			JSON.parse(currentRequest.buffer)
+			const response = currentRequest.buffer
+			const request = currentRequest
+			currentRequest = undefined
+			request.resolve(response)
+
+			// Process next command in queue
+			processNextCommand()
+		} catch {
+			// JSON incomplete, keep buffering
+		}
+	})
+
+	// Handle stderr - treat as errors for the current request
+	interactiveProcess.stderr?.on('data', (data: Uint8Array) => {
+		if (currentRequest !== undefined) {
+			const error = new Error(data.toString().trim())
+			const request = currentRequest
+			currentRequest = undefined
+			request.reject(error)
+			processNextCommand()
+		}
+	})
+
+	// Handle process exit
+	interactiveProcess.on('close', (code) => {
+		const error = new Error(`Interactive session exited with code ${code}`)
+
+		// Reject current request if any
+		if (currentRequest !== undefined) {
+			currentRequest.reject(error)
+			currentRequest = undefined
+		}
+
+		// Reject all queued commands
+		for (const queued of commandQueue) {
+			queued.reject(error)
+		}
+		commandQueue = []
+
+		interactiveProcess = undefined
+	})
+
+	// Wait a tick to ensure the process has started and checked Photos access
+	await new Promise((resolve) => {
+		setTimeout(resolve, 100)
+	})
+}
+
+/**
+ * Stop the interactive session if one is active.
+ */
+export async function interactiveSessionStop(): Promise<void> {
+	if (interactiveProcess === undefined) {
+		return
+	}
+
+	const processToStop = interactiveProcess
+
+	// Send exit command
+	processToStop.stdin?.write('exit\n')
+	processToStop.stdin?.end()
+
+	// Wait for process to exit
+	await new Promise<void>((resolve) => {
+		processToStop.on('close', () => {
+			resolve()
+		})
+
+		// Force kill after timeout
+		setTimeout(() => {
+			processToStop.kill('SIGKILL')
+			resolve()
+		}, 1000)
+	})
+
+	interactiveProcess = undefined
+	currentRequest = undefined
+	commandQueue = []
+}
+
+/**
+ * Check if an interactive session is currently active
+ */
+export function isInteractiveSessionActive(): boolean {
+	return interactiveProcess !== undefined
+}
+
+type QueuedCommand = {
+	command: string
+	reject: (error: Error) => void
+	resolve: (value: string) => void
+}
+
+let commandQueue: QueuedCommand[] = []
+
+function processNextCommand(): void {
+	if (
+		currentRequest !== undefined ||
+		commandQueue.length === 0 ||
+		interactiveProcess === undefined
+	) {
+		return
+	}
+
+	const next = commandQueue.shift()!
+	currentRequest = {
+		buffer: '',
+		reject: next.reject,
+		resolve: next.resolve,
+	}
+	interactiveProcess.stdin?.write(next.command + '\n')
+}
+
+/**
+ * Send a command to the interactive session and wait for the response
+ */
+async function executeInteractiveCommand(command: string): Promise<string> {
+	if (interactiveProcess === undefined) {
+		throw new Error('No interactive session active')
+	}
+
+	return new Promise((resolve, reject) => {
+		commandQueue.push({ command, reject, resolve })
+		processNextCommand()
+	})
+}
+
+/**
+ * Escape and join arguments into a single command string for interactive mode.
+ * Arguments with spaces or special characters are quoted.
+ */
+function escapeCommand(args: string[]): string {
+	return args
+		.map((arg) => {
+			// If the argument contains spaces, quotes, or backslashes, wrap in single quotes
+			// and escape any existing single quotes
+			if (/[\s'"\\]/.test(arg)) {
+				return `'${arg.replaceAll("'", String.raw`'\''`)}'`
+			}
+			return arg
+		})
+		.join(' ')
+}
 
 /**
  * TypeScript type definition for ResourceInfo from the Swift implementation
@@ -187,20 +376,24 @@ export async function aphexPhotoInfo(
 		return []
 	}
 
-	const result = await execa(
-		'./aphex-swift',
-		['photo-info', ...identifiersArray, ...(caseSensitive ? ['--case-sensitive'] : [])],
-		{
+	const args = ['photo-info', ...identifiersArray, ...(caseSensitive ? ['--case-sensitive'] : [])]
+
+	let stdout: string
+	if (isInteractiveSessionActive()) {
+		stdout = await executeInteractiveCommand(escapeCommand(args))
+	} else {
+		const result = await execa('./aphex-swift', args, {
 			cwd: getPackageBinPath(import.meta),
-		},
-	)
+		})
+		stdout = result.stdout
+	}
 
 	try {
-		const output: unknown = JSON.parse(result.stdout, dateReviver)
+		const output: unknown = JSON.parse(stdout, dateReviver)
 		assertPhotoInfoArray(output)
 		return output
 	} catch {
-		throw new Error(`Error fetching albums: ${result.stdout}`)
+		throw new Error(`Error fetching photos: ${stdout}`)
 	}
 }
 
@@ -217,20 +410,24 @@ export async function aphexAlbumInfo(
 		return []
 	}
 
-	const result = await execa(
-		'./aphex-swift',
-		['album-info', ...identifiersArray, ...(caseSensitive ? ['--case-sensitive'] : [])],
-		{
+	const args = ['album-info', ...identifiersArray, ...(caseSensitive ? ['--case-sensitive'] : [])]
+
+	let stdout: string
+	if (isInteractiveSessionActive()) {
+		stdout = await executeInteractiveCommand(escapeCommand(args))
+	} else {
+		const result = await execa('./aphex-swift', args, {
 			cwd: getPackageBinPath(import.meta),
-		},
-	)
+		})
+		stdout = result.stdout
+	}
 
 	try {
-		const output: unknown = JSON.parse(result.stdout, dateReviver)
+		const output: unknown = JSON.parse(stdout, dateReviver)
 		assertAlbumInfoArray(output)
 		return output
 	} catch {
-		throw new Error(`Error fetching album info: ${result.stdout}`)
+		throw new Error(`Error fetching album info: ${stdout}`)
 	}
 }
 
@@ -249,27 +446,31 @@ export async function aphexExport(
 		return []
 	}
 
-	const result = await execa(
-		'./aphex-swift',
-		[
-			'export',
-			...identifiersArray,
-			'--destination',
-			destination,
-			...(caseSensitive ? ['--case-sensitive'] : []),
-			...(originals ? ['--originals'] : []),
-		],
-		{
+	const args = [
+		'export',
+		...identifiersArray,
+		'--destination',
+		destination,
+		...(caseSensitive ? ['--case-sensitive'] : []),
+		...(originals ? ['--originals'] : []),
+	]
+
+	let stdout: string
+	if (isInteractiveSessionActive()) {
+		stdout = await executeInteractiveCommand(escapeCommand(args))
+	} else {
+		const result = await execa('./aphex-swift', args, {
 			cwd: getPackageBinPath(import.meta),
-		},
-	)
+		})
+		stdout = result.stdout
+	}
 
 	try {
-		const output: unknown = JSON.parse(result.stdout, dateReviver)
+		const output: unknown = JSON.parse(stdout, dateReviver)
 		assert.array<string>(output)
 		return output
 	} catch {
-		throw new Error(`Error exporting: ${result.stdout}`)
+		throw new Error(`Error exporting: ${stdout}`)
 	}
 }
 

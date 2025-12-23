@@ -18,6 +18,8 @@ import { assertSingleElement } from './utilities/general'
 export {
 	aphexAlbumInfo as getAlbumInfo,
 	aphexPhotoInfo as getPhotoInfo,
+	interactiveSessionStart,
+	interactiveSessionStop,
 } from './aphex-swift/cli-bridge'
 
 // Re-exported for the worker...
