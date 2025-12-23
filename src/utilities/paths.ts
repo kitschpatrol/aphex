@@ -39,7 +39,7 @@ export function getPackageWorkersPath(meta: ImportMeta): string {
 	const dirname = getDirname(meta)
 	return path.basename(dirname) === 'dist'
 		? path.join(dirname, 'workers')
-		: path.join('src', 'workers')
+		: path.join(dirname, '..', 'workers')
 }
 
 /**
