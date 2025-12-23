@@ -1,7 +1,7 @@
 import type { Tags } from 'exiftool-vendored'
-import { exiftool } from 'exiftool-vendored'
 import type { PhotoInfo } from '../../aphex-swift/cli-bridge'
 import type { ExportOptions } from '../../index'
+import { getExiftool } from '../exiftool'
 import { log } from '../log'
 import { lookupImageMimeType } from './mime'
 
@@ -39,7 +39,7 @@ export async function stripTags(imagePath: string): Promise<void> {
 	if (mime === 'avif') {
 		// Note that imagemagick's -strip is destructive
 		// Preserve ICC
-		await exiftool.write(
+		await getExiftool().write(
 			imagePath,
 			{},
 			{
@@ -48,7 +48,7 @@ export async function stripTags(imagePath: string): Promise<void> {
 		)
 	} else {
 		// Also strips ICC, which we can't re-insert in AVIF files without loss!
-		await exiftool.write(
+		await getExiftool().write(
 			imagePath,
 			{},
 			{
@@ -62,7 +62,7 @@ export async function stripTags(imagePath: string): Promise<void> {
  * Get the number of tags in an image
  */
 export async function getTagCount(imagePath: string): Promise<number> {
-	const data = await exiftool.read(imagePath)
+	const data = await getExiftool().read(imagePath)
 	return Object.keys(data).length
 }
 
@@ -171,7 +171,7 @@ export async function getPreservedFileName(photoInfo: PhotoInfo): Promise<string
 		FileName: filenameExif,
 		OriginalFileName: filenameExifOriginal,
 		PreservedFileName: filenameXmpPreserved,
-	} = await exiftool.read(original.filePath)
+	} = await getExiftool().read(original.filePath)
 	const filenamePath = original.filePath.split('/').pop()
 
 	log.debug(
@@ -197,7 +197,7 @@ export async function getPreservedFileName(photoInfo: PhotoInfo): Promise<string
  * Get the artist tag from an image
  */
 export async function getLegacyArtistTag(imagePath: string): Promise<string | undefined> {
-	const { Artist: artist } = await exiftool.read(imagePath)
+	const { Artist: artist } = await getExiftool().read(imagePath)
 	return artist
 }
 
@@ -205,7 +205,7 @@ export async function getLegacyArtistTag(imagePath: string): Promise<string | un
  * Clear the artist tag from an image
  */
 export async function clearLegacyArtistTag(imagePath: string): Promise<void> {
-	await exiftool.write(
+	await getExiftool().write(
 		imagePath,
 		// eslint-disable-next-line ts/naming-convention
 		{ Artist: '' },
@@ -230,7 +230,7 @@ export async function getTags(imagePath: string): Promise<ImageTags> {
 			UserComment: userComment,
 		} = {},
 		// eslint-disable-next-line ts/no-unsafe-type-assertion
-	} = (await exiftool.readRaw(imagePath, {
+	} = (await getExiftool().readRaw(imagePath, {
 		readArgs: ['-g', '-xmp:all'],
 	})) as {
 		// eslint-disable-next-line ts/naming-convention
@@ -300,7 +300,7 @@ export async function setTags(imagePath: string, imageTags: ImageTags) {
 		...('aphexMetadata' in imageTags ? { 'XMP:UserComment': userComment ?? '' } : {}),
 	}
 
-	await exiftool.write(imagePath, tags, {
+	await getExiftool().write(imagePath, tags, {
 		writeArgs: ['-overwrite_original_in_place'],
 	})
 }

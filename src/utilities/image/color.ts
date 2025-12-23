@@ -1,6 +1,6 @@
 import { execa } from 'execa'
-import { exiftool } from 'exiftool-vendored'
 import path from 'node:path'
+import { getExiftool } from '../exiftool'
 import { log } from '../log'
 import { getPackageAssetsPath } from '../paths'
 import { lookupImageMimeType } from './mime'
@@ -40,7 +40,7 @@ export async function getColorProfile(imagePath: string): Promise<ColorProfile> 
 	const sipsProfile = rawResult === '<nil>' ? undefined : rawResult
 
 	// Then try exiftool
-	const { ProfileDescription: exiftoolProfile } = await exiftool.read(imagePath)
+	const { ProfileDescription: exiftoolProfile } = await getExiftool().read(imagePath)
 
 	if (
 		sipsProfile !== undefined &&
@@ -131,7 +131,7 @@ export async function convertColorProfile(imagePath: string, profile: ColorProfi
 	}
 
 	if (currentProfile === 'None') {
-		await exiftool.write(
+		await getExiftool().write(
 			imagePath,
 			{},
 			{
@@ -180,7 +180,7 @@ export async function assignColorProfile(imagePath: string, profile: ColorProfil
 	}
 
 	if (profile === 'None') {
-		await exiftool.write(
+		await getExiftool().write(
 			imagePath,
 			{},
 			{
@@ -198,7 +198,7 @@ export async function assignColorProfile(imagePath: string, profile: ColorProfil
 		// Sips doesn't work with webp or avif
 		// await execa('sips', ['--embedProfile', getPathToColorProfile(profile), imagePath])
 
-		await exiftool.write(
+		await getExiftool().write(
 			imagePath,
 			{},
 			{

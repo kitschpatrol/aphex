@@ -9,7 +9,6 @@
 //     and quality metrics
 //  3. Summarize and condense the data into a Markdown table
 
-import { exiftool } from 'exiftool-vendored'
 import fse from 'fs-extra'
 import { markdownTable } from 'markdown-table'
 import path, { basename, dirname } from 'node:path'
@@ -19,6 +18,7 @@ import type { ImageMimeType } from '../src/utilities/image/mime'
 import { exportViaAppleScriptGui } from '../src/pipeline/engines/applescript-gui'
 import { exportViaFileSystem } from '../src/pipeline/engines/file-system'
 import { exportViaSwiftPhotoKit } from '../src/pipeline/engines/swift-photokit'
+import { endExiftool } from '../src/utilities/exiftool'
 import { sipsTempCleanup } from '../src/utilities/general'
 import { assertValidColorProfile } from '../src/utilities/image/color'
 import { calculateSimilarity } from '../src/utilities/image/compare'
@@ -343,7 +343,7 @@ async function main() {
 	// Print the tables
 	console.log(markdownTables.join('\n\n'))
 
-	await exiftool.end()
+	await endExiftool()
 	await sipsTempCleanup() // Maybe not needed
 }
 

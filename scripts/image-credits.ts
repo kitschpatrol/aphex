@@ -16,11 +16,11 @@
  */
 
 import { confirm, log, select, spinner, text } from '@clack/prompts'
-import { exiftool } from 'exiftool-vendored'
 import { globby } from 'globby'
 import open from 'open'
 import type { PhotoInfo } from '../src/aphex-swift/cli-bridge'
 import { aphexPhotoInfo } from '../src/aphex-swift/cli-bridge'
+import { endExiftool } from '../src/utilities/exiftool'
 import {
 	cloneTags,
 	// Legacy:
@@ -298,7 +298,7 @@ async function imageCredits() {
 
 async function main() {
 	await imageCredits()
-	await exiftool.end()
+	await endExiftool()
 }
 
 await main()

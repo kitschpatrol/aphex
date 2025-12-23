@@ -5,6 +5,10 @@
 
 /**
  * Worker function for processing images in a separate thread
+ *
+ * Note: Each worker spawns its own exiftool instance via the centralized
+ * exiftool module. These are managed by Piscina's worker lifecycle - when
+ * the worker terminates, the exiftool process exit handlers will clean up.
  * @param {object} params - Worker parameters
  * @param {string} params.destinationDirectory - Directory where processed image will be saved
  * @param {import('../pipeline/image-process.ts').ProcessImageOptions} params.options - Image processing options

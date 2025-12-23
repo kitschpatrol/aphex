@@ -6,6 +6,8 @@ export default cspellConfig({
 		'fflush',
 		'metaimage',
 		'NOCMD',
+		'procs',
+		'pids',
 		'wordc',
 		'wordexp',
 		'wordfree',

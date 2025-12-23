@@ -24,6 +24,9 @@ export {
 // Re-exported for the worker...
 export { processImage } from './pipeline/image-process'
 
+// Cleanup function for exiftool processes
+export { endExiftool } from './utilities/exiftool'
+
 export { setLogger } from './utilities/log'
 
 /**

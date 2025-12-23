@@ -2,6 +2,7 @@ import type { ChildProcess } from 'node:child_process'
 import is, { assert } from '@sindresorhus/is'
 import { execa } from 'execa'
 import { spawn } from 'node:child_process'
+import { endExiftool } from '../utilities/exiftool'
 import { ensureArray } from '../utilities/general'
 import { getPackageBinPath } from '../utilities/paths'
 
@@ -126,6 +127,9 @@ export async function interactiveSessionStop(): Promise<void> {
 	interactiveProcess = undefined
 	currentRequest = undefined
 	commandQueue = []
+
+	// Also clean up exiftool processes
+	await endExiftool()
 }
 
 /**
