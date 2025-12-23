@@ -28,8 +28,81 @@ struct aphex: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Query and export images and albums from your macOS Photos.app library",
         version: getVersion(),
-        subcommands: [AlbumInfo.self, PhotoInfo.self, Export.self]
+        subcommands: [AlbumInfo.self, PhotoInfo.self, Export.self, Interactive.self]
     )
+}
+
+struct Interactive: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "interactive",
+        abstract: "Start an interactive session that accepts commands from stdin"
+    )
+
+    mutating func run() throws {
+        // Check Photos access once at the start
+        try checkPhotosAccess()
+
+        // Read commands from stdin line by line
+        while let line = readLine() {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // Skip empty lines
+            if trimmed.isEmpty {
+                continue
+            }
+
+            // Exit on quit/exit commands
+            if trimmed == "exit" || trimmed == "quit" {
+                break
+            }
+
+            // Parse the line into arguments (respecting quoted strings)
+            let arguments = parseArguments(from: trimmed)
+
+            do {
+                // Parse and run the command using ArgumentParser
+                var command = try aphex.parseAsRoot(arguments)
+                try command.run()
+            } catch {
+                // Use ArgumentParser's built-in error formatting (handles --help, --version, etc.)
+                let exitCode = aphex.exitCode(for: error)
+                let message = aphex.fullMessage(for: error)
+                
+                if exitCode == .success {
+                    // Help/version output goes to stdout
+                    print(message)
+                } else {
+                    // Errors go to stderr
+                    logError(message)
+                }
+            }
+
+            // Flush stdout to ensure output is sent immediately
+            fflush(stdout)
+        }
+    }
+}
+
+/// Parse a command line string into an array of arguments using POSIX wordexp
+func parseArguments(from line: String) -> [String] {
+    var result = wordexp_t()
+    
+    // WRDE_NOCMD disables command substitution for security
+    guard wordexp(line, &result, WRDE_NOCMD) == 0 else {
+        // Fallback: split on whitespace if wordexp fails
+        return line.split(separator: " ").map(String.init)
+    }
+    
+    defer { wordfree(&result) }
+    
+    var arguments: [String] = []
+    for i in 0..<Int(result.we_wordc) {
+        if let word = result.we_wordv[i] {
+            arguments.append(String(cString: word))
+        }
+    }
+    
+    return arguments
 }
 
 struct AlbumInfo: ParsableCommand {
