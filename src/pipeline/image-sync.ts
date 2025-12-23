@@ -74,9 +74,28 @@ async function getDestinationFiles(destinationDirectory: string): Promise<Destin
 	return Promise.all(
 		files.map(async (file): Promise<DestinationFile> => {
 			const filePath = path.join(destinationDirectory, file.name)
-			return {
-				filePath,
-				tags: await getTags(filePath),
+
+			// Check if file exists before reading tags
+			// Handles case where file was deleted between readdir and getTags
+			if (!(await fse.pathExists(filePath))) {
+				return {
+					filePath,
+					tags: undefined,
+				}
+			}
+
+			// Wrap in try-catch to handle unreadable files gracefully
+			// (e.g., file deleted after existence check, file locked, corrupted, etc.)
+			try {
+				return {
+					filePath,
+					tags: await getTags(filePath),
+				}
+			} catch {
+				return {
+					filePath,
+					tags: undefined,
+				}
 			}
 		}),
 	)
