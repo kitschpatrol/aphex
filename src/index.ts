@@ -14,7 +14,6 @@ import { getSyncPlanForImages } from './pipeline/image-sync'
 import { mergeDefaults } from './utilities/defaults'
 import { ensureDirectoryExists, getTempDirectory, stripExtension } from './utilities/file'
 import { assertSingleElement } from './utilities/general'
-
 export {
 	aphexAlbumInfo as getAlbumInfo,
 	aphexPhotoInfo as getPhotoInfo,
@@ -24,6 +23,8 @@ export {
 
 // Re-exported for the worker...
 export { processImage } from './pipeline/image-process'
+
+export { setLogger } from './utilities/log'
 
 /**
  * Helper for deep merging ExportOptions object against library defaults.

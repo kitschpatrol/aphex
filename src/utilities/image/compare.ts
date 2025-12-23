@@ -3,6 +3,7 @@ import fse from 'fs-extra'
 import os from 'node:os'
 import path from 'node:path'
 import { getSlugFilename } from '../file'
+import { log } from '../log'
 import { convertToPng } from './convert'
 import { getImageDimensions, getImageInfo } from './image'
 import { lookupImageMimeType } from './mime'
@@ -109,7 +110,7 @@ async function calculateDSSIMInternal(image1: string, image2: string): Promise<n
 
 	// Sometimes resizing fails?
 	if (!(await isIdenticalSize(image1, image2))) {
-		console.error(`Images are not the same size:\n${image1}\n${image2}`)
+		log.error(`Images are not the same size:\n${image1}\n${image2}`)
 		return -1
 	}
 
@@ -146,7 +147,7 @@ async function calculateSSIMInternal(image1: string, image2: string): Promise<nu
 
 	// Sometimes resizing fails?
 	if (!(await isIdenticalSize(image1, image2))) {
-		console.error(`Images are not the same size:\n${image1}\n${image2}`)
+		log.error(`Images are not the same size:\n${image1}\n${image2}`)
 		return -1
 	}
 
@@ -189,7 +190,7 @@ export async function calculatePSNRInternal(image1: string, image2: string): Pro
 
 	// Sometimes resizing fails?
 	if (!(await isIdenticalSize(image1, image2))) {
-		console.error(`Images are not the same size:\n${image1}\n${image2}`)
+		log.error(`Images are not the same size:\n${image1}\n${image2}`)
 		return -1
 	}
 
@@ -219,10 +220,13 @@ export async function visuallyIdentical(image1: string, image2: string): Promise
 	const isVisuallyIdentical = dssim === 0 && psnr === 0 && ssim === 1
 
 	if (!isVisuallyIdentical) {
-		console.log(`Images are not visually identical:\n${image1}\n${image2}:`)
-		console.log(`DSSIM: ${dssim}`)
-		console.log(`PSNR: ${psnr}`)
-		console.log(`SSIM: ${ssim}`)
+		log
+			.withMetadata({
+				dssim,
+				psnr,
+				ssim,
+			})
+			.debug(`Images are not visually identical:\n${image1}\n${image2}:`)
 	}
 
 	return isVisuallyIdentical
@@ -250,9 +254,9 @@ export async function metadataIdentical(image1: string, image2: string): Promise
 	// image1Info.sizeBytes === image2Info.sizeBytes
 
 	if (!isMetadataIdentical) {
-		console.log(`Metadata is not identical:\n${image1}\n${image2}`)
-		console.log(`image1Info: ${JSON.stringify(image1Info, undefined, 2)}`)
-		console.log(`image2Info: ${JSON.stringify(image2Info, undefined, 2)}`)
+		log
+			.withMetadata({ image1Info, image2Info })
+			.debug(`Metadata is not identical:\n${image1}\n${image2}`)
 	}
 
 	return isMetadataIdentical

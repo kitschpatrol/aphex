@@ -12,6 +12,7 @@ import { ensureDirectoryExists, normalizeExtension } from '../utilities/file'
 import { assertSingleElement } from '../utilities/general'
 import { hasAlpha } from '../utilities/image/image'
 import { lookupImageMimeType } from '../utilities/image/mime'
+import { log } from '../utilities/log'
 import { exportViaAppleScript } from './engines/applescript'
 import { exportViaAppleScriptGui } from './engines/applescript-gui'
 import { exportViaFileSystem } from './engines/file-system'
@@ -288,7 +289,7 @@ async function getEngineForPhoto(
 	const alpha = await hasAlpha(photoInfo.edited.filePath)
 
 	if (alpha) {
-		console.warn(
+		log.warn(
 			`Edited photo "${photoInfo.title}" has true transparency, it probably won't export correctly. Only un-edited files preserve transparency on export.`,
 		)
 	}
@@ -327,7 +328,7 @@ async function getEngineForPhoto(
 // 	sync = false,
 // 	audit = false,
 // ): Promise<ExportedPhoto[]> {
-// 	console.log(`Exporting from "${identifier}" to "${exportDirectory}"...`)
+// 	log.info(`Exporting from "${identifier}" to "${exportDirectory}"...`)
 
 // 	const resolvedOptions = options
 // 		? mergeDefaults(options, defaultExportApplePhotoOptions)
@@ -393,7 +394,7 @@ async function getEngineForPhoto(
 // 			}
 // 		}
 
-// 		console.log(
+// 		log.info(
 // 			`Exporting ${albumPhotoInfo.length} new or updated / ${albumPhotoCount} total photos in "${albumInfo.title}"`,
 // 		)
 // 	}
@@ -425,7 +426,7 @@ async function getEngineForPhoto(
 
 // 	if (enginelessExports.length > 0) {
 // 		for (const photoInfo of enginelessExports) {
-// 			console.log(
+// 			log.info(
 // 				`No export engine found for photo "${photoInfo.title}" in album "${albumInfo.title}"`,
 // 			)
 // 		}
@@ -435,10 +436,10 @@ async function getEngineForPhoto(
 // 		)
 // 	}
 
-// 	console.log(`Engine allocation:`)
-// 	console.log(`fileSystemExports: ${fileSystemExports.length}`)
-// 	console.log(`swiftPhotokitExports: ${swiftPhotokitExports.length}`)
-// 	console.log(`photosGuiExports: ${photosGuiExports.length}`)
+// 	log.info(`Engine allocation:`)
+// 	log.info(`fileSystemExports: ${fileSystemExports.length}`)
+// 	log.info(`swiftPhotokitExports: ${swiftPhotokitExports.length}`)
+// 	log.info(`photosGuiExports: ${photosGuiExports.length}`)
 
 // 	if (photosGuiExports.length > 0) {
 // 		// Exporting photos one-by one is often slower than just exporting everything in the album and then deleting, so we do that if there are more than a handful of images...
@@ -541,7 +542,7 @@ async function getEngineForPhoto(
 // 				['credit', 'creator', 'preservedFileName'],
 // 			)
 
-// 			console.log(`Cloned metadata keys for "${exportedPhoto.path}": ${clonedKeys.join(', ')}`)
+// 			log.info(`Cloned metadata keys for "${exportedPhoto.path}": ${clonedKeys.join(', ')}`)
 // 		}
 
 // 		// Normalize filename, doesn't touch the directory paths
@@ -561,7 +562,7 @@ async function getEngineForPhoto(
 // 		}
 // 	}
 
-// 	console.log(`Exported ${exportedPhotos.length} photos from "${albumInfo.title}"`)
+// 	log.info(`Exported ${exportedPhotos.length} photos from "${albumInfo.title}"`)
 // 	return exportedPhotos
 // }
 

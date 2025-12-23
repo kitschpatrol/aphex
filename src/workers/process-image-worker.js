@@ -9,20 +9,24 @@
  * @param {string} params.destinationDirectory - Directory where processed image will be saved
  * @param {import('../pipeline/image-process.ts').ProcessImageOptions} params.options - Image processing options
  * @param {string} params.sourceImagePath - Path to the source image file
+ * @param {boolean} params.verbose - Whether to log verbose output
  * @returns {Promise<import('../pipeline/image-process.ts').ProcessImageResult>} Processing result with input/output info and report
  */
-export default async function worker({ destinationDirectory, options, sourceImagePath }) {
+export default async function worker({ destinationDirectory, options, sourceImagePath, verbose }) {
 	// Weird workaround after issues with ESM imports in worker threads and more recent versions of Node / TSX / Piscina / etc?
 	// ts-node didn't work
 	const { processImage } = await import('importx').then(async (x) =>
 		x.import('../index', import.meta.url),
 	)
 
-	console.log(`Processing image on worker thread:\n${sourceImagePath}`)
-
+	if (verbose) {
+		console.log(`Processing image on worker thread:\n${sourceImagePath}`)
+	}
 	const result = await processImage(sourceImagePath, destinationDirectory, options)
-	console.log(
-		`Finished processing image on worker thread:\n${sourceImagePath}\nTime:\n${result.report.durationMs / 1000} seconds`,
-	)
+	if (verbose) {
+		console.log(
+			`Finished processing image on worker thread:\n${sourceImagePath}\nTime:\n${result.report.durationMs / 1000} seconds`,
+		)
+	}
 	return result
 }

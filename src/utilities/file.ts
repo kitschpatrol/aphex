@@ -3,6 +3,7 @@ import fse from 'fs-extra'
 import { slug as githubSlug } from 'github-slugger'
 import os from 'node:os'
 import path from 'node:path'
+import { log } from './log'
 
 /**
  * Removes the file extension from a file path
@@ -75,7 +76,7 @@ export async function getFileCreationTime(filePath: string): Promise<Date> {
 		const { birthtime } = await fse.stat(filePath)
 		return birthtime
 	} catch (error) {
-		console.error('Error retrieving creation date:', error)
+		log.withError(error).error('Error retrieving creation date:')
 		throw error // Propagate the error to be handled by the caller
 	}
 }

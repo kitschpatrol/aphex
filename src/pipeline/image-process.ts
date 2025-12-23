@@ -30,6 +30,7 @@ import {
 } from '../utilities/image/convert'
 import { getImageInfo } from '../utilities/image/image'
 import { stripTags } from '../utilities/image/tags'
+import { log } from '../utilities/log'
 import { getPackageWorkersPath } from '../utilities/paths'
 
 export type ProcessImageOptions = CompressImageOptions & {
@@ -125,7 +126,8 @@ export async function processPhotos(
 		// Multiple images processed in parallel in background process
 		const threads = Math.floor(os.availableParallelism() * 0.5)
 		// Higher crashes the machine? Default 1.5x
-		// console.log(`Using ${threads} threads for processing`)
+		log.debug(`Using ${threads} threads for processing`)
+
 		const piscina = new Piscina({
 			env: {
 				...process.env,
@@ -150,6 +152,7 @@ export async function processPhotos(
 					destinationDirectory: tempProcessOutputDirectory,
 					options: resolvedOptions,
 					sourceImagePath: path,
+					verbose: log.isLevelEnabled('debug'),
 				}),
 			),
 		)
@@ -170,10 +173,10 @@ export async function processPhotos(
 
 	// Clean up
 	await fse.rm(tempProcessOutputDirectory, { force: true, recursive: true })
-	await sipsTempCleanup()
+
 	// Sips leave temp files...
-	// const sipsTempFileCount = await sipsTempCleanup()
-	// console.log(`Cleaned up ${sipsTempFileCount} probable SIPS temp files from "${os.tmpdir()}"`)
+	const sipsTempFileCount = await sipsTempCleanup()
+	log.debug(`Cleaned up ${sipsTempFileCount} probable SIPS temp files from "${os.tmpdir()}"`)
 
 	return processImageResults
 }

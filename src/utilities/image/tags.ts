@@ -2,6 +2,7 @@ import type { Tags } from 'exiftool-vendored'
 import { exiftool } from 'exiftool-vendored'
 import type { PhotoInfo } from '../../aphex-swift/cli-bridge'
 import type { ExportOptions } from '../../index'
+import { log } from '../log'
 import { lookupImageMimeType } from './mime'
 
 export const VALID_LABELS = [
@@ -79,7 +80,7 @@ export async function validateTags(
 	andKeys?: Array<keyof ImageTags>,
 	/** Must have at least one of these keys */
 	orKeys?: Array<keyof ImageTags>,
-	log = true,
+	logWarnings = true,
 ): Promise<ValidateTagsResult> {
 	const result: ValidateTagsResult = {
 		issues: [],
@@ -96,8 +97,8 @@ export async function validateTags(
 
 		if (keysUnseen.length > 0) {
 			result.issues.push(`Tags are missing keys: ${keysUnseen.join(', ')}`)
-			if (log) {
-				console.log(result.issues.at(-1))
+			if (logWarnings) {
+				log.warn(result.issues.at(-1))
 			}
 
 			result.valid = false
@@ -109,8 +110,8 @@ export async function validateTags(
 
 		if (orKeysSeen.length === 0) {
 			result.issues.push(`Tags should have at least one of the keys: ${orKeys.join(', ')}`)
-			if (log) {
-				console.log(result.issues.at(-1))
+			if (logWarnings) {
+				log.warn(result.issues.at(-1))
 			}
 			result.valid = false
 		}
@@ -121,8 +122,8 @@ export async function validateTags(
 
 		if (andKeysUnseen.length > 0) {
 			result.issues.push(`Tags are missing the keys: ${andKeysUnseen.join(', ')}`)
-			if (log) {
-				console.log(result.issues.at(-1))
+			if (logWarnings) {
+				log.warn(result.issues.at(-1))
 			}
 
 			result.valid = false
@@ -132,8 +133,8 @@ export async function validateTags(
 	// Check labels if no value check is defined
 	if (tags.label !== undefined && !VALID_LABELS.includes(tags.label)) {
 		result.issues.push(`Tag value for 'label' is invalid: ${tags.label}`)
-		if (log) {
-			console.log(result.issues.at(-1))
+		if (logWarnings) {
+			log.warn(result.issues.at(-1))
 		}
 
 		result.valid = false
@@ -173,7 +174,7 @@ export async function getPreservedFileName(photoInfo: PhotoInfo): Promise<string
 	} = await exiftool.read(original.filePath)
 	const filenamePath = original.filePath.split('/').pop()
 
-	console.log(
+	log.debug(
 		`filenamePhotos:       ${original.fileName}\n` +
 			`filenameExifOriginal: ${filenameExifOriginal}\n` +
 			`filenameXmpPreserved: ${filenameXmpPreserved}\n` +
@@ -273,8 +274,8 @@ function parseUserComment(userComment: string | undefined): AphexMetadata | unde
 		// TODO real validation...
 		// eslint-disable-next-line ts/no-unsafe-type-assertion
 		return JSON.parse(userComment, dateReviver) as AphexMetadata
-	} catch {
-		console.error(`Error parsing UserComment JSON: ${userComment}`)
+	} catch (error) {
+		log.withError(error).error(`Error parsing UserComment JSON: ${userComment}`)
 		return undefined
 	}
 }

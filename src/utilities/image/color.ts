@@ -1,6 +1,7 @@
 import { execa } from 'execa'
 import { exiftool } from 'exiftool-vendored'
 import path from 'node:path'
+import { log } from '../log'
 import { getPackageAssetsPath } from '../paths'
 import { lookupImageMimeType } from './mime'
 
@@ -46,7 +47,7 @@ export async function getColorProfile(imagePath: string): Promise<ColorProfile> 
 		exiftoolProfile !== undefined &&
 		sipsProfile !== exiftoolProfile
 	) {
-		console.error(
+		log.error(
 			`Conflicting color profiles: sips: "${sipsProfile}", exiftool: "${exiftoolProfile}" in image "${imagePath}"`,
 		)
 	}
@@ -79,7 +80,7 @@ export async function getColorProfile(imagePath: string): Promise<ColorProfile> 
 		}
 
 		default: {
-			console.warn(`Unsupported color profile "${profile}"  in image "${imagePath}"`)
+			log.warn(`Unsupported color profile "${profile}"  in image "${imagePath}"`)
 			return 'Unsupported'
 		}
 	}
@@ -144,8 +145,7 @@ export async function convertColorProfile(imagePath: string, profile: ColorProfi
 	const mime = lookupImageMimeType(imagePath, true)
 
 	if (['png', 'psd', 'tif'].includes(mime)) {
-		//
-		// console.log(`Converting ${path.basename(imagePath)} from ${currentProfile} to ${profile}`)
+		log.debug(`Converting ${path.basename(imagePath)} from ${currentProfile} to ${profile}`)
 		// TODO clean up temp (sips does not respect TMPDIR)
 		await execa('sips', ['--matchTo', getPathToColorProfile(profile), imagePath])
 	} else if (['avif', 'gif', 'heic', 'jpeg', 'webp'].includes(mime)) {
@@ -193,7 +193,7 @@ export async function assignColorProfile(imagePath: string, profile: ColorProfil
 	const mime = lookupImageMimeType(imagePath, true)
 
 	if (mime === 'avif') {
-		console.warn(`Unsupported mime type for color profile assignment: ${mime}, skipping`)
+		log.warn(`Unsupported mime type for color profile assignment: ${mime}, skipping`)
 	} else {
 		// Sips doesn't work with webp or avif
 		// await execa('sips', ['--embedProfile', getPathToColorProfile(profile), imagePath])

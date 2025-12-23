@@ -68,6 +68,7 @@
 		"github-slugger": "^2.0.0",
 		"globby": "^16.1.0",
 		"image-size": "^2.0.2",
+		"lognow": "^0.4.1",
 		"markdown-table": "^3.0.4",
 		"mdat-plugin-cli-help": "^1.0.4",
 		"mrmime": "^2.0.1",
