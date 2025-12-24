@@ -17,7 +17,7 @@ export type ManageMetadataOptions = {
 export const defaultManageMetadataOptions: ManageMetadataOptions = {
 	syncToEdited: true,
 	syncToTarget: true,
-	tagsToSync: ['label', 'preservedFileName', 'creator', 'credit'],
+	tagsToSync: ['label', 'preservedFileName', 'creator', 'credit', 'description'],
 	validate: true,
 	writeAphexMetadata: true,
 }

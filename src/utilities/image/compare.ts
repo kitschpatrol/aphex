@@ -243,6 +243,7 @@ export async function metadataIdentical(image1: string, image2: string): Promise
 		image1Info.alpha === image2Info.alpha &&
 		image1Info.tags.creator === image2Info.tags.creator &&
 		image1Info.tags.credit === image2Info.tags.credit &&
+		image1Info.tags.description === image2Info.tags.description &&
 		image1Info.tags.preservedFileName === image2Info.tags.preservedFileName &&
 		image1Info.colorProfile === image2Info.colorProfile &&
 		image1Info.dimensionsPixels.height === image2Info.dimensionsPixels.height &&

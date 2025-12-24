@@ -25,6 +25,7 @@ function isValidLabel(value: string): value is Label {
 export type TagsPlusXmp = Tags & {
 	'XMP:Creator'?: string | string[] | undefined
 	'XMP:Credit'?: string | undefined
+	'XMP:Description'?: string | undefined
 	'XMP:PreservedFileName'?: string | undefined
 	'XMP:UserComment'?: string | undefined
 }
@@ -92,7 +93,9 @@ export async function validateTags(
 
 	// Check all keys if no "and" or "or" keys are specified
 	if (orKeys === undefined && andKeys === undefined) {
-		const allKeys = ['creator', 'credit', 'label', 'preservedFileName'] as Array<keyof ImageTags>
+		const allKeys = ['creator', 'credit', 'description', 'label', 'preservedFileName'] as Array<
+			keyof ImageTags
+		>
 		const keysUnseen = allKeys.filter((key) => tags[key] === undefined)
 
 		if (keysUnseen.length > 0) {
@@ -155,6 +158,8 @@ export type ImageTags = {
 	creator?: string | undefined
 	/** Organization */
 	credit?: string | undefined
+	/** Description, used as alt text in HTML content */
+	description?: string | undefined
 	/** Image Type, e.g. 'animation', 'diagram', 'illustration', 'screenshot', 'image', 'photo', 'render', 'video' */
 	label?: Label | undefined
 	preservedFileName?: string | undefined
@@ -225,6 +230,7 @@ export async function getTags(imagePath: string): Promise<ImageTags> {
 		XMP: {
 			Creator: creator,
 			Credit: credit,
+			Description: description,
 			Label: label,
 			PreservedFileName: preservedFileName,
 			UserComment: userComment,
@@ -240,6 +246,8 @@ export async function getTags(imagePath: string): Promise<ImageTags> {
 			// eslint-disable-next-line ts/naming-convention
 			Credit?: string | undefined
 			// eslint-disable-next-line ts/naming-convention
+			Description?: string | undefined
+			// eslint-disable-next-line ts/naming-convention
 			Label?: string | undefined
 			// eslint-disable-next-line ts/naming-convention
 			PreservedFileName?: string | undefined
@@ -252,6 +260,7 @@ export async function getTags(imagePath: string): Promise<ImageTags> {
 		aphexMetadata: parseUserComment(userComment),
 		creator: creator === undefined ? undefined : typeof creator === 'string' ? creator : creator[0],
 		credit,
+		description,
 		label: label !== undefined && isValidLabel(label) ? label : undefined,
 		preservedFileName,
 	}
@@ -284,7 +293,7 @@ function parseUserComment(userComment: string | undefined): AphexMetadata | unde
  * Set the tags on an image
  */
 export async function setTags(imagePath: string, imageTags: ImageTags) {
-	const { aphexMetadata, creator, credit, label, preservedFileName } = imageTags
+	const { aphexMetadata, creator, credit, description, label, preservedFileName } = imageTags
 	const userComment = aphexMetadata ? JSON.stringify(aphexMetadata) : undefined
 
 	// We explicitly use XMP metadata because it's compatible across all file types and not clobbered by Apple Photos
@@ -292,6 +301,7 @@ export async function setTags(imagePath: string, imageTags: ImageTags) {
 	// Does an empty string work, or do we have to pass null?
 	const tags: TagsPlusXmp = {
 		...('creator' in imageTags ? { 'XMP:Creator': creator ?? '' } : {}),
+		...('description' in imageTags ? { 'XMP:Description': description ?? '' } : {}),
 		...('credit' in imageTags ? { 'XMP:Credit': credit ?? '' } : {}),
 		...('label' in imageTags ? { 'XMP:Label': label ?? '' } : {}),
 		...('preservedFileName' in imageTags
@@ -328,7 +338,9 @@ export async function cloneTags(
 
 	const keys =
 		includeKeys ??
-		(['creator', 'credit', 'label', 'preservedFileName', 'aphexMetadata'] as Array<keyof ImageTags>)
+		(['creator', 'credit', 'description', 'label', 'preservedFileName', 'aphexMetadata'] as Array<
+			keyof ImageTags
+		>)
 
 	let tagsToAssign: ImageTags = {}
 	for (const key of keys) {

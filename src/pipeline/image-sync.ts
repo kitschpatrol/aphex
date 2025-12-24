@@ -230,6 +230,7 @@ async function isDifferent(
 					matchPhotoTags === undefined ||
 					sourceTags.credit !== matchPhotoTags.credit ||
 					sourceTags.creator !== matchPhotoTags.creator ||
+					sourceTags.description !== matchPhotoTags.description ||
 					sourceTags.preservedFileName !== matchPhotoTags.preservedFileName ||
 					sourceTags.label !== matchPhotoTags.label
 				) {
