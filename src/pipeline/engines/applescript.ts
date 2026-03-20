@@ -9,6 +9,10 @@ const UUID_SUFFIX_PHOTO = '/L0/001'
 // const UUID_SUFFIX_ALBUM = '/L0/040'
 // const UUID_SUFFIX_FOLDER = '/L0/020'
 
+function escapeForAppleScript(str: string): string {
+	return str.replaceAll('\\', '\\\\').replaceAll('"', '\\"')
+}
+
 /**
  * Export a photo via AppleScript using the Photos app's scripting dictionary
  * @param photoUuid - UUID of the photo to export
@@ -24,18 +28,21 @@ export async function exportViaAppleScript(
 	// Choose AppleScript export flag
 	const exportFlag = forceOriginal ? 'with originals' : 'without originals'
 
+	const escapedUuid = escapeForAppleScript(`${photoUuid}${UUID_SUFFIX_PHOTO}`)
+	const escapedDirectory = escapeForAppleScript(tempDirectory)
+
 	// AppleScript to export photo using Photos app dictionary
 	const appleScript = `
     tell application "Photos"
       -- Find the media item by UUID
-      set targetPhoto to (first media item whose id is "${photoUuid}${UUID_SUFFIX_PHOTO}")
-      
+      set targetPhoto to (first media item whose id is "${escapedUuid}")
+
       -- Export the photo to temp directory
-      export {targetPhoto} to POSIX file "${tempDirectory}" ${exportFlag}
-      
+      export {targetPhoto} to POSIX file "${escapedDirectory}" ${exportFlag}
+
       -- Get the exported file name
       set photoFilename to filename of targetPhoto
-      
+
       -- Return the filename for path construction
       return photoFilename
     end tell
