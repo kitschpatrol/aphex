@@ -234,7 +234,7 @@ export async function getTags(imagePath: string): Promise<ImageTags> {
 			Label: label,
 			PreservedFileName: preservedFileName,
 			UserComment: userComment,
-		} = {},
+		},
 		// eslint-disable-next-line ts/no-unsafe-type-assertion
 	} = (await getExiftool().readRaw(imagePath, {
 		readArgs: ['-g', '-xmp:all'],

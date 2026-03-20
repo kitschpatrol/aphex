@@ -25,11 +25,11 @@ Aphex is a TypeScript library for exporting images and albums from your local ma
 
 It makes it simple to export high-quality versions of specific photos or albums from your Photos.app library via a path-like syntax. It can also (optionally) perform image resizing, compression, metadata migration, metadata validation, and color space normalization.
 
-I created this library for integration in static website content management asset pipelines, and to attempt to work around some issues related to [exporting high-quality versions of edited images](https://github.com/RhetTbull/osxphotos/discussions/1522) from the Photos.app library. (See the [unplugin-aphex](https://github.com/kitschpatrol/unplugin-aphex) project for an additional layer of integration with various build tools.)
+I created this library for integration in static website content management asset pipelines, and to attempt to work around some issues related to [exporting high-quality versions of edited images](https://github.com/RhetTbull/osxphotos/discussions/1522) from the Photos.app library. (See the [unplugin-aphex](https://github.com/kitschpatrol/unplugin-aphex) project for an additional layer of integration with various build tools, and the [vscode-aphex](https://github.com/kitschpatrol/vscode-aphex) plugin for hover previews of Aphex links in VS Code.)
 
 This repository also embeds the `aphex-swift` CLI project, which provides a minimal and performant wrapper around parts of Apple's PhotoKit framework. It's not intended for direct use, instead it provides just enough functionality to support the parts of the methods provided by the `aphex` TypeScript library that can only be implemented natively.
 
-The name "Aphex" is a concatenation of Apple Photos Export.
+The name "Aphex" is a concatenation of Apple PHotos EXport.
 
 ## Caveats
 
@@ -235,6 +235,10 @@ See the [project's readme](./native/aphex-swift/readme.md) for additional detail
 Currently, the TypeScript code bridges via simple CLI calls to the `aphex-swift` binary, which is a wrapper around parts of Apple's PhotoKit framework. This is flexible and fast enough for now, but projects like Kabir Oberai's [node-swift](https://github.com/kabiroberai/node-swift) could be a good alternative for tighter integration between native Swift code and the TypeScript API.
 
 Also, this library bundles a bunch of generically useful image processing functionality, which should probably live in a separate package.
+
+## Resources
+
+- [Ole Begemann on PhotoKit’s data model](https://oleb.net/2018/photos-data-model/)
 
 ## Maintainers
 

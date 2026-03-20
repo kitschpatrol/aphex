@@ -8,10 +8,7 @@ import { ensureArray } from '../../src/utilities/general'
 /**
  * Gets a sample photo UUID from the user's Photos library.
  */
-export async function getSamplePhotoUuid(
-	isEdited: boolean | undefined = undefined,
-	hasTitle: boolean | undefined = undefined,
-): Promise<string> {
+export async function getSamplePhotoUuid(isEdited?: boolean, hasTitle?: boolean): Promise<string> {
 	const photos = await aphexPhotoInfo('/Favorites')
 	for (const photo of photos) {
 		if (
