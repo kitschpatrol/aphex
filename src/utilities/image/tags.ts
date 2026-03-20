@@ -93,9 +93,7 @@ export async function validateTags(
 
 	// Check all keys if no "and" or "or" keys are specified
 	if (orKeys === undefined && andKeys === undefined) {
-		const allKeys = ['creator', 'credit', 'label', 'preservedFileName'] as Array<
-			keyof ImageTags
-		>
+		const allKeys = ['creator', 'credit', 'label', 'preservedFileName'] as Array<keyof ImageTags>
 		const keysUnseen = allKeys.filter((key) => tags[key] === undefined)
 
 		if (keysUnseen.length > 0) {
@@ -250,13 +248,29 @@ function dateReviver(key: string, value: unknown) {
 	return value
 }
 
+function isAphexMetadata(value: unknown): value is AphexMetadata {
+	if (typeof value !== 'object' || value === null) return false
+	// eslint-disable-next-line ts/no-unsafe-type-assertion
+	const maybeObject = value as Record<string, unknown>
+	return (
+		typeof maybeObject.exportOptions === 'object' &&
+		maybeObject.exportOptions !== null &&
+		typeof maybeObject.photoInfo === 'object' &&
+		maybeObject.photoInfo !== null
+	)
+}
+
 function parseUserComment(userComment: string | undefined): AphexMetadata | undefined {
 	if (userComment === undefined) return undefined
 
 	try {
-		// TODO real validation...
-		// eslint-disable-next-line ts/no-unsafe-type-assertion
-		return JSON.parse(userComment, dateReviver) as AphexMetadata
+		const parsed: unknown = JSON.parse(userComment, dateReviver)
+		if (!isAphexMetadata(parsed)) {
+			log.warn(`UserComment JSON does not match AphexMetadata shape: ${userComment}`)
+			return undefined
+		}
+
+		return parsed
 	} catch (error) {
 		log.withError(error).error(`Error parsing UserComment JSON: ${userComment}`)
 		return undefined
