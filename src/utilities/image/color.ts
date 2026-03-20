@@ -36,11 +36,13 @@ export async function getColorProfile(imagePath: string): Promise<ColorProfile> 
 	// No temporary files created
 	const { stdout } = await execa('sips', ['-g', 'profile', imagePath])
 	const result = /profile: (.+)/.exec(stdout)
-	const rawResult = result?.[1]
+	const rawResult = result?.[1]?.trim()
 	const sipsProfile = rawResult === '<nil>' ? undefined : rawResult
 
 	// Then try exiftool
-	const { ProfileDescription: exiftoolProfile } = await getExiftool().read(imagePath)
+	const { ProfileDescription: rawExiftoolProfile } = await getExiftool().read(imagePath)
+	const exiftoolProfile =
+		typeof rawExiftoolProfile === 'string' ? rawExiftoolProfile.trim() : rawExiftoolProfile
 
 	if (
 		sipsProfile !== undefined &&
