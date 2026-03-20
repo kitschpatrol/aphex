@@ -16,14 +16,10 @@ import { lookupImageMimeType } from './mime'
 export async function getTwoIdenticallySizedPng(
 	image1: string,
 	image2: string,
-): Promise<
-	Promise<
-		Promise<{
-			image1Png: string
-			image2Png: string
-		}>
-	>
-> {
+): Promise<{
+	image1Png: string
+	image2Png: string
+}> {
 	const tempDirectory1 = await fse.mkdtemp(
 		path.join(
 			os.tmpdir(),
@@ -76,17 +72,20 @@ export async function calculateSimilarity(
 	ssim: number
 }> {
 	const { image1Png, image2Png } = await getTwoIdenticallySizedPng(image1, image2)
-	const [dssim, ssim, psnr] = await Promise.all([
-		calculateDSSIMInternal(image1Png, image2Png),
-		calculateSSIMInternal(image1Png, image2Png),
-		calculatePSNRInternal(image1Png, image2Png),
-	])
-	await fse.rm(path.dirname(image1Png), { recursive: true })
-	await fse.rm(path.dirname(image2Png), { recursive: true })
-	return {
-		dssim,
-		psnr,
-		ssim,
+	try {
+		const [dssim, ssim, psnr] = await Promise.all([
+			calculateDSSIMInternal(image1Png, image2Png),
+			calculateSSIMInternal(image1Png, image2Png),
+			calculatePSNRInternal(image1Png, image2Png),
+		])
+		return {
+			dssim,
+			psnr,
+			ssim,
+		}
+	} finally {
+		await fse.rm(path.dirname(image1Png), { force: true, recursive: true })
+		await fse.rm(path.dirname(image2Png), { force: true, recursive: true })
 	}
 }
 
@@ -98,10 +97,12 @@ export async function calculateSimilarity(
  */
 export async function calculateDSSIM(image1: string, image2: string): Promise<number> {
 	const { image1Png, image2Png } = await getTwoIdenticallySizedPng(image1, image2)
-	const result = await calculateDSSIMInternal(image1Png, image2Png)
-	await fse.rm(path.dirname(image1Png), { recursive: true })
-	await fse.rm(path.dirname(image2Png), { recursive: true })
-	return result
+	try {
+		return await calculateDSSIMInternal(image1Png, image2Png)
+	} finally {
+		await fse.rm(path.dirname(image1Png), { force: true, recursive: true })
+		await fse.rm(path.dirname(image2Png), { force: true, recursive: true })
+	}
 }
 
 async function calculateDSSIMInternal(image1: string, image2: string): Promise<number> {
@@ -135,10 +136,12 @@ async function calculateDSSIMInternal(image1: string, image2: string): Promise<n
  */
 export async function calculateSSIM(image1: string, image2: string): Promise<number> {
 	const { image1Png, image2Png } = await getTwoIdenticallySizedPng(image1, image2)
-	const result = await calculateSSIMInternal(image1Png, image2Png)
-	await fse.rm(path.dirname(image1Png), { recursive: true })
-	await fse.rm(path.dirname(image2Png), { recursive: true })
-	return result
+	try {
+		return await calculateSSIMInternal(image1Png, image2Png)
+	} finally {
+		await fse.rm(path.dirname(image1Png), { force: true, recursive: true })
+		await fse.rm(path.dirname(image2Png), { force: true, recursive: true })
+	}
 }
 
 async function calculateSSIMInternal(image1: string, image2: string): Promise<number> {
@@ -175,10 +178,12 @@ async function calculateSSIMInternal(image1: string, image2: string): Promise<nu
  */
 export async function calculatePSNR(image1: string, image2: string): Promise<number> {
 	const { image1Png, image2Png } = await getTwoIdenticallySizedPng(image1, image2)
-	const result = await calculatePSNRInternal(image1Png, image2Png)
-	await fse.rm(path.dirname(image1Png), { recursive: true })
-	await fse.rm(path.dirname(image2Png), { recursive: true })
-	return result
+	try {
+		return await calculatePSNRInternal(image1Png, image2Png)
+	} finally {
+		await fse.rm(path.dirname(image1Png), { force: true, recursive: true })
+		await fse.rm(path.dirname(image2Png), { force: true, recursive: true })
+	}
 }
 
 /**
