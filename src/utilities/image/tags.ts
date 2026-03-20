@@ -167,35 +167,9 @@ export type ImageTags = {
 
 /**
  * Get the preserved file name of an image
- * TODO this is always from PhotoInfo now?
  */
-export async function getPreservedFileName(photoInfo: PhotoInfo): Promise<string | undefined> {
-	const { original } = photoInfo
-
-	const {
-		FileName: filenameExif,
-		OriginalFileName: filenameExifOriginal,
-		PreservedFileName: filenameXmpPreserved,
-	} = await getExiftool().read(original.filePath)
-	const filenamePath = original.filePath.split('/').pop()
-
-	log.debug(
-		`filenamePhotos:       ${original.fileName}\n` +
-			`filenameExifOriginal: ${filenameExifOriginal}\n` +
-			`filenameXmpPreserved: ${filenameXmpPreserved}\n` +
-			`filenameExif:         ${filenameExif}\n` +
-			`filenamePath:         ${filenamePath}`,
-	)
-
-	return original.fileName
-	// Hmm...
-	// return (
-	// 	original.fileName ??
-	// 	filenameExifOriginal ??
-	// 	filenameXmpPreserved ??
-	// 	filenameExif ??
-	// 	filenamePath
-	// ).trim()
+export function getPreservedFileName(photoInfo: PhotoInfo): string | undefined {
+	return photoInfo.original.fileName
 }
 
 /**
