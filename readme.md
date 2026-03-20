@@ -120,12 +120,12 @@ function exportPhotos(
 
 The `options` parameter accepts a deeply partial `ExportOptions` object. All fields have sensible defaults, so you only need to specify what you want to override.
 
-| Option group | Description |
-| --- | --- |
-| `exportOptions` | Controls which export engine is used per image type, file naming conventions (sluggify, UUID fragment, extension normalization), and AppleScript GUI export settings. |
-| `processOptions` | Controls image processing: color profile normalization (`preserveColorProfiles`, `defaultColorProfile`), compression format and quality (`lossyFormat`, `lossyQuality`, `losslessFormat`), max dimensions and file size (`maxDimensionsPixels`, `maxFileSizeBytes`), and format passthrough (`passthroughFormats`). Set to `'disabled'` to skip processing. |
-| `metadataOptions` | Controls metadata written to exported images (creator, credit, description, label). Set to `'disabled'` to skip metadata management. |
-| `syncOptions` | Controls incremental export behavior: diff strategies (`diffStrategies`), whether to delete stale files (`deleteTarget`, `deleteOthers`), and force re-export (`forceUpdate`). Set to `'disabled'` to skip sync. |
+| Option group      | Description                                                                                                                                                                                                                                                                                                                                                 |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `exportOptions`   | Controls which export engine is used per image type, file naming conventions (sluggify, UUID fragment, extension normalization), and AppleScript GUI export settings.                                                                                                                                                                                       |
+| `processOptions`  | Controls image processing: color profile normalization (`preserveColorProfiles`, `defaultColorProfile`), compression format and quality (`lossyFormat`, `lossyQuality`, `losslessFormat`), max dimensions and file size (`maxDimensionsPixels`, `maxFileSizeBytes`), and format passthrough (`passthroughFormats`). Set to `'disabled'` to skip processing. |
+| `metadataOptions` | Controls metadata written to exported images (creator, credit, description, label). Set to `'disabled'` to skip metadata management.                                                                                                                                                                                                                        |
+| `syncOptions`     | Controls incremental export behavior: diff strategies (`diffStrategies`), whether to delete stale files (`deleteTarget`, `deleteOthers`), and force re-export (`forceUpdate`). Set to `'disabled'` to skip sync.                                                                                                                                            |
 
 See the TypeScript types and inline comments in the source for the full set of options.
 

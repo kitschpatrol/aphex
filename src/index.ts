@@ -1,3 +1,5 @@
+/* eslint-disable complexity */
+
 import type { OmitDeep, PartialDeep, Simplify } from 'type-fest'
 import fse from 'fs-extra'
 import path from 'node:path'
@@ -7,13 +9,18 @@ import type { ManageMetadataOptions, ManageMetadataResult } from './pipeline/ima
 import type { ProcessImageOptions, ProcessImageResult } from './pipeline/image-process'
 import type { SyncOptions, SyncResult } from './pipeline/image-sync'
 import { resolveIdentifiers, resolvePhotoIdentifier } from './aphex-swift/identifiers'
-import { defaultExportApplePhotoOptions, exportApplePhotos } from './pipeline/image-export'
+import {
+	defaultExportApplePhotoOptions,
+	exportApplePhotos,
+	getImagePathWithFileName,
+} from './pipeline/image-export'
 import { defaultManageMetadataOptions, manageMetadataBatch } from './pipeline/image-metadata'
 import { defaultProcessImageOptions, processPhotos } from './pipeline/image-process'
 import { getSyncPlanForImages } from './pipeline/image-sync'
 import { mergeDefaults } from './utilities/defaults'
 import { ensureDirectoryExists, getTempDirectory, stripExtension } from './utilities/file'
 import { assertSingleElement } from './utilities/general'
+import { log } from './utilities/log'
 export {
 	aphexAlbumInfo as getAlbumInfo,
 	aphexPhotoInfo as getPhotoInfo,
@@ -161,7 +168,36 @@ export async function exportPhotos(
 		return exportResults
 	}
 
-	// TODO what about name collisions?
+	// Detect name collisions and enable UUID fragment to disambiguate
+	const seenBaseNames = new Set<string>()
+	let hasCollision = false
+	for (const exportResult of exportResults) {
+		if (exportResult.results.syncResult?.status === 'unchanged') continue
+		const baseName = path.basename(
+			getImagePathWithFileName(
+				exportResult.photoInfo,
+				'placeholder.jpg',
+				exportOptions.fileNameSluggify,
+				exportOptions.fileNameAppendUuidFragment,
+				exportOptions.fileNameNormalizeExtensions,
+				exportOptions.fileNamePrecedence,
+			),
+			path.extname('placeholder.jpg'),
+		)
+		if (seenBaseNames.has(baseName)) {
+			hasCollision = true
+			break
+		}
+
+		seenBaseNames.add(baseName)
+	}
+
+	if (hasCollision && !exportOptions.fileNameAppendUuidFragment) {
+		log.warn(
+			'Name collision detected among exported photos, enabling UUID fragment to disambiguate',
+		)
+		exportOptions.fileNameAppendUuidFragment = true
+	}
 
 	// ------------------------------------------------------------
 
@@ -182,6 +218,8 @@ export async function exportPhotos(
 
 	// Update export results with the exported paths
 	for (const exportResult of exportResults) {
+		if (exportResult.results.syncResult?.status === 'unchanged') continue
+
 		const matchingExportResult = applePhotosExportResults.find(
 			(photoExportResult) => photoExportResult.photoInfo.uuid === exportResult.photoInfo.uuid,
 		)
@@ -189,6 +227,10 @@ export async function exportPhotos(
 		if (matchingExportResult) {
 			exportResult.path = matchingExportResult.path
 			exportResult.results.exportResult = cleanExportResults(matchingExportResult)
+		} else {
+			log.warn(
+				`No export result found for photo "${exportResult.photoInfo.title ?? exportResult.photoInfo.uuid}"`,
+			)
 		}
 	}
 
@@ -210,6 +252,8 @@ export async function exportPhotos(
 
 		// Update export results with the processed paths
 		for (const exportResult of exportResults) {
+			if (exportResult.results.syncResult?.status === 'unchanged') continue
+
 			const matchingProcessResult = processResults.find(
 				(processResult) =>
 					stripExtension(path.basename(processResult.path)) ===
@@ -219,6 +263,10 @@ export async function exportPhotos(
 			if (matchingProcessResult) {
 				exportResult.path = matchingProcessResult.path
 				exportResult.results.processResult = cleanProcessResults(matchingProcessResult)
+			} else {
+				log.warn(
+					`No process result found for photo "${exportResult.photoInfo.title ?? exportResult.photoInfo.uuid}"`,
+				)
 			}
 		}
 	}
