@@ -93,7 +93,7 @@ export async function validateTags(
 
 	// Check all keys if no "and" or "or" keys are specified
 	if (orKeys === undefined && andKeys === undefined) {
-		const allKeys = ['creator', 'credit', 'description', 'label', 'preservedFileName'] as Array<
+		const allKeys = ['creator', 'credit', 'label', 'preservedFileName'] as Array<
 			keyof ImageTags
 		>
 		const keysUnseen = allKeys.filter((key) => tags[key] === undefined)
@@ -226,21 +226,12 @@ export async function clearLegacyArtistTag(imagePath: string): Promise<void> {
 export async function getTags(imagePath: string): Promise<ImageTags> {
 	// We explicitly use XMP metadata because it's compatible across all file types and not clobbered by Apple Photos
 
-	const {
-		XMP: {
-			Creator: creator,
-			Credit: credit,
-			Description: description,
-			Label: label,
-			PreservedFileName: preservedFileName,
-			UserComment: userComment,
-		},
-		// eslint-disable-next-line ts/no-unsafe-type-assertion
-	} = (await getExiftool().readRaw(imagePath, {
+	// eslint-disable-next-line ts/no-unsafe-type-assertion
+	const raw = (await getExiftool().readRaw(imagePath, {
 		readArgs: ['-g', '-xmp:all'],
 	})) as {
 		// eslint-disable-next-line ts/naming-convention
-		XMP: {
+		XMP?: {
 			// eslint-disable-next-line ts/naming-convention
 			Creator?: string | string[] | undefined
 			// eslint-disable-next-line ts/naming-convention
@@ -255,6 +246,15 @@ export async function getTags(imagePath: string): Promise<ImageTags> {
 			UserComment?: string | undefined
 		}
 	}
+
+	const {
+		Creator: creator,
+		Credit: credit,
+		Description: description,
+		Label: label,
+		PreservedFileName: preservedFileName,
+		UserComment: userComment,
+	} = raw.XMP ?? {}
 
 	return {
 		aphexMetadata: parseUserComment(userComment),
