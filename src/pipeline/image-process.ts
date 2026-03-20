@@ -115,68 +115,73 @@ export async function processPhotos(
 	const tempProcessOutputDirectory = await getTempDirectory('process', 'images')
 	let processImageResults: ProcessImageResult[]
 
-	// eslint-disable-next-line ts/no-unnecessary-condition
-	if (SINGLE_FILE_SERIAL && imagePaths.length === 1) {
-		// Single images processed on main thread, no observed speed advantage
-		// from skipping parallelization
-		processImageResults = [
-			await processImage(imagePaths[0], tempProcessOutputDirectory, resolvedOptions),
-		]
-	} else {
-		// Multiple images processed in parallel in background process
-		const threads = Math.floor(os.availableParallelism() * 0.5)
-		// Higher crashes the machine? Default 1.5x
-		log.debug(`Using ${threads} threads for processing`)
+	try {
+		// eslint-disable-next-line ts/no-unnecessary-condition
+		if (SINGLE_FILE_SERIAL && imagePaths.length === 1) {
+			// Single images processed on main thread, no observed speed advantage
+			// from skipping parallelization
+			processImageResults = [
+				await processImage(imagePaths[0], tempProcessOutputDirectory, resolvedOptions),
+			]
+		} else {
+			// Multiple images processed in parallel in background process
+			const threads = Math.floor(os.availableParallelism() * 0.5)
+			// Higher crashes the machine? Default 1.5x
+			log.debug(`Using ${threads} threads for processing`)
 
-		const piscina = new Piscina({
-			env: {
-				...process.env,
-				// We have to pass the import context manually for the
-				// getDirname calls inside image process
-				// eslint-disable-next-line ts/naming-convention
-				PISCINA_WORKER_META_URL: import.meta.url,
-			},
-			filename: new URL(
-				path.join(getPackageWorkersPath(import.meta), 'process-image-worker.js'),
-				'file://',
-			).href,
-			maxThreads: threads,
-			minThreads: threads,
-		})
+			const piscina = new Piscina({
+				env: {
+					...process.env,
+					// We have to pass the import context manually for the
+					// getDirname calls inside image process
+					// eslint-disable-next-line ts/naming-convention
+					PISCINA_WORKER_META_URL: import.meta.url,
+				},
+				filename: new URL(
+					path.join(getPackageWorkersPath(import.meta), 'process-image-worker.js'),
+					'file://',
+				).href,
+				maxThreads: threads,
+				minThreads: threads,
+			})
 
-		// Process images in parallel
-		processImageResults = await Promise.all<ProcessImageResult>(
-			imagePaths.map(async (path) =>
-				// eslint-disable-next-line ts/no-unsafe-return
-				piscina.run({
-					destinationDirectory: tempProcessOutputDirectory,
-					options: resolvedOptions,
-					sourceImagePath: path,
-					verbose: log.isLevelEnabled('debug'),
-				}),
-			),
-		)
+			try {
+				// Process images in parallel
+				processImageResults = await Promise.all<ProcessImageResult>(
+					imagePaths.map(async (path) =>
+						// eslint-disable-next-line ts/no-unsafe-return
+						piscina.run({
+							destinationDirectory: tempProcessOutputDirectory,
+							options: resolvedOptions,
+							sourceImagePath: path,
+							verbose: log.isLevelEnabled('debug'),
+						}),
+					),
+				)
+			} finally {
+				await piscina.destroy()
+			}
+		}
+
+		// Copy processed images to output
+		const resolvedDestinationDirectory = await ensureDirectoryExists(destinationDirectory)
+		for (const result of processImageResults) {
+			const finalOutputPath = path.join(
+				resolvedDestinationDirectory,
+				path.basename(result.output.path),
+			)
+
+			await fse.move(result.path, finalOutputPath, { overwrite: true })
+			// Overwrite path...
+			result.path = finalOutputPath
+		}
+	} finally {
+		await fse.rm(tempProcessOutputDirectory, { force: true, recursive: true })
+
+		// Sips leave temp files...
+		const sipsTempFileCount = await sipsTempCleanup()
+		log.debug(`Cleaned up ${sipsTempFileCount} probable SIPS temp files from "${os.tmpdir()}"`)
 	}
-
-	// Copy processed images to output
-	const resolvedDestinationDirectory = await ensureDirectoryExists(destinationDirectory)
-	for (const result of processImageResults) {
-		const finalOutputPath = path.join(
-			resolvedDestinationDirectory,
-			path.basename(result.output.path),
-		)
-
-		await fse.move(result.path, finalOutputPath, { overwrite: true })
-		// Overwrite path...
-		result.path = finalOutputPath
-	}
-
-	// Clean up
-	await fse.rm(tempProcessOutputDirectory, { force: true, recursive: true })
-
-	// Sips leave temp files...
-	const sipsTempFileCount = await sipsTempCleanup()
-	log.debug(`Cleaned up ${sipsTempFileCount} probable SIPS temp files from "${os.tmpdir()}"`)
 
 	return processImageResults
 }

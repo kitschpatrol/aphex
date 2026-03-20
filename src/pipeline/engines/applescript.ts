@@ -9,8 +9,9 @@ const UUID_SUFFIX_PHOTO = '/L0/001'
 // const UUID_SUFFIX_ALBUM = '/L0/040'
 // const UUID_SUFFIX_FOLDER = '/L0/020'
 
-function escapeForAppleScript(str: string): string {
-	return str.replaceAll('\\', '\\\\').replaceAll('"', '\\"')
+function escapeForAppleScript(text: string): string {
+	// eslint-disable-next-line unicorn/prefer-string-raw
+	return text.replaceAll('\\', '\\\\').replaceAll('"', '\\"')
 }
 
 /**
