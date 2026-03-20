@@ -40,8 +40,9 @@
 	],
 	"scripts": {
 		"build": "pnpm run --sequential /^build:/",
-		"build:1-lib": "tsdown --no-fixed-extension --copy ./src/assets --copy ./src/workers",
+		"build:1-lib": "tsdown",
 		"build:2-native": "cd native/aphex-swift && ./build.sh",
+		"build:3-publint": "publint",
 		"clean": "git rm -f pnpm-lock.yaml ; git clean -fdX",
 		"fix": "ksc fix ; mdat readme ./native/aphex-swift/readme.md",
 		"lint": "ksc lint",
@@ -66,6 +67,7 @@
 		"type-fest": "^5.5.0"
 	},
 	"devDependencies": {
+		"@arethetypeswrong/core": "^0.18.2",
 		"@clack/prompts": "^1.1.0",
 		"@kitschpatrol/shared-config": "^6.0.3",
 		"@types/fs-extra": "^11.0.4",
@@ -77,6 +79,7 @@
 		"open": "^11.0.0",
 		"pretty-bytes": "^7.1.0",
 		"pretty-ms": "^9.3.0",
+		"publint": "^0.3.18",
 		"tsdown": "^0.21.4",
 		"tsx": "^4.21.0",
 		"vitest": "^4.1.0"
