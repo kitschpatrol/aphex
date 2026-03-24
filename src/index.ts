@@ -36,6 +36,8 @@ export { endExiftool } from './utilities/exiftool'
 
 export { setLogger } from './utilities/log'
 
+export { IMAGE_MIME_TYPES, type ImageMimeType } from './utilities/image/mime'
+
 /**
  * Helper for deep merging ExportOptions object against library defaults.
  * Exported for unplugin-aphex.
