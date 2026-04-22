@@ -4,27 +4,13 @@ import { execa } from 'execa'
 import fse from 'fs-extra'
 import os from 'node:os'
 import path from 'node:path'
-import prettier from 'prettier'
 import { getSlugFilename } from './file'
 
-/**
- * Use prettier to format a JSON object into a string according to the package's configuration
- */
-export async function formatJson(json: Record<string, unknown>): Promise<string> {
-	const prettierConfig = await prettier.resolveConfig(process.cwd())
-
-	// Disable plugins since we're just formatting JSON,
-	// and tailwind plugin seems to crash at the moment...
-	if (prettierConfig) {
-		prettierConfig.plugins = []
-	}
-
-	return prettier.format(JSON.stringify(json), { ...prettierConfig, parser: 'json' })
-}
+const UUID_REGEX = /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i
 
 /**
- * Escape special characters in a string to be used in a regular expression
- * TODO is there a built-in function for this?
+ * Escape special characters in a string to be used in a regular expression TODO
+ * is there a built-in function for this?
  */
 export function escapeRegExp(string: string): string {
 	return string.replaceAll(/[$()*+.?[\\\]^{|}]/g, String.raw`\$&`)
@@ -79,16 +65,21 @@ export async function isBinaryOnPath(binaryName: string): Promise<boolean> {
 }
 
 /**
- * Adjusts the given source dimensions to fit within the specified maximum width and height while preserving the aspect ratio.
+ * Adjusts the given source dimensions to fit within the specified maximum width
+ * and height while preserving the aspect ratio.
  *
- * If the source dimensions are already within the maximum bounds, the original dimensions are returned.
- * Otherwise, the function calculates the new dimensions by comparing the aspect ratios of the source and target areas,
+ * If the source dimensions are already within the maximum bounds, the original
+ * dimensions are returned. Otherwise, the function calculates the new
+ * dimensions by comparing the aspect ratios of the source and target areas,
  * ensuring the result fits inside the maximum dimensions provided.
+ *
  * @param sourceWidth - The original width of the source.
  * @param sourceHeight - The original height of the source.
  * @param maxWidth - The maximum allowable width.
  * @param maxHeight - The maximum allowable height.
- * @returns An object containing the width and height that the source is scaled to.
+ *
+ * @returns An object containing the width and height that the source is scaled
+ *   to.
  */
 export function fitInside(
 	sourceWidth: number,
@@ -143,14 +134,13 @@ export async function execaWithTempCleanup(
 }
 
 /**
- * Sips makes a mess of the temp folder and does not respect TMPDIR,
- * so we need to clean up after it ourselves
+ * Sips makes a mess of the temp folder and does not respect TMPDIR, so we need
+ * to clean up after it ourselves
  */
 export async function sipsTempCleanup(): Promise<number> {
 	const tempFiles = fse.readdirSync(os.tmpdir())
 
-	const uuidRegex = /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i
-	const uuidFiles = tempFiles.filter((file) => uuidRegex.test(file))
+	const uuidFiles = tempFiles.filter((file) => UUID_REGEX.test(file))
 
 	let cleanCount = 0
 	for (const file of uuidFiles) {
@@ -166,7 +156,8 @@ export async function sipsTempCleanup(): Promise<number> {
 }
 
 /**
- * Ensure the value is an array. If it's undefined or null, return an empty array.
+ * Ensure the value is an array. If it's undefined or null, return an empty
+ * array.
  */
 export function ensureArray<T>(value: T | T[] | undefined): T[] {
 	if (value === undefined || value === null) {

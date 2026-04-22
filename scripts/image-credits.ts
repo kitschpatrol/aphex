@@ -38,7 +38,9 @@ async function imageCredits() {
 	const albumPath = await text({
 		message: 'Enter the path to the album',
 		validate(value) {
-			if (value === undefined || value.length === 0) return `Path is required!`
+			if (value === undefined || value.length === 0) {
+				return `Path is required!`
+			}
 		},
 	})
 
@@ -212,7 +214,9 @@ async function imageCredits() {
 	const processedImagesSearchPath = await text({
 		message: 'Enter the path to the processed images (e.g. album/processed-images/*.*)',
 		validate(value) {
-			if (value === undefined || value.length === 0) return `Path is required!`
+			if (value === undefined || value.length === 0) {
+				return `Path is required!`
+			}
 		},
 	})
 

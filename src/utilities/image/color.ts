@@ -5,6 +5,8 @@ import { log } from '../log'
 import { getPackageAssetsPath } from '../paths'
 import { lookupImageMimeType } from './mime'
 
+const SIPS_PROFILE_REGEX = /profile: (.+)/
+
 const validColorProfiles = [
 	'Adobe RGB (1998)',
 	'Apple Wide Color Sharing Profile',
@@ -35,7 +37,7 @@ export async function getColorProfile(imagePath: string): Promise<ColorProfile> 
 	// First try sips
 	// No temporary files created
 	const { stdout } = await execa('sips', ['-g', 'profile', imagePath])
-	const result = /profile: (.+)/.exec(stdout)
+	const result = SIPS_PROFILE_REGEX.exec(stdout)
 	const rawResult = result?.[1]?.trim()
 	const sipsProfile = rawResult === '<nil>' ? undefined : rawResult
 

@@ -24,7 +24,9 @@ export async function resolveIdentifiers(
 	// Ensure unique by uuid
 	const seen = new Set<string>()
 	const unique = photoInfos.filter((photo) => {
-		if (seen.has(photo.uuid)) return false
+		if (seen.has(photo.uuid)) {
+			return false
+		}
 		seen.add(photo.uuid)
 		return true
 	})

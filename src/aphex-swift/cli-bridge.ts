@@ -16,6 +16,8 @@ type PendingRequest = {
 	resolve: (value: string) => void
 }
 
+const SHELL_SPECIAL_CHARS_REGEX = /[\s'"\\]/
+
 let interactiveProcess: ChildProcess | undefined
 let currentRequest: PendingRequest | undefined
 
@@ -188,7 +190,7 @@ function escapeCommand(args: string[]): string {
 		.map((arg) => {
 			// If the argument contains spaces, quotes, or backslashes, wrap in single quotes
 			// and escape any existing single quotes
-			if (/[\s'"\\]/.test(arg)) {
+			if (SHELL_SPECIAL_CHARS_REGEX.test(arg)) {
 				return `'${arg.replaceAll("'", String.raw`'\''`)}'`
 			}
 			return arg
@@ -242,7 +244,7 @@ export function isResourceInfo(value: unknown): value is ResourceInfo {
 		return false
 	}
 
-	const object = value as Record<string, unknown>
+	const object = value
 	return (
 		is.string(object.contentType) &&
 		is.string(object.fileName) &&
@@ -261,7 +263,7 @@ export function isPhotoInfo(value: unknown): value is PhotoInfo {
 		return false
 	}
 
-	const object = value as Record<string, unknown>
+	const object = value
 
 	// Required fields
 	if (
@@ -301,7 +303,7 @@ export function isAlbumInfo(value: unknown): value is AlbumInfo {
 		return false
 	}
 
-	const object = value as Record<string, unknown>
+	const object = value
 
 	if (
 		!is.string(object.uuid) ||

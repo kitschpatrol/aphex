@@ -25,6 +25,8 @@ import { calculateSimilarity } from '../src/utilities/image/compare'
 import { getImageInfo } from '../src/utilities/image/image'
 import { getTagCount } from '../src/utilities/image/tags'
 
+const LEADING_DIGITS_REGEX = /^\d+ /
+
 // # Export Functions
 
 async function exportViaAppleScriptGuiWrapped(
@@ -290,7 +292,7 @@ function generateMarkdownTables(reports: ImageReport[]): string[] {
 
 		// Trim the numbers from the start of the first column values
 		for (const row of rows) {
-			row[0] = row[0].replace(/^\d+ /, '')
+			row[0] = row[0].replace(LEADING_DIGITS_REGEX, '')
 		}
 
 		const title = `Image ID: ${uuid}`

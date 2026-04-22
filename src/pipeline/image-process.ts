@@ -350,7 +350,9 @@ function isProcessImageResultReport(
 		typeof object.durationMs === 'number'
 
 	// If mandatory fields are missing, immediately return false
-	if (!hasMandatoryFields) return false
+	if (!hasMandatoryFields) {
+		return false
+	}
 
 	// If similarity is provided, check its fields
 	if (object.similarity !== undefined) {

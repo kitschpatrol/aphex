@@ -8,6 +8,9 @@ import { convertToPng } from './convert'
 import { getImageDimensions, getImageInfo } from './image'
 import { lookupImageMimeType } from './mime'
 
+const SSIM_REGEX = /All:\s*([\d.]+)/
+const PSNR_REGEX = /average:\s*([\d.]+)/
+
 /**
  * Get two identically sized PNGs from two images.
  * Uses the smaller image size as the target size.
@@ -166,7 +169,7 @@ async function calculateSSIMInternal(image1: string, image2: string): Promise<nu
 		'-',
 	])
 	// Extract SSIM value from stdout
-	const match = /All:\s*([\d.]+)/.exec(result.stderr)
+	const match = SSIM_REGEX.exec(result.stderr)
 	return match?.[1] ? Number.parseFloat(match[1]) : 0
 }
 
@@ -212,7 +215,7 @@ export async function calculatePSNRInternal(image1: string, image2: string): Pro
 	])
 
 	// Extract PSNR value from stdout
-	const match = /average:\s*([\d.]+)/.exec(result.stderr)
+	const match = PSNR_REGEX.exec(result.stderr)
 	return match?.[1] ? Number.parseFloat(match[1]) : 0
 }
 

@@ -158,7 +158,10 @@ export type ImageTags = {
 	credit?: string | undefined
 	/** Description, used as alt text in HTML content */
 	description?: string | undefined
-	/** Image Type, e.g. 'animation', 'diagram', 'illustration', 'screenshot', 'image', 'photo', 'render', 'video' */
+	/**
+ Image Type, e.g. 'animation', 'diagram', 'illustration', 'screenshot',
+'image', 'photo', 'render', 'video'
+	 */
 	label?: Label | undefined
 	preservedFileName?: string | undefined
 }
@@ -249,7 +252,9 @@ function dateReviver(key: string, value: unknown) {
 }
 
 function isAphexMetadata(value: unknown): value is AphexMetadata {
-	if (typeof value !== 'object' || value === null) return false
+	if (typeof value !== 'object' || value === null) {
+		return false
+	}
 	// eslint-disable-next-line ts/no-unsafe-type-assertion
 	const maybeObject = value as Record<string, unknown>
 	return (
@@ -261,7 +266,9 @@ function isAphexMetadata(value: unknown): value is AphexMetadata {
 }
 
 function parseUserComment(userComment: string | undefined): AphexMetadata | undefined {
-	if (userComment === undefined) return undefined
+	if (userComment === undefined) {
+		return undefined
+	}
 
 	try {
 		const parsed: unknown = JSON.parse(userComment, dateReviver)

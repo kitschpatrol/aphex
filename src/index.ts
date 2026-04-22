@@ -28,15 +28,21 @@ export {
 	interactiveSessionStop,
 } from './aphex-swift/cli-bridge'
 
-// Re-exported for the worker...
+/**
+ * Re-exported so the Piscina worker (`dist/workers/process-image-worker.js`)
+ * can `import` it from the package entry at runtime. Not part of the public
+ * API; signature and behavior may change without notice.
+ *
+ * @internal
+ */
 export { processImage } from './pipeline/image-process'
 
 // Cleanup function for exiftool processes
 export { endExiftool } from './utilities/exiftool'
 
-export { setLogger } from './utilities/log'
-
 export { IMAGE_MIME_TYPES, type ImageMimeType } from './utilities/image/mime'
+
+export { setLogger } from './utilities/log'
 
 /**
  * Helper for deep merging ExportOptions object against library defaults.
@@ -77,7 +83,7 @@ export const defaultExportOptions: ExportOptions = {
 	syncOptions: defaultSyncOptions,
 }
 
-/** Some fields omitted for relevance...  */
+/** Some fields omitted for relevance... */
 
 type ExportResults = {
 	exportResult:
@@ -174,7 +180,9 @@ export async function exportPhotos(
 	const seenBaseNames = new Set<string>()
 	let hasCollision = false
 	for (const exportResult of exportResults) {
-		if (exportResult.results.syncResult?.status === 'unchanged') continue
+		if (exportResult.results.syncResult?.status === 'unchanged') {
+			continue
+		}
 		const baseName = path.basename(
 			getImagePathWithFileName(
 				exportResult.photoInfo,
@@ -220,7 +228,9 @@ export async function exportPhotos(
 
 	// Update export results with the exported paths
 	for (const exportResult of exportResults) {
-		if (exportResult.results.syncResult?.status === 'unchanged') continue
+		if (exportResult.results.syncResult?.status === 'unchanged') {
+			continue
+		}
 
 		const matchingExportResult = applePhotosExportResults.find(
 			(photoExportResult) => photoExportResult.photoInfo.uuid === exportResult.photoInfo.uuid,
@@ -254,7 +264,9 @@ export async function exportPhotos(
 
 		// Update export results with the processed paths
 		for (const exportResult of exportResults) {
-			if (exportResult.results.syncResult?.status === 'unchanged') continue
+			if (exportResult.results.syncResult?.status === 'unchanged') {
+				continue
+			}
 
 			const matchingProcessResult = processResults.find(
 				(processResult) =>

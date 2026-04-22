@@ -52,7 +52,9 @@ export async function endExiftool(): Promise<void> {
  * forgets to call endExiftool(). Only installs handlers once.
  */
 function scheduleProcessCleanup(): void {
-	if (processExitHandlerInstalled) return
+	if (processExitHandlerInstalled) {
+		return
+	}
 	processExitHandlerInstalled = true
 
 	// Clean up on normal exit

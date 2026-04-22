@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
 # # Save notarization credentials...
 # xcrun notarytool store-credentials "notarytool-profile" --apple-id "eric@ericmika.com" --team-id "86294Z3YEC"
 
