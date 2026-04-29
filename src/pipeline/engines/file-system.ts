@@ -5,8 +5,8 @@ import { aphexPhotoInfo, isPhotoInfo } from '../../aphex-swift/cli-bridge'
 import { getTempDirectory } from '../../utilities/file'
 
 /**
- * Export a photo via direct file system copy of the original or edited file to a temporary directory
- * Clean up and move the file as needed afterwards
+ * Export a photo via direct file system copy of the original or edited file to
+ * a temporary directory Clean up and move the file as needed afterwards
  */
 export async function exportViaFileSystem(
 	photoUuid: PhotoInfo | string,

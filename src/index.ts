@@ -183,6 +183,7 @@ export async function exportPhotos(
 		if (exportResult.results.syncResult?.status === 'unchanged') {
 			continue
 		}
+
 		const baseName = path.basename(
 			getImagePathWithFileName(
 				exportResult.photoInfo,

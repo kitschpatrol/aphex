@@ -9,7 +9,7 @@
 <!-- badges -->
 
 [![NPM Package @kitschpatrol/aphex](https://img.shields.io/npm/v/@kitschpatrol/aphex.svg)](https://npmjs.com/package/@kitschpatrol/aphex)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit/)
 
 <!-- /badges -->
 

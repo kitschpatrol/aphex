@@ -32,8 +32,9 @@ export async function optimizePng(
 }
 
 /**
- * Resize a PNG image to fit within a maximum width and height
- * Copies the image unchanged if it already fits within the target size
+ * Resize a PNG image to fit within a maximum width and height Copies the image
+ * unchanged if it already fits within the target size
+ *
  * @returns The destination image path
  */
 export async function resizePngToFit(
@@ -247,8 +248,8 @@ export async function convertToTiff(
 }
 
 /**
- * Convert an image to a PNG
- * Supports width / height to help quality comparison tools match target sizes in one step
+ * Convert an image to a PNG Supports width / height to help quality comparison
+ * tools match target sizes in one step
  */
 export async function convertToPng(
 	sourceImagePath: string,
@@ -299,9 +300,9 @@ export async function convertToPng(
 }
 
 /**
- * Convert an image to a TGA
- * Only viable input to mozjpeg is TGA, BMP, and some other esoteric stuff...
- * BMP emitted by sips is too modern for cjpeg, so we need to convert to TGA instead
+ * Convert an image to a TGA Only viable input to mozjpeg is TGA, BMP, and some
+ * other esoteric stuff... BMP emitted by sips is too modern for cjpeg, so we
+ * need to convert to TGA instead
  */
 export async function convertToTga(
 	sourceImagePath: string,
@@ -393,20 +394,24 @@ export type LossyFormat = 'avif' | 'jpeg' | 'none' | 'webp'
  * Configuration options for image compression.
  *
  * The compression process follows a three-tier approach:
+ *
  * 1. First attempts lossless compression if enabled
  * 2. Falls back to near-lossless compression if lossless exceeds size limit
- * 3. Finally uses lossy compression if other methods fail to meet size requirements
+ * 3. Finally uses lossy compression if other methods fail to meet size
+ *    requirements
  *
  * Set format to 'none' to disable that compression tier.
  */
 export type CompressImageOptions = {
 	/**
-	 * Force compression even if the original image is already within the size limit.
-	 * When false, images smaller than maxFileSizeBytes are copied without modification.
+	 * Force compression even if the original image is already within the size
+	 * limit. When false, images smaller than maxFileSizeBytes are copied without
+	 * modification.
 	 */
 	forceCompression: boolean
 	/**
 	 * Format to use for lossless compression (first attempt).
+	 *
 	 * - 'avif': Best compression but slower encoding
 	 * - 'png': Good compatibility, optimized with oxipng
 	 * - 'webp': Good balance of compression and speed
@@ -415,6 +420,7 @@ export type CompressImageOptions = {
 	losslessFormat: LosslessFormat
 	/**
 	 * Format to use for lossy compression (final fallback).
+	 *
 	 * - 'avif': Best compression but very slow encoding
 	 * - 'jpeg': Good compatibility, uses mozjpeg encoder
 	 * - 'webp': Good balance of compression and speed
@@ -423,19 +429,21 @@ export type CompressImageOptions = {
 	lossyFormat: LossyFormat
 	/**
 	 * Quality level for lossy compression (0-1 scale).
+	 *
 	 * - 0: Lowest quality, smallest file size
 	 * - 1: Highest quality, largest file size
 	 * - Recommended range: 0.85-0.96 for high-quality images
 	 */
 	lossyQuality: number
 	/**
-	 * Maximum allowed file size in bytes.
-	 * Images exceeding this size will be compressed using the configured formats.
-	 * The compression process stops when this target is met or all options are exhausted.
+	 * Maximum allowed file size in bytes. Images exceeding this size will be
+	 * compressed using the configured formats. The compression process stops when
+	 * this target is met or all options are exhausted.
 	 */
 	maxFileSizeBytes: number
 	/**
 	 * Format to use for near-lossless compression (second attempt).
+	 *
 	 * - 'webp': Only format currently supporting near-lossless mode
 	 * - 'none': Skip near-lossless compression
 	 */

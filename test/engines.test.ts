@@ -41,6 +41,7 @@ describe('export engines', () => {
 			for (const uuid of uuids) {
 				results.push(...(await exportViaAppleScriptGui(uuid)))
 			}
+
 			expect(results.length).toBe(4)
 			await fs.rm(path.dirname(results[0]), { recursive: true })
 		},
@@ -57,6 +58,7 @@ describe('export engines', () => {
 			for (const uuid of uuids) {
 				results.push(await exportViaAppleScript(uuid))
 			}
+
 			expect(results.length).toBe(4)
 			await fs.rm(path.dirname(results[0]), { recursive: true })
 		},

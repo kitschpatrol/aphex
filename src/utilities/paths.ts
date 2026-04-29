@@ -2,8 +2,10 @@ import path, { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 /**
- * import.meta.dirname for Node >= 20.19.0
- * @example getDirname(import.meta)
+ * Import.meta.dirname for Node >= 20.19.0
+ *
+ * @example
+ * 	getDirname(import.meta)
  */
 export function getDirname(meta: ImportMeta): string {
 	// Workaround for lack of import.meta context when called from Piscina workers
@@ -12,10 +14,8 @@ export function getDirname(meta: ImportMeta): string {
 }
 
 /**
- * "Root" of package or distribution folder
- * e.g.
- * Development: /Users/mika/Code/aphex
- * Production: /Users/mika/Code/aphex/dist
+ * "Root" of package or distribution folder e.g. Development:
+ * /Users/mika/Code/aphex Production: /Users/mika/Code/aphex/dist
  */
 export function getPackageBasePath(meta: ImportMeta): string {
 	const dirname = getDirname(meta)
@@ -43,7 +43,8 @@ export function getPackageWorkersPath(meta: ImportMeta): string {
 }
 
 /**
- * Binary directory path of package or distribution folder (Copied by native build script)
+ * Binary directory path of package or distribution folder (Copied by native
+ * build script)
  */
 export function getPackageBinPath(meta: ImportMeta): string {
 	const dirname = getDirname(meta)

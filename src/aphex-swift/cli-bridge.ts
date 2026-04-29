@@ -22,8 +22,9 @@ let interactiveProcess: ChildProcess | undefined
 let currentRequest: PendingRequest | undefined
 
 /**
- * Start an interactive session with aphex-swift.
- * Commands will be sent to this persistent process instead of spawning new ones.
+ * Start an interactive session with aphex-swift. Commands will be sent to this
+ * persistent process instead of spawning new ones.
+ *
  * @throws {Error} If the session is already active or fails to start
  */
 export async function interactiveSessionStart(): Promise<void> {
@@ -88,6 +89,7 @@ export async function interactiveSessionStart(): Promise<void> {
 		for (const queued of commandQueue) {
 			queued.reject(error)
 		}
+
 		commandQueue = []
 
 		interactiveProcess = undefined
@@ -193,6 +195,7 @@ function escapeCommand(args: string[]): string {
 			if (SHELL_SPECIAL_CHARS_REGEX.test(arg)) {
 				return `'${arg.replaceAll("'", String.raw`'\''`)}'`
 			}
+
 			return arg
 		})
 		.join(' ')
@@ -211,8 +214,8 @@ export type ResourceInfo = {
 }
 
 /**
- * TypeScript type definition for the JSON representation of a PHAsset
- * from the iOS Photos framework (CodablePHAsset)
+ * TypeScript type definition for the JSON representation of a PHAsset from the
+ * iOS Photos framework (CodablePHAsset)
  */
 export type PhotoInfo = {
 	dateCreated: Date
@@ -370,7 +373,9 @@ export function assertAlbumInfoArray(value: unknown): asserts value is AlbumInfo
 }
 
 /**
- * Get photo asset information for given identifiers (ID, filename, album name, or photo path)
+ * Get photo asset information for given identifiers (ID, filename, album name,
+ * or photo path)
+ *
  * @throws {Error} If the command fails
  */
 export async function aphexPhotoInfo(
@@ -405,6 +410,7 @@ export async function aphexPhotoInfo(
 
 /**
  * Get album info
+ *
  * @throws {Error} If the command fails
  */
 export async function aphexAlbumInfo(
@@ -439,6 +445,7 @@ export async function aphexAlbumInfo(
 
 /**
  * Export photos for given identifiers to a destination directory
+ *
  * @throws {Error} If the command fails
  */
 export async function aphexExport(
@@ -487,5 +494,6 @@ function dateReviver(key: string, value: unknown) {
 	) {
 		return value ? new Date(value) : undefined
 	}
+
 	return value
 }

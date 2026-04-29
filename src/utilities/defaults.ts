@@ -11,6 +11,7 @@ const mergeDefaultsInternal = createDefu((object, key, value) => {
 		Object.assign(object, { [key]: merged })
 		return true
 	}
+
 	// Return false to use default merging for non-arrays
 	return false
 })

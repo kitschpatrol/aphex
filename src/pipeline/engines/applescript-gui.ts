@@ -6,7 +6,8 @@ import { getTempDirectory } from '../../utilities/file'
 import { getPackageAssetsPath } from '../../utilities/paths'
 
 /**
- * Mirrors the export UI in Note that note that some options are contingent on others.
+ * Mirrors the export UI in Note that note that some options are contingent on
+ * others.
  *
  * The AppleScript implementation is smart about only "clicking" the necessary
  * options in the GUI.
@@ -75,8 +76,8 @@ const defaultExportViaAppleScriptGuiOptions: ExportViaAppleScriptGuiOptions = {
 }
 
 /**
- * Export a photo via the Photos.app GUI to a temporary directory
- * Clean up and move the file as needed afterwards
+ * Export a photo via the Photos.app GUI to a temporary directory Clean up and
+ * move the file as needed afterwards
  */
 export async function exportViaAppleScriptGui(
 	/**

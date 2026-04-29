@@ -2,8 +2,8 @@
  * Centralized exiftool instance management
  *
  * This module provides a managed exiftool instance with proper lifecycle
- * management to prevent hanging processes. The exiftool-vendored library
- * spawns persistent Perl processes that must be explicitly ended.
+ * management to prevent hanging processes. The exiftool-vendored library spawns
+ * persistent Perl processes that must be explicitly ended.
  */
 
 import { ExifTool } from 'exiftool-vendored'
@@ -34,8 +34,8 @@ export function getExiftool(): ExifTool {
 /**
  * End the exiftool process gracefully
  *
- * This should be called when you're done using exiftool to prevent
- * hanging processes. It's safe to call multiple times.
+ * This should be called when you're done using exiftool to prevent hanging
+ * processes. It's safe to call multiple times.
  */
 export async function endExiftool(): Promise<void> {
 	if (exiftoolInstance.pids.length > 0) {
@@ -48,13 +48,14 @@ export async function endExiftool(): Promise<void> {
 /**
  * Install process exit handlers for automatic cleanup
  *
- * This ensures exiftool processes are cleaned up even if the user
- * forgets to call endExiftool(). Only installs handlers once.
+ * This ensures exiftool processes are cleaned up even if the user forgets to
+ * call endExiftool(). Only installs handlers once.
  */
 function scheduleProcessCleanup(): void {
 	if (processExitHandlerInstalled) {
 		return
 	}
+
 	processExitHandlerInstalled = true
 
 	// Clean up on normal exit

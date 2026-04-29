@@ -168,6 +168,7 @@ export async function getSyncPlanForImages(
 			if (resolvedOptions.deleteTarget) {
 				syncResult.toDelete.push(matchingDestinationFile.filePath)
 			}
+
 			syncResult.plan.push({
 				diffedVia: differenceFound,
 				matchFilePath: matchingDestinationFile.filePath,
@@ -203,6 +204,7 @@ export async function getSyncPlanForImages(
 
 /**
  * See if there's a difference between the source image and the target image
+ *
  * @returns Undefined if the, or the reason for the difference if found
  */
 async function isDifferent(
@@ -250,6 +252,7 @@ async function isDifferent(
 				) {
 					return diffStrategy
 				}
+
 				break
 			}
 
@@ -259,6 +262,7 @@ async function isDifferent(
 				if (stripExtension(path.basename(matchPhotoFilePath)) !== sourcePhotoFileBaseName) {
 					return diffStrategy
 				}
+
 				break
 			}
 
@@ -278,6 +282,7 @@ async function isDifferent(
 				) {
 					return diffStrategy
 				}
+
 				break
 			}
 
@@ -288,6 +293,7 @@ async function isDifferent(
 				) {
 					return diffStrategy
 				}
+
 				break
 			}
 
@@ -302,6 +308,7 @@ async function isDifferent(
 				) {
 					return diffStrategy
 				}
+
 				break
 			}
 		}

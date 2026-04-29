@@ -12,22 +12,25 @@ import { lookupImageMimeType } from '../src/utilities/image/mime'
  *
  * Updates the extensions of image paths in text files based on the provided
  * glob patterns.
+ *
  * @param imageGlobs - An array of glob patterns to match image files.
  * @param fileGlobs - An array of glob patterns to match text files.
+ *
  * @returns A promise that resolves to an array of file paths that were updated.
  *
- * This function performs the following steps:
- * 1. Uses the `globby` library to find image paths and text file paths based on
- *    the provided glob patterns.
- * 2. Filters the image paths to include only those with a valid MIME type and
- *    maps them to new paths.
- * 3. Creates an array of regular expressions to match the image paths in the
- *    text files.
- * 4. Reads each text file and replaces occurrences of the old image paths with
- *    the new paths.
- * 5. Writes the updated content back to the text files if any replacements were
- *    made.
- * 6. Returns an array of file paths that were updated.
+ *   This function performs the following steps:
+ *
+ *   1. Uses the `globby` library to find image paths and text file paths based on
+ *        the provided glob patterns.
+ *   2. Filters the image paths to include only those with a valid MIME type and maps
+ *        them to new paths.
+ *   3. Creates an array of regular expressions to match the image paths in the text
+ *        files.
+ *   4. Reads each text file and replaces occurrences of the old image paths with the
+ *        new paths.
+ *   5. Writes the updated content back to the text files if any replacements were
+ *        made.
+ *   6. Returns an array of file paths that were updated.
  */
 async function updateImageExtensions(imageGlobs: string[], fileGlobs: string[]): Promise<string[]> {
 	const imagePaths = await globby(imageGlobs)

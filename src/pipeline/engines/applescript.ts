@@ -16,8 +16,10 @@ function escapeForAppleScript(text: string): string {
 
 /**
  * Export a photo via AppleScript using the Photos app's scripting dictionary
+ *
  * @param photoUuid - UUID of the photo to export
  * @param forceOriginal - Whether to force export of original version
+ *
  * @returns Promise<string> - Path to the exported file
  */
 export async function exportViaAppleScript(

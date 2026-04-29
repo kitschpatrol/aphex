@@ -21,9 +21,8 @@ export async function getSizeBytes(filePath: string): Promise<number> {
 }
 
 /**
- * Normalizes file extensions, particularly for image files
- * Converts to lowercase.
- * Converts .jpg to .jpeg and .tif to .tiff
+ * Normalizes file extensions, particularly for image files Converts to
+ * lowercase. Converts .jpg to .jpeg and .tif to .tiff
  */
 export function normalizeExtension(filePath: string): string {
 	const directory = path.dirname(filePath)
@@ -47,7 +46,9 @@ export function normalizeExtension(filePath: string): string {
 
 /**
  * Converts a filename to a GitHub-style slug format
+ *
  * @param filePath - The path of the file
+ *
  * @returns The slug version of the filename without extension
  */
 export function getSlugFilename(filePath: string): string {
@@ -55,8 +56,11 @@ export function getSlugFilename(filePath: string): string {
 }
 
 /**
- * Converts a filename within a path to a slug format while preserving the directory and extension
+ * Converts a filename within a path to a slug format while preserving the
+ * directory and extension
+ *
  * @param filePath - The path of the file
+ *
  * @returns The file path with the filename portion converted to slug format
  */
 export function sluggifyFilenameInPath(filePath: string): string {
@@ -69,7 +73,8 @@ export function sluggifyFilenameInPath(filePath: string): string {
 
 /**
  * Retrieves the creation date of a file
- * @throws {Error} if the file doesn't exist or can't be accessed
+ *
+ * @throws {Error} If the file doesn't exist or can't be accessed
  */
 export async function getFileCreationTime(filePath: string): Promise<Date> {
 	try {
@@ -122,6 +127,7 @@ export async function creationDatesMatch(file1: string, file2: string): Promise<
 
 /**
  * Verifies if all provided file paths exist
+ *
  * @throws {Error} If any file path doesn't exist
  */
 export function assertPathsExist(...filePaths: string[]): void {
@@ -135,7 +141,9 @@ export function assertPathsExist(...filePaths: string[]): void {
 /**
  * Ensures the directory for a given file path exists, creating it if necessary.
  * Expands '~' to the user's home directory.
+ *
  * @param filePath - The full file path for which to ensure the directory exists
+ *
  * @returns The fully expanded directory path which definitely exists
  */
 export async function ensureDirectoryExists(filePath: string): Promise<string> {
@@ -149,7 +157,8 @@ export async function ensureDirectoryExists(filePath: string): Promise<string> {
 }
 
 /**
- * Creates a temporary directory with an optional custom prefix based on provided labels
+ * Creates a temporary directory with an optional custom prefix based on
+ * provided labels
  */
 export async function getTempDirectory(...labels: string[]): Promise<string> {
 	const prefix =

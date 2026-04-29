@@ -2,7 +2,8 @@ import type { AlbumInfo, PhotoInfo } from '../aphex-swift/cli-bridge'
 import { aphexAlbumInfo, aphexPhotoInfo, isAlbumInfo, isPhotoInfo } from './cli-bridge'
 
 /**
- * Takes a mix of photos, albums, strings, all resolved to a single array of PhotoInfo objects
+ * Takes a mix of photos, albums, strings, all resolved to a single array of
+ * PhotoInfo objects
  */
 export async function resolveIdentifiers(
 	identifiers: Array<AlbumInfo | PhotoInfo | string>,
@@ -27,6 +28,7 @@ export async function resolveIdentifiers(
 		if (seen.has(photo.uuid)) {
 			return false
 		}
+
 		seen.add(photo.uuid)
 		return true
 	})
@@ -46,6 +48,7 @@ export async function resolveAlbumIdentifier(identifier: AlbumInfo | string): Pr
 	if (aphexAlbumInfoResult.length === 0) {
 		throw new Error(`No album found for identifier "${identifier}"`)
 	}
+
 	if (aphexAlbumInfoResult.length > 1) {
 		throw new Error(`Multiple albums found for identifier "${identifier} — is it a photo?"`)
 	}
@@ -60,12 +63,15 @@ export async function resolvePhotoIdentifier(identifier: PhotoInfo | string): Pr
 	if (isPhotoInfo(identifier)) {
 		return identifier
 	}
+
 	const aphexPhotoInfoResult = await aphexPhotoInfo(identifier)
 	if (aphexPhotoInfoResult.length === 0) {
 		throw new Error(`No photo asset found for identifier "${identifier}"`)
 	}
+
 	if (aphexPhotoInfoResult.length > 1) {
 		throw new Error(`Multiple photo assets found for identifier "${identifier} — is it an album?"`)
 	}
+
 	return aphexPhotoInfoResult[0]
 }

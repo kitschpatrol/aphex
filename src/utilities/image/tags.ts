@@ -114,6 +114,7 @@ export async function validateTags(
 			if (logWarnings) {
 				log.warn(result.issues.at(-1))
 			}
+
 			result.valid = false
 		}
 	}
@@ -159,8 +160,8 @@ export type ImageTags = {
 	/** Description, used as alt text in HTML content */
 	description?: string | undefined
 	/**
- Image Type, e.g. 'animation', 'diagram', 'illustration', 'screenshot',
-'image', 'photo', 'render', 'video'
+	 * Image Type, e.g. 'animation', 'diagram', 'illustration', 'screenshot',
+	 * 'image', 'photo', 'render', 'video'
 	 */
 	label?: Label | undefined
 	preservedFileName?: string | undefined
@@ -248,6 +249,7 @@ function dateReviver(key: string, value: unknown) {
 	) {
 		return value ? new Date(value) : undefined
 	}
+
 	return value
 }
 
@@ -255,6 +257,7 @@ function isAphexMetadata(value: unknown): value is AphexMetadata {
 	if (typeof value !== 'object' || value === null) {
 		return false
 	}
+
 	// eslint-disable-next-line ts/no-unsafe-type-assertion
 	const maybeObject = value as Record<string, unknown>
 	return (

@@ -9,6 +9,7 @@
  *
  * This script guides the user through picking a a Photos.app album name as
  * input and performs the following steps:
+ *
  * 1. Load the list of photos with their metadata from the specified album
  * 2. Write the filename metadata to the original files
  * 3. Interactively edit credit and creator metadata with MetaImage.app, if needed

@@ -28,8 +28,10 @@ export type ExportApplePhotoOptions = {
 	engineOriginal: ExportEngineOptions
 	engineOriginalAlpha: ExportEngineOptions
 	/**
-	 * Append a few digits from the image's local identifier in Photos.app, useful to avoid name collisions if exporting multiple album-worth of photos.
-	 * Only applies to `FileNameOptions` `title` or `uuid`. This is NOT the same as a content hash.
+	 * Append a few digits from the image's local identifier in Photos.app, useful
+	 * to avoid name collisions if exporting multiple album-worth of photos. Only
+	 * applies to `FileNameOptions` `title` or `uuid`. This is NOT the same as a
+	 * content hash.
 	 */
 	fileNameAppendUuidFragment: boolean
 	fileNameNormalizeExtensions: boolean
@@ -151,10 +153,12 @@ export async function exportApplePhotos(
 				exportedPhoto.path = await exportViaAppleScript(photoInfo.uuid)
 				break
 			}
+
 			case 'file-system': {
 				exportedPhoto.path = await exportViaFileSystem(photoInfo)
 				break
 			}
+
 			case 'photos-gui': {
 				const [exportedPath] = await exportViaAppleScriptGui(
 					photoInfo.uuid,
@@ -172,6 +176,7 @@ export async function exportApplePhotos(
 				// ])
 				break
 			}
+
 			case 'swift-photokit': {
 				exportedPhoto.path = await exportViaSwiftPhotoKit(photoInfo.uuid)
 				break
@@ -230,6 +235,7 @@ export function getImagePathWithFileName(
 					: `${nameWithoutExtension}${uuidFragment}`
 				return path.join(basePath, `${processedName}${extension}`)
 			}
+
 			case 'title': {
 				if (isNonEmptyStringAndNotWhitespace(photoInfo.title)) {
 					const title = sluggify ? githubSlug(photoInfo.title) : photoInfo.title
@@ -239,8 +245,10 @@ export function getImagePathWithFileName(
 						: `${title}${uuidFragment}`
 					return path.join(basePath, `${processedTitle}${extension}`)
 				}
+
 				break
 			}
+
 			case 'uuid': {
 				// Don't append UUID fragment if the filename is already a UUID
 				const processedUuid = sluggify ? githubSlug(photoInfo.uuid) : photoInfo.uuid
@@ -282,6 +290,7 @@ async function getEngineForPhoto(
 				}`,
 			)
 		}
+
 		return engine
 	}
 
@@ -311,14 +320,14 @@ async function getEngineForPhoto(
 			}`,
 		)
 	}
+
 	return engine
 }
 
 /**
- * Export a single album to a folder
- * Optionally sync the output directory with the album, deleting any images that are no longer in the album
- * Optionally audit the album for duplicate titles
- * Does NOT further process the images
+ * Export a single album to a folder Optionally sync the output directory with
+ * the album, deleting any images that are no longer in the album Optionally
+ * audit the album for duplicate titles Does NOT further process the images
  */
 // export async function exportPhotoAlbum(
 // 	identifier: string,

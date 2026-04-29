@@ -5,7 +5,8 @@ import { calculateSimilarity } from '../src/utilities/image/compare'
 
 /**
  * Calculates the similarity between two images using the `calculateSimilarity`
- * function, and prints the results of the similarity calculation in JSON format.
+ * function, and prints the results of the similarity calculation in JSON
+ * format.
  */
 async function main() {
 	// Get two positional arguments from the command line

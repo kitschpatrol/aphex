@@ -12,9 +12,8 @@ const SSIM_REGEX = /All:\s*([\d.]+)/
 const PSNR_REGEX = /average:\s*([\d.]+)/
 
 /**
- * Get two identically sized PNGs from two images.
- * Uses the smaller image size as the target size.
- * Remember to clean up temp
+ * Get two identically sized PNGs from two images. Uses the smaller image size
+ * as the target size. Remember to clean up temp
  */
 export async function getTwoIdenticallySizedPng(
 	image1: string,
@@ -93,9 +92,12 @@ export async function calculateSimilarity(
 }
 
 /**
- * Calculates the DSSIM index between two images using the dssim command-line tool.
+ * Calculates the DSSIM index between two images using the dssim command-line
+ * tool.
+ *
  * @param image1 The path to the first image file.
  * @param image2 The path to the second image file.
+ *
  * @returns A promise that resolves to the DSSIM value as a number.
  */
 export async function calculateDSSIM(image1: string, image2: string): Promise<number> {
@@ -133,8 +135,10 @@ async function calculateDSSIMInternal(image1: string, image2: string): Promise<n
 
 /**
  * Calculates the SSIM between two images using ffmpeg.
+ *
  * @param image1 The path to the first image.
  * @param image2 The path to the second image.
+ *
  * @returns A promise that resolves to the SSIM value as a number.
  */
 export async function calculateSSIM(image1: string, image2: string): Promise<number> {
@@ -175,8 +179,10 @@ async function calculateSSIMInternal(image1: string, image2: string): Promise<nu
 
 /**
  * Calculates the PSNR between two images using ffmpeg.
+ *
  * @param image1 The path to the first image.
  * @param image2 The path to the second image.
+ *
  * @returns A promise that resolves to the PSNR value as a number.
  */
 export async function calculatePSNR(image1: string, image2: string): Promise<number> {
