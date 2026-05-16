@@ -1,6 +1,6 @@
 {
 	"name": "@kitschpatrol/aphex",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "Apple Photos Export. TypeScript library and CLI tool to export and process images and albums from your macOS Photos.app library.",
 	"keywords": [
 		"apple",
