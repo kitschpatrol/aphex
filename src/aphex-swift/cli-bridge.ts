@@ -16,7 +16,7 @@ type PendingRequest = {
 	resolve: (value: string) => void
 }
 
-const SHELL_SPECIAL_CHARS_REGEX = /[\s'"\\]/
+const SHELL_SPECIAL_CHARS_REGEX = /[\s'"\\]/v
 
 let interactiveProcess: ChildProcess | undefined
 let currentRequest: PendingRequest | undefined
@@ -66,13 +66,15 @@ export async function interactiveSessionStart(): Promise<void> {
 
 	// Handle stderr - treat as errors for the current request
 	interactiveProcess.stderr?.on('data', (data: Uint8Array) => {
-		if (currentRequest !== undefined) {
-			const error = new Error(data.toString().trim())
-			const request = currentRequest
-			currentRequest = undefined
-			request.reject(error)
-			processNextCommand()
+		if (currentRequest === undefined) {
+			return
 		}
+
+		const error = new Error(data.toString().trim())
+		const request = currentRequest
+		currentRequest = undefined
+		request.reject(error)
+		processNextCommand()
 	})
 
 	// Handle process exit
@@ -154,8 +156,8 @@ let commandQueue: QueuedCommand[] = []
 function processNextCommand(): void {
 	if (
 		currentRequest !== undefined ||
-		commandQueue.length === 0 ||
-		interactiveProcess === undefined
+		interactiveProcess === undefined ||
+		commandQueue.length === 0
 	) {
 		return
 	}
@@ -489,10 +491,10 @@ export async function aphexExport(
 
 function dateReviver(key: string, value: unknown) {
 	if (
-		(key === 'dateCreated' || key === 'dateModified' || key === 'dateStart' || key === 'dateEnd') &&
-		typeof value === 'string'
+		typeof value === 'string' &&
+		['dateCreated', 'dateEnd', 'dateModified', 'dateStart'].includes(key)
 	) {
-		return value ? new Date(value) : undefined
+		return value.length > 0 ? new Date(value) : undefined
 	}
 
 	return value

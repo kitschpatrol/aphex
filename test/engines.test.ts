@@ -16,7 +16,7 @@ describe('export engines', () => {
 		}
 
 		expect(results.length).toBe(4)
-		await fs.rm(path.dirname(results[0]), { recursive: true })
+		await fs.rm(path.dirname(results[0]!), { recursive: true })
 	})
 
 	it('exports via file system', async () => {
@@ -27,7 +27,7 @@ describe('export engines', () => {
 		}
 
 		expect(results.length).toBe(4)
-		await fs.rm(path.dirname(results[0]), { recursive: true })
+		await fs.rm(path.dirname(results[0]!), { recursive: true })
 	})
 
 	it(
@@ -43,7 +43,7 @@ describe('export engines', () => {
 			}
 
 			expect(results.length).toBe(4)
-			await fs.rm(path.dirname(results[0]), { recursive: true })
+			await fs.rm(path.dirname(results[0]!), { recursive: true })
 		},
 	)
 
@@ -60,7 +60,7 @@ describe('export engines', () => {
 			}
 
 			expect(results.length).toBe(4)
-			await fs.rm(path.dirname(results[0]), { recursive: true })
+			await fs.rm(path.dirname(results[0]!), { recursive: true })
 		},
 	)
 })

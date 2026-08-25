@@ -9,7 +9,7 @@ let package = Package(
         .macOS(.v15)
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.7.0")
+        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.8.2")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.

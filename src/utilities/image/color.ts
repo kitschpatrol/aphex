@@ -5,7 +5,7 @@ import { log } from '../log'
 import { getPackageAssetsPath } from '../paths'
 import { lookupImageMimeType } from './mime'
 
-const SIPS_PROFILE_REGEX = /profile: (.+)/
+const SIPS_PROFILE_REGEX = /profile: (.+)/v
 
 const validColorProfiles = [
 	'Adobe RGB (1998)',

@@ -25,7 +25,7 @@ import { calculateSimilarity } from '../src/utilities/image/compare'
 import { getImageInfo } from '../src/utilities/image/image'
 import { getTagCount } from '../src/utilities/image/tags'
 
-const LEADING_DIGITS_REGEX = /^\d+ /
+const LEADING_DIGITS_REGEX = /^\d+ /v
 
 // # Export Functions
 
@@ -33,7 +33,7 @@ async function exportViaAppleScriptGuiWrapped(
 	uuid: string,
 	format: 'jpeg-high' | 'jpeg-max' | 'png',
 ): Promise<string> {
-	const result = await exportViaAppleScriptGui(uuid, {
+	const [exportedPath] = await exportViaAppleScriptGui(uuid, {
 		colorProfile: 'Original',
 		fileName: 'Use Title',
 		includeLocation: true,
@@ -43,7 +43,11 @@ async function exportViaAppleScriptGuiWrapped(
 		photoSize: 'Full Size',
 	})
 
-	return result[0]
+	if (exportedPath === undefined) {
+		throw new Error(`AppleScript GUI export returned no files for photo "${uuid}"`)
+	}
+
+	return exportedPath
 }
 
 async function moveResult(
@@ -125,7 +129,7 @@ const methodNameAndOrderMap = {
 function assertValidExportMethod(
 	method: string,
 ): asserts method is keyof typeof methodNameAndOrderMap {
-	if (!(method in methodNameAndOrderMap)) {
+	if (!Object.hasOwn(methodNameAndOrderMap, method)) {
 		throw new Error(`Unknown export method: ${method}`)
 	}
 }
@@ -194,11 +198,9 @@ async function generateImageReport(exportDirectory: string): Promise<ImageReport
 			withFileTypes: true,
 		})
 
-		for (const file of allFiles) {
-			if (file.name.startsWith('.')) {
-				continue
-			}
+		const visibleFiles = allFiles.filter((file) => !file.name.startsWith('.'))
 
+		for (const file of visibleFiles) {
 			const filePath = path.join(file.parentPath, file.name)
 
 			const exportMethod = directory.name.replace('original-', '')
@@ -269,11 +271,9 @@ function generateMarkdownTables(reports: ImageReport[]): string[] {
 
 		const rows: string[][] = []
 
-		for (const relatedImage of relatedImages) {
-			if (relatedImage.isOriginal && !relatedImage.isBenchmark) {
-				continue
-			}
+		const rowImages = relatedImages.filter((image) => !image.isOriginal || image.isBenchmark)
 
+		for (const relatedImage of rowImages) {
 			assertValidColorProfile(relatedImage.imageInfo.colorProfile)
 
 			rows.push([
@@ -288,11 +288,11 @@ function generateMarkdownTables(reports: ImageReport[]): string[] {
 		}
 
 		// Sort the table by its first column
-		rows.sort((a, b) => a[0].localeCompare(b[0]))
+		rows.sort((a, b) => (a[0] ?? '').localeCompare(b[0] ?? ''))
 
 		// Trim the numbers from the start of the first column values
 		for (const row of rows) {
-			row[0] = row[0].replace(LEADING_DIGITS_REGEX, '')
+			row[0] = (row[0] ?? '').replace(LEADING_DIGITS_REGEX, '')
 		}
 
 		const title = `Image ID: ${uuid}`

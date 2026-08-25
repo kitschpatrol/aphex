@@ -12,9 +12,15 @@ export async function exportViaFileSystem(
 	photoUuid: PhotoInfo | string,
 	forceOriginal = false,
 ): Promise<string> {
-	const [{ edited, original }] = isPhotoInfo(photoUuid)
-		? [photoUuid]
-		: await aphexPhotoInfo(photoUuid)
+	const [photoInfo] = isPhotoInfo(photoUuid) ? [photoUuid] : await aphexPhotoInfo(photoUuid)
+
+	if (photoInfo === undefined) {
+		throw new Error(
+			`No photo info found for UUID "${isPhotoInfo(photoUuid) ? photoUuid.uuid : photoUuid}"`,
+		)
+	}
+
+	const { edited, original } = photoInfo
 
 	const tempDirectory = await getTempDirectory('engine', 'file-system')
 

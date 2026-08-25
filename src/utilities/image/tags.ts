@@ -36,7 +36,6 @@ export type TagsPlusXmp = Tags & {
 export async function stripTags(imagePath: string): Promise<void> {
 	const mime = lookupImageMimeType(imagePath, true)
 
-	// eslint-disable-next-line unicorn/prefer-ternary
 	if (mime === 'avif') {
 		// Note that imagemagick's -strip is destructive
 		// Preserve ICC
@@ -202,7 +201,6 @@ export async function clearLegacyArtistTag(imagePath: string): Promise<void> {
 export async function getTags(imagePath: string): Promise<ImageTags> {
 	// We explicitly use XMP metadata because it's compatible across all file types and not clobbered by Apple Photos
 
-	// eslint-disable-next-line ts/no-unsafe-type-assertion
 	const raw = (await getExiftool().readRaw(imagePath, {
 		readArgs: ['-g', '-xmp:all'],
 	})) as {
@@ -244,10 +242,10 @@ export async function getTags(imagePath: string): Promise<ImageTags> {
 
 function dateReviver(key: string, value: unknown) {
 	if (
-		(key === 'dateCreated' || key === 'dateModified' || key === 'dateStart' || key === 'dateEnd') &&
-		typeof value === 'string'
+		typeof value === 'string' &&
+		['dateCreated', 'dateEnd', 'dateModified', 'dateStart'].includes(key)
 	) {
-		return value ? new Date(value) : undefined
+		return value.length > 0 ? new Date(value) : undefined
 	}
 
 	return value
@@ -258,7 +256,6 @@ function isAphexMetadata(value: unknown): value is AphexMetadata {
 		return false
 	}
 
-	// eslint-disable-next-line ts/no-unsafe-type-assertion
 	const maybeObject = value as Record<string, unknown>
 	return (
 		typeof maybeObject.exportOptions === 'object' &&
@@ -298,14 +295,12 @@ export async function setTags(imagePath: string, imageTags: ImageTags) {
 	// Values explicitly passed as undefined will "erase" the value
 	// Does an empty string work, or do we have to pass null?
 	const tags: TagsPlusXmp = {
-		...('creator' in imageTags ? { 'XMP:Creator': creator ?? '' } : {}),
-		...('description' in imageTags ? { 'XMP:Description': description ?? '' } : {}),
-		...('credit' in imageTags ? { 'XMP:Credit': credit ?? '' } : {}),
-		...('label' in imageTags ? { 'XMP:Label': label ?? '' } : {}),
-		...('preservedFileName' in imageTags
-			? { 'XMP:PreservedFileName': preservedFileName ?? '' }
-			: {}),
-		...('aphexMetadata' in imageTags ? { 'XMP:UserComment': userComment ?? '' } : {}),
+		...('creator' in imageTags && { 'XMP:Creator': creator ?? '' }),
+		...('description' in imageTags && { 'XMP:Description': description ?? '' }),
+		...('credit' in imageTags && { 'XMP:Credit': credit ?? '' }),
+		...('label' in imageTags && { 'XMP:Label': label ?? '' }),
+		...('preservedFileName' in imageTags && { 'XMP:PreservedFileName': preservedFileName ?? '' }),
+		...('aphexMetadata' in imageTags && { 'XMP:UserComment': userComment ?? '' }),
 	}
 
 	await getExiftool().write(imagePath, tags, {
@@ -342,8 +337,8 @@ export async function cloneTags(
 
 	let tagsToAssign: ImageTags = {}
 	for (const key of keys) {
-		const sourceValue = key in sourceTags ? sourceTags[key] : undefined
-		const destinationValue = key in destinationTags ? destinationTags[key] : undefined
+		const sourceValue = sourceTags[key]
+		const destinationValue = destinationTags[key]
 
 		if (sourceValue !== destinationValue || force) {
 			tagsToAssign = {
@@ -358,6 +353,5 @@ export async function cloneTags(
 		await setTags(destinationImagePath, tagsToAssign)
 	}
 
-	// eslint-disable-next-line ts/no-unsafe-type-assertion
 	return Object.keys(tagsToAssign) as Array<keyof ImageTags>
 }

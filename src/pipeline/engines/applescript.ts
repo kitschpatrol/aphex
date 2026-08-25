@@ -62,6 +62,6 @@ export async function exportViaAppleScript(
 		return exportedFilePath
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : String(error)
-		throw new Error(`Failed to export photo via AppleScript: ${errorMessage}`)
+		throw new Error(`Failed to export photo via AppleScript: ${errorMessage}`, { cause: error })
 	}
 }

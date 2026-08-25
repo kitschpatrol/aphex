@@ -1,4 +1,4 @@
-import path, { dirname } from 'node:path'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 /**
@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url'
 export function getDirname(meta: ImportMeta): string {
 	// Workaround for lack of import.meta context when called from Piscina workers
 	// See image-process.ts
-	return dirname(fileURLToPath(process.env.PISCINA_WORKER_META_URL ?? meta.url))
+	return path.dirname(fileURLToPath(process.env.PISCINA_WORKER_META_URL ?? meta.url))
 }
 
 /**

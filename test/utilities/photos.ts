@@ -42,10 +42,10 @@ export async function entropicRename(original: string | string[]): Promise<strin
 	const originalArray = ensureArray(original)
 	const entropicPaths: string[] = []
 
-	for (const original of originalArray) {
-		const originalDirectory = path.dirname(original)
-		const originalExtension = path.extname(original)
-		const originalBare = stripExtension(path.basename(original))
+	for (const originalPath of originalArray) {
+		const originalDirectory = path.dirname(originalPath)
+		const originalExtension = path.extname(originalPath)
+		const originalBare = stripExtension(path.basename(originalPath))
 
 		Math.round(Math.random() * 1_000_000)
 		const randomPart = Math.floor(Math.random() * 1_000_000)
@@ -54,7 +54,7 @@ export async function entropicRename(original: string | string[]): Promise<strin
 			`${originalBare}-${randomPart}.${originalExtension}`,
 		)
 		entropicPaths.push(entropicPath)
-		await fse.rename(original, entropicPath)
+		await fse.rename(originalPath, entropicPath)
 	}
 
 	return entropicPaths

@@ -32,7 +32,7 @@ describe('image processing', () => {
 		{ timeout: 600_000 },
 		async ({ tempDirectory }) => {
 			const filePairs: string[][] = []
-			const pathPairs: string[][] = []
+			const pathPairs: Array<[string, string]> = []
 			for (const file of testFiles) {
 				const result = await processImage(file, tempDirectory, PROCESS_IMAGE_OPTIONS)
 				filePairs.push([path.basename(file), path.basename(result.output.path)])

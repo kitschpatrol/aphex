@@ -45,9 +45,15 @@ export async function manageMetadataBatch(
 	}
 
 	return Promise.all(
-		photoInfos.map(async (photoInfo, index) =>
-			manageMetadata(photoInfo, targetFilePaths[index], options, exportOptions),
-		),
+		photoInfos.map(async (photoInfo, index) => {
+			const targetFilePath = targetFilePaths[index]
+
+			if (targetFilePath === undefined) {
+				throw new Error(`Missing target file path for photo "${photoInfo.uuid}"`)
+			}
+
+			return manageMetadata(photoInfo, targetFilePath, options, exportOptions)
+		}),
 	)
 }
 

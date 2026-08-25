@@ -115,13 +115,15 @@ export async function processPhotos(
 	const tempProcessOutputDirectory = await getTempDirectory('process', 'images')
 	let processImageResults: ProcessImageResult[]
 
+	const [singleImagePath] = imagePaths
+
 	try {
 		// eslint-disable-next-line ts/no-unnecessary-condition
-		if (SINGLE_FILE_SERIAL && imagePaths.length === 1) {
+		if (SINGLE_FILE_SERIAL && singleImagePath !== undefined && imagePaths.length === 1) {
 			// Single images processed on main thread, no observed speed advantage
 			// from skipping parallelization
 			processImageResults = [
-				await processImage(imagePaths[0], tempProcessOutputDirectory, resolvedOptions),
+				await processImage(singleImagePath, tempProcessOutputDirectory, resolvedOptions),
 			]
 		} else {
 			// Multiple images processed in parallel in background process
@@ -148,12 +150,12 @@ export async function processPhotos(
 			try {
 				// Process images in parallel
 				processImageResults = await Promise.all<ProcessImageResult>(
-					imagePaths.map(async (path) =>
+					imagePaths.map(async (imagePath) =>
 						// eslint-disable-next-line ts/no-unsafe-return
 						piscina.run({
 							destinationDirectory: tempProcessOutputDirectory,
 							options: resolvedOptions,
-							sourceImagePath: path,
+							sourceImagePath: imagePath,
 							verbose: log.isLevelEnabled('debug'),
 						}),
 					),

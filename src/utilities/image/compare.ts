@@ -8,8 +8,8 @@ import { convertToPng } from './convert'
 import { getImageDimensions, getImageInfo } from './image'
 import { lookupImageMimeType } from './mime'
 
-const SSIM_REGEX = /All:\s*([\d.]+)/
-const PSNR_REGEX = /average:\s*([\d.]+)/
+const SSIM_REGEX = /All:\s*([\d.]+)/v
+const PSNR_REGEX = /average:\s*([\d.]+)/v
 
 /**
  * Get two identically sized PNGs from two images. Uses the smaller image size
@@ -124,13 +124,13 @@ async function calculateDSSIMInternal(image1: string, image2: string): Promise<n
 
 	// Dssim output is typically in the form "0.00234\timage1\timage2"
 	// where the first tab-separated value is the DSSIM index.
-	const [dssimIndex] = stdout.split('\t')
-	// eslint-disable-next-line ts/no-unnecessary-condition
+	const [dssimIndex] = stdout.split('\t', 1)
+
 	if (dssimIndex === undefined) {
 		throw new Error('DSSIM index not found in dssim output.')
 	}
 
-	return Number.parseFloat(dssimIndex)
+	return Number(dssimIndex)
 }
 
 /**
@@ -173,8 +173,8 @@ async function calculateSSIMInternal(image1: string, image2: string): Promise<nu
 		'-',
 	])
 	// Extract SSIM value from stdout
-	const match = SSIM_REGEX.exec(result.stderr)
-	return match?.[1] ? Number.parseFloat(match[1]) : 0
+	const ssimValue = SSIM_REGEX.exec(result.stderr)?.[1]
+	return ssimValue === undefined ? 0 : Number(ssimValue)
 }
 
 /**
@@ -221,8 +221,8 @@ export async function calculatePSNRInternal(image1: string, image2: string): Pro
 	])
 
 	// Extract PSNR value from stdout
-	const match = PSNR_REGEX.exec(result.stderr)
-	return match?.[1] ? Number.parseFloat(match[1]) : 0
+	const psnrValue = PSNR_REGEX.exec(result.stderr)?.[1]
+	return psnrValue === undefined ? 0 : Number(psnrValue)
 }
 
 /**
@@ -303,9 +303,5 @@ export async function identicalImageExistsInDirectory(
 	}
 
 	const isVisuallyIdentical = await visuallyIdentical(sourceImagePath, existingFilePath)
-	if (!isVisuallyIdentical) {
-		return false
-	}
-
-	return true
+	return isVisuallyIdentical
 }

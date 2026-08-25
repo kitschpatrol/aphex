@@ -38,11 +38,13 @@ export function getExiftool(): ExifTool {
  * processes. It's safe to call multiple times.
  */
 export async function endExiftool(): Promise<void> {
-	if (exiftoolInstance.pids.length > 0) {
-		log.debug(`Ending exiftool processes: ${exiftoolInstance.pids.join(', ')}`)
-		await exiftoolInstance.end()
-		log.debug('Exiftool processes ended')
+	if (exiftoolInstance.pids.length === 0) {
+		return
 	}
+
+	log.debug(`Ending exiftool processes: ${exiftoolInstance.pids.join(', ')}`)
+	await exiftoolInstance.end()
+	log.debug('Exiftool processes ended')
 }
 
 /**
@@ -59,11 +61,13 @@ function scheduleProcessCleanup(): void {
 	processExitHandlerInstalled = true
 
 	// Clean up on normal exit
-	process.on('beforeExit', async () => {
-		if (!cleanupScheduled) {
-			cleanupScheduled = true
-			await endExiftool()
+	process.on('beforeExit', () => {
+		if (cleanupScheduled) {
+			return
 		}
+
+		cleanupScheduled = true
+		void endExiftool()
 	})
 
 	// Clean up on explicit exit
@@ -77,20 +81,24 @@ function scheduleProcessCleanup(): void {
 	})
 
 	// Handle SIGINT (Ctrl+C)
-	process.on('SIGINT', async () => {
-		log.debug('Received SIGINT, cleaning up exiftool...')
-		await endExiftool()
-		process.exit(130)
+	process.on('SIGINT', () => {
+		void (async () => {
+			log.debug('Received SIGINT, cleaning up exiftool...')
+			await endExiftool()
+			process.exit(130)
+		})()
 	})
 
 	// Handle SIGTERM
-	process.on('SIGTERM', async () => {
-		log.debug('Received SIGTERM, cleaning up exiftool...')
-		await endExiftool()
-		process.exit(143)
+	process.on('SIGTERM', () => {
+		void (async () => {
+			log.debug('Received SIGTERM, cleaning up exiftool...')
+			await endExiftool()
+			process.exit(143)
+		})()
 	})
 }
 
 // Re-export the ExifTool type for consumers who need it
 
-export { type ExifTool } from 'exiftool-vendored'
+export type { ExifTool } from 'exiftool-vendored'

@@ -89,6 +89,6 @@ export async function hasAlpha(imagePath: string): Promise<boolean> {
 		const minAlpha = Number(stdout)
 		return minAlpha < 1
 	} catch (error) {
-		throw new Error(`Error checking file: ${String(error)}`)
+		throw new Error(`Error checking file: ${String(error)}`, { cause: error })
 	}
 }

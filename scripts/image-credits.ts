@@ -38,11 +38,8 @@ async function imageCredits() {
 
 	const albumPath = await text({
 		message: 'Enter the path to the album',
-		validate(value) {
-			if (value === undefined || value.length === 0) {
-				return `Path is required!`
-			}
-		},
+		validate: (value) =>
+			value === undefined || value.length === 0 ? `Path is required!` : undefined,
 	})
 
 	// Why can text return a symbol?
@@ -56,14 +53,14 @@ async function imageCredits() {
 
 	const photos = await aphexPhotoInfo(albumPath)
 
-	const photosWithInvalidTags: PhotoInfo[] = []
-
 	if (photos.length === 0) {
 		s.stop(`No photos found in album "${albumPath}"`)
 		return
 	}
 
 	s.stop(`Found ${photos.length} photos in album "${albumPath}"`)
+
+	const photosWithInvalidTags: PhotoInfo[] = []
 
 	// --------------------------------------------------------------------------
 
@@ -160,7 +157,7 @@ async function imageCredits() {
 			message: 'Is all the original metadata set?',
 		})
 
-		if (shouldContinue) {
+		if (shouldContinue === true) {
 			log.success('Continuing...')
 		} else {
 			log.warning('Exiting early.')
@@ -214,11 +211,8 @@ async function imageCredits() {
 
 	const processedImagesSearchPath = await text({
 		message: 'Enter the path to the processed images (e.g. album/processed-images/*.*)',
-		validate(value) {
-			if (value === undefined || value.length === 0) {
-				return `Path is required!`
-			}
-		},
+		validate: (value) =>
+			value === undefined || value.length === 0 ? `Path is required!` : undefined,
 	})
 
 	if (typeof processedImagesSearchPath !== 'string') {

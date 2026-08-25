@@ -27,9 +27,8 @@
 export default async function worker({ destinationDirectory, options, sourceImagePath, verbose }) {
 	// Weird workaround after issues with ESM imports in worker threads and more recent versions of Node / TSX / Piscina / etc?
 	// ts-node didn't work
-	const { processImage } = await import('importx').then(async (x) =>
-		x.import('../index', import.meta.url),
-	)
+	const importx = await import('importx')
+	const { processImage } = await importx.import('../index', import.meta.url)
 
 	if (verbose) {
 		console.log(`Processing image on worker thread:\n${sourceImagePath}`)

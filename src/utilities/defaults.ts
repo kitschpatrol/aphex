@@ -28,6 +28,5 @@ export function mergeDefaults<T extends Record<string, unknown>, S extends T>(
 	}
 
 	// Regrettable
-	// eslint-disable-next-line ts/no-unsafe-type-assertion
 	return mergeDefaultsInternal(options, defaults) as T
 }

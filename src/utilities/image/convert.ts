@@ -53,7 +53,6 @@ export async function resizePngToFit(
 
 	const destinationImagePath = path.join(destinationDirectory, path.basename(imagePath))
 
-	// eslint-disable-next-line unicorn/prefer-ternary
 	if (height <= maxHeight && width <= maxWidth) {
 		// No resize needed
 		await fse.copy(imagePath, destinationImagePath)
@@ -122,24 +121,14 @@ export async function convertToJpeg(
 				)
 				const tgaImagePath = await convertToTga(sourceImagePath, tgaTempDirectory)
 
-				await (jpegQuality === 'lossless'
-					? execa('cjpeg', [
-							'--lossless',
-							'-optimize',
-							'-progressive',
-							'-outfile',
-							destinationImagePath,
-							tgaImagePath,
-						])
-					: execa('cjpeg', [
-							'-quality',
-							jpegQuality.toString(),
-							'-optimize',
-							'-progressive',
-							'-outfile',
-							destinationImagePath,
-							tgaImagePath,
-						]))
+				await execa('cjpeg', [
+					...(jpegQuality === 'lossless' ? ['--lossless'] : ['-quality', jpegQuality.toString()]),
+					'-optimize',
+					'-progressive',
+					'-outfile',
+					destinationImagePath,
+					tgaImagePath,
+				])
 
 				await fse.rm(tgaTempDirectory, { recursive: true })
 				break
@@ -287,7 +276,7 @@ export async function convertToPng(
 			'--setProperty',
 			'format',
 			'png',
-			...(restoreColorProfile && restoreColorProfile !== 'None'
+			...(restoreColorProfile !== undefined && restoreColorProfile !== 'None'
 				? ['--setProperty', 'profile', getPathToColorProfile(restoreColorProfile)]
 				: []),
 			sourceImagePath,
@@ -373,9 +362,7 @@ export async function convertToAvif(
 		await execa('avifenc', [
 			...qualityArgs,
 			'--icc',
-			profile === 'None'
-				? getPathToColorProfile('sRGB IEC61966-2.1')
-				: getPathToColorProfile(profile),
+			getPathToColorProfile(profile === 'None' ? 'sRGB IEC61966-2.1' : profile),
 			'--speed',
 			'default',
 			sourceImagePath,

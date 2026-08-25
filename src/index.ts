@@ -40,7 +40,8 @@ export { processImage } from './pipeline/image-process'
 // Cleanup function for exiftool processes
 export { endExiftool } from './utilities/exiftool'
 
-export { IMAGE_MIME_TYPES, type ImageMimeType } from './utilities/image/mime'
+export { IMAGE_MIME_TYPES } from './utilities/image/mime'
+export type { ImageMimeType } from './utilities/image/mime'
 
 export { setLogger } from './utilities/log'
 
@@ -87,12 +88,10 @@ export const defaultExportOptions: ExportOptions = {
 
 type ExportResults = {
 	exportResult:
-		| Simplify<Omit<ExportApplePhotoResult, 'exportOptions' | 'path' | 'photoInfo'>>
-		| undefined
+		Simplify<Omit<ExportApplePhotoResult, 'exportOptions' | 'path' | 'photoInfo'>> | undefined
 	metadataResult: Simplify<Omit<ManageMetadataResult, 'photoInfo'>> | undefined
 	processResult:
-		| Simplify<OmitDeep<ProcessImageResult, 'input.path' | 'output.path' | 'path'>>
-		| undefined
+		Simplify<OmitDeep<ProcessImageResult, 'input.path' | 'output.path' | 'path'>> | undefined
 	syncResult: Simplify<Omit<SyncResult['plan'][number], 'photoInfo'>> | undefined
 }
 
@@ -250,9 +249,8 @@ export async function exportPhotos(
 	// ------------------------------------------------------------
 
 	// Processing
-	let processResults: ProcessImageResult[] | undefined
 	if (processOptions !== 'disabled') {
-		processResults = await processPhotos(
+		const processResults = await processPhotos(
 			exportResults
 				.filter((exportResult) => exportResult.results.syncResult?.status !== 'unchanged')
 				.map((exportResult) => exportResult.path),
@@ -289,14 +287,12 @@ export async function exportPhotos(
 	// ------------------------------------------------------------
 
 	// Metadata
-	let metadataResults: ManageMetadataResult[] | undefined
-
 	if (metadataOptions !== 'disabled') {
 		const targetPhotos = exportResults.filter(
 			(exportResult) => exportResult.results.syncResult?.status !== 'unchanged',
 		)
 
-		metadataResults = await manageMetadataBatch(
+		const metadataResults = await manageMetadataBatch(
 			targetPhotos.map((exportResult) => exportResult.photoInfo),
 			targetPhotos.map((exportResult) => exportResult.path),
 			metadataOptions,

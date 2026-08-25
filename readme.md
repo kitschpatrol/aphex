@@ -8,8 +8,8 @@
 
 <!-- badges -->
 
-[![NPM Package @kitschpatrol/aphex](https://img.shields.io/npm/v/@kitschpatrol/aphex.svg)](https://npmjs.com/package/@kitschpatrol/aphex)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit/)
+[![NPM Package @kitschpatrol/aphex](https://img.shields.io/npm/v/@kitschpatrol/aphex.svg)](https://www.npmjs.com/package/@kitschpatrol/aphex)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit)
 
 <!-- /badges -->
 
@@ -35,7 +35,7 @@ Aphex is a TypeScript library for exporting images and albums from your local ma
 
 It makes it simple to export high-quality versions of specific photos or albums from your Photos.app library via a path-like syntax. It can also (optionally) perform image resizing, compression, metadata migration, metadata validation, and color space normalization.
 
-I created this library for integration in static website content management asset pipelines, and to attempt to work around some issues related to [exporting high-quality versions of edited images](https://github.com/RhetTbull/osxphotos/discussions/1522) from the Photos.app library. (See the [unplugin-aphex](https://github.com/kitschpatrol/unplugin-aphex) project for an additional layer of integration with various build tools, and the [vscode-aphex](https://github.com/kitschpatrol/vscode-aphex) plugin for hover previews of Aphex links in VS Code.)
+I created this library for integration in static website content management asset pipelines, and to attempt to work around some issues related to [exporting high-quality versions of edited images](https://github.com/RhetTbull/osxphotos/discussions/1522) from the Photos.app library. (See the [unplugin-aphex](https://github.com/kitschpatrol/unplugin-aphex) project for an additional layer of integration with various build tools, and the [vscode-aphex-preview](https://github.com/kitschpatrol/vscode-aphex-preview) plugin for hover previews of Aphex links in VS Code.)
 
 This repository also embeds the `aphex-swift` CLI project, which provides a minimal and performant wrapper around parts of Apple's PhotoKit framework. It's not intended for direct use, instead it provides just enough functionality to support the parts of the methods provided by the `aphex` TypeScript library that can only be implemented natively.
 
@@ -77,7 +77,7 @@ npm install @kitschpatrol/aphex
 
 In most cases, the application invoking aphex should request permission to access your Photos.app library on first use.
 
-In certain situations, like executing commands in a VS Code terminal, can [fail to prompt for permission](https://errorism.dev/issues/microsoft-vscode-vscode-terminal-doesnt-allowrequest-permissions-to-access-media-devices). You can work around this through some _highly inadvisable_ direct manipulation of the [permissions database](https://www.rainforestqa.com/blog/macos-tcc-db-deep-dive):
+In certain situations, like executing commands in a VS Code terminal, can [fail to prompt for permission](https://errorism.dev/issues/microsoft-vscode-vscode-terminal-doesnt-allowrequest-permissions-to-access-media-devices). You can work around this through some _highly inadvisable_ direct manipulation of the [permissions database](https://web.archive.org/web/https://www.rainforestqa.com/blog/macos-tcc-db-deep-dive):
 
 For example, to grant photo library permission to VS Code:
 
@@ -192,7 +192,7 @@ setLogger(console)
 
 ##### Exporting a photo by filename
 
-Let's assume you have an album named "Trip" in your Photos.app library containing a photo with the filename "IMG_1922.jpeg":
+Let's assume you have an album named "Trip" in your Photos.app library containing a photo with the filename "IMG\_1922.jpeg":
 
 ```ts
 const result = await exportPhoto('Trip/IMG_1922.jpeg', '~/Desktop')

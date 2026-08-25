@@ -144,43 +144,8 @@ export async function exportApplePhotos(
 		const exportedPhoto: ExportApplePhotoResult = {
 			exportEngine: engine,
 			exportOptions: resolvedOptions,
-			path: '', // Will be set later
+			path: await exportPhotoWithEngine(photoInfo, engine, resolvedOptions),
 			photoInfo,
-		}
-
-		switch (engine) {
-			case 'applescript': {
-				exportedPhoto.path = await exportViaAppleScript(photoInfo.uuid)
-				break
-			}
-
-			case 'file-system': {
-				exportedPhoto.path = await exportViaFileSystem(photoInfo)
-				break
-			}
-
-			case 'photos-gui': {
-				const [exportedPath] = await exportViaAppleScriptGui(
-					photoInfo.uuid,
-					resolvedOptions.appleScriptGuiOptions,
-				)
-
-				exportedPhoto.path = exportedPath
-
-				// TODO necessary?
-				// Copy relevant metadata from the original photo since photos-gui doesn't preserve it
-				// await cloneTags(photoInfo.original.filePath, exportedPhoto.path, [
-				// 	'credit',
-				// 	'creator',
-				// 	'preservedFileName',
-				// ])
-				break
-			}
-
-			case 'swift-photokit': {
-				exportedPhoto.path = await exportViaSwiftPhotoKit(photoInfo.uuid)
-				break
-			}
 		}
 
 		// Normalize and move to final destination...
@@ -207,6 +172,46 @@ export async function exportApplePhotos(
 	return exportedPhotos
 }
 
+async function exportPhotoWithEngine(
+	photoInfo: PhotoInfo,
+	engine: ExportEngine,
+	options: ExportApplePhotoOptions,
+): Promise<string> {
+	switch (engine) {
+		case 'applescript': {
+			return exportViaAppleScript(photoInfo.uuid)
+		}
+
+		case 'file-system': {
+			return exportViaFileSystem(photoInfo)
+		}
+
+		case 'photos-gui': {
+			const [exportedPath] = await exportViaAppleScriptGui(
+				photoInfo.uuid,
+				options.appleScriptGuiOptions,
+			)
+
+			if (exportedPath === undefined) {
+				throw new Error(`Photos GUI export returned no files for photo "${photoInfo.uuid}"`)
+			}
+
+			// TODO necessary?
+			// Copy relevant metadata from the original photo since photos-gui doesn't preserve it
+			// await cloneTags(photoInfo.original.filePath, exportedPath, [
+			// 	'credit',
+			// 	'creator',
+			// 	'preservedFileName',
+			// ])
+			return exportedPath
+		}
+
+		case 'swift-photokit': {
+			return exportViaSwiftPhotoKit(photoInfo.uuid)
+		}
+	}
+}
+
 type FileNameOptions = 'fileName' | 'title' | 'uuid'
 
 /** Also normalizes */
@@ -223,41 +228,49 @@ export function getImagePathWithFileName(
 	const extension = path.extname(normalizedPath)
 
 	for (const option of namingStrategyPrecedence) {
-		switch (option) {
-			case 'fileName': {
-				const nameWithoutExtension = path.basename(
-					photoInfo.original.fileName,
-					path.extname(photoInfo.original.fileName),
-				)
-				const uuidFragment = fileNameAppendUuidFragment ? `-${photoInfo.uuid.slice(-8)}` : ''
-				const processedName = sluggify
-					? githubSlug(`${nameWithoutExtension}${uuidFragment}`)
-					: `${nameWithoutExtension}${uuidFragment}`
-				return path.join(basePath, `${processedName}${extension}`)
-			}
+		const fileName = getFileNameForStrategy(option, photoInfo, sluggify, fileNameAppendUuidFragment)
 
-			case 'title': {
-				if (isNonEmptyStringAndNotWhitespace(photoInfo.title)) {
-					const title = sluggify ? githubSlug(photoInfo.title) : photoInfo.title
-					const uuidFragment = fileNameAppendUuidFragment ? `-${photoInfo.uuid.slice(-8)}` : ''
-					const processedTitle = sluggify
-						? githubSlug(`${title}${uuidFragment}`)
-						: `${title}${uuidFragment}`
-					return path.join(basePath, `${processedTitle}${extension}`)
-				}
-
-				break
-			}
-
-			case 'uuid': {
-				// Don't append UUID fragment if the filename is already a UUID
-				const processedUuid = sluggify ? githubSlug(photoInfo.uuid) : photoInfo.uuid
-				return path.join(basePath, `${processedUuid}${extension}`)
-			}
+		if (fileName !== undefined) {
+			return path.join(basePath, `${fileName}${extension}`)
 		}
 	}
 
 	throw new Error("No valid filename option found, can't name image")
+}
+
+function getFileNameForStrategy(
+	option: FileNameOptions,
+	photoInfo: PhotoInfo,
+	sluggify: boolean,
+	fileNameAppendUuidFragment: boolean,
+): string | undefined {
+	switch (option) {
+		case 'fileName': {
+			const nameWithoutExtension = path.basename(
+				photoInfo.original.fileName,
+				path.extname(photoInfo.original.fileName),
+			)
+			const uuidFragment = fileNameAppendUuidFragment ? `-${photoInfo.uuid.slice(-8)}` : ''
+			return sluggify
+				? githubSlug(`${nameWithoutExtension}${uuidFragment}`)
+				: `${nameWithoutExtension}${uuidFragment}`
+		}
+
+		case 'title': {
+			if (isNonEmptyStringAndNotWhitespace(photoInfo.title)) {
+				const title = sluggify ? githubSlug(photoInfo.title) : photoInfo.title
+				const uuidFragment = fileNameAppendUuidFragment ? `-${photoInfo.uuid.slice(-8)}` : ''
+				return sluggify ? githubSlug(`${title}${uuidFragment}`) : `${title}${uuidFragment}`
+			}
+
+			return undefined
+		}
+
+		case 'uuid': {
+			// Don't append UUID fragment if the filename is already a UUID
+			return sluggify ? githubSlug(photoInfo.uuid) : photoInfo.uuid
+		}
+	}
 }
 
 async function getEngineForPhoto(

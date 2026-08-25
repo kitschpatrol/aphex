@@ -6,14 +6,14 @@ import os from 'node:os'
 import path from 'node:path'
 import { getSlugFilename } from './file'
 
-const UUID_REGEX = /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i
+const UUID_REGEX = /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/iv
 
 /**
  * Escape special characters in a string to be used in a regular expression TODO
  * is there a built-in function for this?
  */
 export function escapeRegExp(string: string): string {
-	return string.replaceAll(/[$()*+.?[\\\]^{|}]/g, String.raw`\$&`)
+	return string.replaceAll(/[$\(\)*+.?\[\\\]^\{\|\}]/gv, String.raw`\$&`)
 }
 
 /**

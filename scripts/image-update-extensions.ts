@@ -43,7 +43,7 @@ async function updateImageExtensions(imageGlobs: string[], fileGlobs: string[]):
 
 	const imagePathRegexArray = newImagePaths.map((filePath) => {
 		const rawFileName = stripExtension(filePath)
-		return new RegExp(String.raw`${escapeRegExp(rawFileName)}\.\w{3,4}`, 'g')
+		return new RegExp(String.raw`${escapeRegExp(rawFileName)}\.\w{3,4}`, 'gv')
 	})
 
 	const updatedFiles: string[] = []

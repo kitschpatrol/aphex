@@ -164,7 +164,7 @@ export async function getSyncPlanForImages(
 			resolvedOptions.forceUpdate,
 		)
 
-		if (differenceFound) {
+		if (differenceFound !== false) {
 			if (resolvedOptions.deleteTarget) {
 				syncResult.toDelete.push(matchingDestinationFile.filePath)
 			}
@@ -191,7 +191,7 @@ export async function getSyncPlanForImages(
 		syncResult.toDelete = [
 			...syncResult.toDelete,
 			...destinationFiles
-				.filter((file) => !syncResult.plan.some((plan) => plan.matchFilePath === file.filePath))
+				.filter((file) => syncResult.plan.every((plan) => plan.matchFilePath !== file.filePath))
 				.map((file) => file.filePath),
 		]
 	}
@@ -216,101 +216,84 @@ async function isDifferent(
 	exportOptions: ExportOptions,
 	forceUpdate: boolean,
 ): Promise<DiffStrategy | false> {
-	// Soft memoization...
-	let sourceTags: ImageTags | undefined
-
 	if (forceUpdate) {
 		return 'force-update'
 	}
 
-	for (const diffStrategy of diffStrategies) {
+	// Soft memoization...
+	let sourceTags: ImageTags | undefined
+
+	async function strategyFindsDifference(diffStrategy: DiffStrategy): Promise<boolean> {
 		switch (diffStrategy) {
 			case 'exif-tags': {
 				sourceTags ??= await getTags(sourcePhotoInfo.original.filePath)
 
-				if (
+				return (
 					matchPhotoTags === undefined ||
 					sourceTags.credit !== matchPhotoTags.credit ||
 					sourceTags.creator !== matchPhotoTags.creator ||
 					sourceTags.description !== matchPhotoTags.description ||
 					sourceTags.preservedFileName !== matchPhotoTags.preservedFileName ||
 					sourceTags.label !== matchPhotoTags.label
-				) {
-					return diffStrategy
-				}
-
-				break
+				)
 			}
 
 			case 'export-options': {
-				if (
+				return (
 					matchPhotoTags === undefined ||
 					!deepEqual(
 						exportOptions.exportOptions,
 						matchPhotoTags.aphexMetadata?.exportOptions.exportOptions,
 					)
-				) {
-					return diffStrategy
-				}
-
-				break
+				)
 			}
 
 			case 'file-name': {
 				// Ignore extension because it's too much work to figure out the final file extension
 				// But this can still change if the "title" changes in a source photo...
-				if (stripExtension(path.basename(matchPhotoFilePath)) !== sourcePhotoFileBaseName) {
-					return diffStrategy
-				}
-
-				break
+				return stripExtension(path.basename(matchPhotoFilePath)) !== sourcePhotoFileBaseName
 			}
 
 			case 'force-update': {
 				// Special case... normally handled by flag instead
-				return diffStrategy
+				return true
 			}
 
 			case 'metadata-options': {
 				sourceTags ??= await getTags(sourcePhotoInfo.original.filePath)
-				if (
+
+				return (
 					matchPhotoTags === undefined ||
 					!deepEqual(
 						exportOptions.metadataOptions,
 						matchPhotoTags.aphexMetadata?.exportOptions.metadataOptions,
 					)
-				) {
-					return diffStrategy
-				}
-
-				break
+				)
 			}
 
 			case 'photo-info': {
-				if (
+				return (
 					matchPhotoTags === undefined ||
 					!deepEqual(sourcePhotoInfo, matchPhotoTags.aphexMetadata?.photoInfo)
-				) {
-					return diffStrategy
-				}
-
-				break
+				)
 			}
 
 			case 'process-options': {
 				// We skip sync options since they shouldn't affect the exported image!
-				if (
+				return (
 					matchPhotoTags === undefined ||
 					!deepEqual(
 						exportOptions.processOptions,
 						matchPhotoTags.aphexMetadata?.exportOptions.processOptions,
 					)
-				) {
-					return diffStrategy
-				}
-
-				break
+				)
 			}
+		}
+	}
+
+	for (const diffStrategy of diffStrategies) {
+		if (await strategyFindsDifference(diffStrategy)) {
+			return diffStrategy
 		}
 	}
 

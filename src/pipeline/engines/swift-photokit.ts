@@ -7,5 +7,10 @@ import { getTempDirectory } from '../../utilities/file'
 export async function exportViaSwiftPhotoKit(photoUuid: string): Promise<string> {
 	const tempDirectory = await getTempDirectory('engine', 'swift-photokit')
 	const [result] = await aphexExport(photoUuid, tempDirectory)
+
+	if (result === undefined) {
+		throw new Error(`Export via PhotoKit returned no files for photo "${photoUuid}"`)
+	}
+
 	return result
 }

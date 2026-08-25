@@ -45,7 +45,9 @@ export async function resolveAlbumIdentifier(identifier: AlbumInfo | string): Pr
 	}
 
 	const aphexAlbumInfoResult = await aphexAlbumInfo(identifier)
-	if (aphexAlbumInfoResult.length === 0) {
+	const [albumInfo] = aphexAlbumInfoResult
+
+	if (albumInfo === undefined) {
 		throw new Error(`No album found for identifier "${identifier}"`)
 	}
 
@@ -53,7 +55,7 @@ export async function resolveAlbumIdentifier(identifier: AlbumInfo | string): Pr
 		throw new Error(`Multiple albums found for identifier "${identifier} — is it a photo?"`)
 	}
 
-	return aphexAlbumInfoResult[0]
+	return albumInfo
 }
 
 /**
@@ -65,7 +67,9 @@ export async function resolvePhotoIdentifier(identifier: PhotoInfo | string): Pr
 	}
 
 	const aphexPhotoInfoResult = await aphexPhotoInfo(identifier)
-	if (aphexPhotoInfoResult.length === 0) {
+	const [photoInfo] = aphexPhotoInfoResult
+
+	if (photoInfo === undefined) {
 		throw new Error(`No photo asset found for identifier "${identifier}"`)
 	}
 
@@ -73,5 +77,5 @@ export async function resolvePhotoIdentifier(identifier: PhotoInfo | string): Pr
 		throw new Error(`Multiple photo assets found for identifier "${identifier} — is it an album?"`)
 	}
 
-	return aphexPhotoInfoResult[0]
+	return photoInfo
 }
