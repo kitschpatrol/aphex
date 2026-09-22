@@ -191,15 +191,11 @@ async function executeInteractiveCommand(command: string): Promise<string> {
  */
 function escapeCommand(args: string[]): string {
 	return args
-		.map((arg) => {
+		.map((arg) =>
 			// If the argument contains spaces, quotes, or backslashes, wrap in single quotes
 			// and escape any existing single quotes
-			if (SHELL_SPECIAL_CHARS_REGEX.test(arg)) {
-				return `'${arg.replaceAll("'", String.raw`'\''`)}'`
-			}
-
-			return arg
-		})
+			SHELL_SPECIAL_CHARS_REGEX.test(arg) ? `'${arg.replaceAll("'", String.raw`'\''`)}'` : arg,
+		)
 		.join(' ')
 }
 

@@ -110,11 +110,7 @@ function formatColorProfile(profile: ColorProfile): string {
 		return 'sRGB'
 	}
 
-	if (profile === 'Apple Wide Color Sharing Profile') {
-		return 'Sharing'
-	}
-
-	return profile
+	return profile === 'Apple Wide Color Sharing Profile' ? 'Sharing' : profile
 }
 
 const methodNameAndOrderMap = {

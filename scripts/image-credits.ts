@@ -126,10 +126,10 @@ async function imageCredits() {
 			{ label: 'Open only photos without credit or creator in MetaImage.app', value: 'some' },
 			{ label: 'Open all photos in MetaImage.app', value: 'all' },
 			{ label: 'Skip editing metadata', value: 'none' },
-		].filter(({ value }) =>
-			photosWithInvalidTags.length > 0 && photosWithInvalidTags.length !== photos.length
-				? true
-				: value !== 'some',
+		].filter(
+			({ value }) =>
+				(photosWithInvalidTags.length > 0 && photosWithInvalidTags.length !== photos.length) ||
+				value !== 'some',
 		),
 	})
 

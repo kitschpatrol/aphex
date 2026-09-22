@@ -146,10 +146,12 @@ export async function sipsTempCleanup(): Promise<number> {
 	for (const file of uuidFiles) {
 		const filePath = path.join(os.tmpdir(), file)
 		const { stdout } = await execa('file', ['-b', '--mime', filePath])
-		if (stdout.startsWith('image/')) {
-			await fse.rm(filePath, { force: true })
-			cleanCount += 1
+		if (!stdout.startsWith('image/')) {
+			continue
 		}
+
+		await fse.rm(filePath, { force: true })
+		cleanCount += 1
 	}
 
 	return cleanCount

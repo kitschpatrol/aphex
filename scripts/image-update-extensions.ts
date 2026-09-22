@@ -68,10 +68,12 @@ async function updateImageExtensions(imageGlobs: string[], fileGlobs: string[]):
 			})
 		}
 
-		if (text !== originalText) {
-			updatedFiles.push(textFilePath)
-			await fs.writeFile(textFilePath, text)
+		if (text === originalText) {
+			continue
 		}
+
+		updatedFiles.push(textFilePath)
+		await fs.writeFile(textFilePath, text)
 	}
 
 	return updatedFiles
