@@ -37,7 +37,7 @@ It makes it simple to export high-quality versions of specific photos or albums 
 
 I created this library for integration in static website content management asset pipelines, and to attempt to work around some issues related to [exporting high-quality versions of edited images](https://github.com/RhetTbull/osxphotos/discussions/1522) from the Photos.app library. (See the [unplugin-aphex](https://github.com/kitschpatrol/unplugin-aphex) project for an additional layer of integration with various build tools, and the [vscode-aphex-preview](https://github.com/kitschpatrol/vscode-aphex-preview) plugin for hover previews of Aphex links in VS Code.)
 
-This repository also embeds the `aphex-swift` CLI project, which provides a minimal and performant wrapper around parts of Apple's PhotoKit framework. It's not intended for direct use, instead it provides just enough functionality to support the parts of the methods provided by the `aphex` TypeScript library that can only be implemented natively.
+This repository also embeds the `aphex-swift` CLI project, which provides a minimal and performant wrapper around parts of Apple's PhotoKit framework. It's not really intended for direct use beyond querying the Photos library and simple exports. It provides just enough functionality to support the parts of the methods provided by the `aphex` TypeScript library that can only be implemented natively.
 
 <!-- /* spell-checker:disable */  -->
 
@@ -68,8 +68,23 @@ If you skip image processing (`processOptions: 'disabled'`) you can omit the Hom
 
 ### Installation
 
+The easiest way to install the CLI tool is via Homebrew:
+
+```sh
+brew install kitschpatrol/tap/aphex
+```
+
+If you're working in a Node project or prefer to install through npm, you will need some additional dependencies for the image processing functionality exposed through the library API.
+
+These are easiest to install via Homebrew:
+
 ```sh
 brew install libavif mozjpeg imagemagick webp dssim ffmpeg guetzli oxipng
+```
+
+Then, in your node project:
+
+```sh
 npm install @kitschpatrol/aphex
 ```
 
