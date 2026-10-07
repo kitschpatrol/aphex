@@ -46,6 +46,7 @@
 		"clean-deep": "git rm -f pnpm-lock.yaml && git clean -fdX -e !.claude/",
 		"fix": "ksc fix && mdat ./native/aphex-swift/readme.md",
 		"lint": "ksc lint",
+		"prepare": "skills experimental_sync -y -f",
 		"release": "bumpp --commit 'Release: %s' && pnpm build && pnpm publish --otp $(op item get npm --otp) && brewpub --tap kitschpatrol/tap",
 		"test": "vitest run",
 		"test:coverage": "vitest run --coverage"
@@ -53,14 +54,14 @@
 	"dependencies": {
 		"@sindresorhus/is": "^8.1.0",
 		"defu": "^6.1.7",
-		"execa": "^10.0.1",
-		"exiftool-vendored": "^38.1.0",
-		"fast-equals": "^6.0.4",
-		"fs-extra": "^11.4.0",
+		"execa": "^10.1.0",
+		"exiftool-vendored": "^39.0.0",
+		"fast-equals": "^6.1.0",
+		"fs-extra": "^11.4.1",
 		"github-slugger": "^2.0.0",
 		"image-size": "^2.0.4",
 		"importx": "^0.5.2",
-		"lognow": "^0.8.4",
+		"lognow": "^0.8.5",
 		"mrmime": "^2.0.1",
 		"piscina": "^5.3.2",
 		"type-fest": "^5.10.0"
@@ -68,27 +69,28 @@
 	"devDependencies": {
 		"@arethetypeswrong/core": "^0.18.5",
 		"@clack/prompts": "^1.8.1",
-		"@kitschpatrol/shared-config": "^8.10.0",
+		"@kitschpatrol/shared-config": "^8.12.1",
 		"@types/fs-extra": "^11.0.4",
-		"@types/node": "~24.13.4",
-		"@vitest/coverage-v8": "^5.0.1",
-		"brewpub": "^0.3.0",
+		"@types/node": "~24.13.6",
+		"@vitest/coverage-v8": "^5.0.3",
+		"brewpub": "^0.5.0",
 		"bumpp": "^12.3.0",
 		"globby": "^16.2.4",
 		"markdown-table": "^3.0.4",
-		"mdat-plugin-cli-help": "^3.2.0",
+		"mdat-plugin-cli-help": "^3.4.1",
 		"open": "^11.0.4",
-		"pretty-bytes": "^7.1.3",
+		"pretty-bytes": "^7.2.0",
 		"pretty-ms": "^9.3.1",
-		"publint": "^0.3.24",
+		"publint": "^0.3.25",
+		"skills": "^1.7.0",
 		"tsdown": "^0.23.0",
 		"tsx": "^4.23.15",
 		"typescript": "~6.0.3",
-		"vitest": "^5.0.1"
+		"vitest": "^5.0.3"
 	},
-	"packageManager": "pnpm@12.4.2",
+	"packageManager": "pnpm@12.9.1",
 	"engines": {
-		"node": ">=24.16.0"
+		"node": "^24.16.0 || >=26.3.0"
 	},
 	"os": [
 		"darwin"

@@ -29,8 +29,7 @@ describe('export and process', () => {
 		{ timeout: 20_000 },
 		async ({ tempDirectory }) => {
 			const uuid = await getSamplePhotoUuid(false, true)
-			const result = await exportApplePhoto(uuid, tempDirectory)
-			const { path } = result
+			const { path } = await exportApplePhoto(uuid, tempDirectory)
 
 			const processResult = await processPhotos([path], tempDirectory)
 			console.log(processResult)

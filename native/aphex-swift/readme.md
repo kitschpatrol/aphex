@@ -30,7 +30,7 @@ aphex --help
 
 ### Command: `aphex`
 
-<!-- cli-help({ command: "./dist/aphex-swift" })  -->
+<!-- cli-help({ command: "./dist/aphex-swift", heading: false }) -->
 
 ```txt
 OVERVIEW: Query and export images and albums from your macOS Photos.app library
@@ -59,7 +59,7 @@ SUBCOMMANDS:
 
 ### Subcommand: `aphex photo-info`
 
-<!-- cli-help({ command: "./dist/aphex-swift", subcommand: "photo-info" })  -->
+<!-- cli-help({ command: "./dist/aphex-swift", subcommand: "photo-info", heading: false }) -->
 
 ```txt
 OVERVIEW: Get photo asset information for given identifiers (UUID, file name,
@@ -84,7 +84,7 @@ OPTIONS:
 
 ### Subcommand: `aphex album-info`
 
-<!-- cli-help({ command: "./dist/aphex-swift", subcommand: "album-info" })  -->
+<!-- cli-help({ command: "./dist/aphex-swift", subcommand: "album-info", heading: false }) -->
 
 ```txt
 OVERVIEW: Get album information for given identifiers (UUID, album name, or
@@ -108,7 +108,7 @@ OPTIONS:
 
 ### Subcommand: `aphex export`
 
-<!-- cli-help({ command: "./dist/aphex-swift", subcommand: "export" })  -->
+<!-- cli-help({ command: "./dist/aphex-swift", subcommand: "export", heading: false }) -->
 
 ```txt
 OVERVIEW: Export photos for given identifiers to a destination directory

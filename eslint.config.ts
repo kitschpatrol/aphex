@@ -19,7 +19,6 @@ export default eslintConfig({
 					allowed: ['execa', 'fs-extra', 'globby'],
 				},
 			],
-			'import/no-named-as-default-member': 'off',
 		},
 	},
 	type: 'lib',

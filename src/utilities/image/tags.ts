@@ -288,18 +288,25 @@ function parseUserComment(userComment: string | undefined): AphexMetadata | unde
  * Set the tags on an image
  */
 export async function setTags(imagePath: string, imageTags: ImageTags) {
-	const { aphexMetadata, creator, credit, description, label, preservedFileName } = imageTags
+	const {
+		aphexMetadata,
+		creator = '',
+		credit = '',
+		description = '',
+		label = '',
+		preservedFileName = '',
+	} = imageTags
 	const userComment = aphexMetadata ? JSON.stringify(aphexMetadata) : undefined
 
 	// We explicitly use XMP metadata because it's compatible across all file types and not clobbered by Apple Photos
 	// Values explicitly passed as undefined will "erase" the value
 	// Does an empty string work, or do we have to pass null?
 	const tags: TagsPlusXmp = {
-		...('creator' in imageTags && { 'XMP:Creator': creator ?? '' }),
-		...('description' in imageTags && { 'XMP:Description': description ?? '' }),
-		...('credit' in imageTags && { 'XMP:Credit': credit ?? '' }),
-		...('label' in imageTags && { 'XMP:Label': label ?? '' }),
-		...('preservedFileName' in imageTags && { 'XMP:PreservedFileName': preservedFileName ?? '' }),
+		...('creator' in imageTags && { 'XMP:Creator': creator }),
+		...('description' in imageTags && { 'XMP:Description': description }),
+		...('credit' in imageTags && { 'XMP:Credit': credit }),
+		...('label' in imageTags && { 'XMP:Label': label }),
+		...('preservedFileName' in imageTags && { 'XMP:PreservedFileName': preservedFileName }),
 		...('aphexMetadata' in imageTags && { 'XMP:UserComment': userComment ?? '' }),
 	}
 

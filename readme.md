@@ -10,6 +10,7 @@
 
 [![NPM Package @kitschpatrol/aphex](https://img.shields.io/npm/v/@kitschpatrol/aphex.svg)](https://www.npmjs.com/package/@kitschpatrol/aphex)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit)
+[![Homebrew](https://img.shields.io/badge/Homebrew-kitschpatrol%2Ftap%2Faphex-FBB040?logo=homebrew&logoColor=white)](https://github.com/kitschpatrol/homebrew-tap/blob/HEAD/Formula/aphex.rb)
 
 <!-- /badges -->
 
@@ -47,11 +48,34 @@ The name "Aphex" is a concatenation of **A**pple **PH**otos **EX**port.
 
 ## Getting started
 
+<!-- dependencies -->
+
 ### Dependencies
 
-Requires an Apple Silicon (`arm64`) Mac with Photos.app installed and [Node 22.18.0](https://nodejs.org/en/download/) or newer. No Intel (`x86_64`) build of the bundled native binary is provided.
+- [Node.js](https://nodejs.org/) 24.16.0 or newer (specifically `^24.16.0 || >=26.3.0`)
+- Supported operating systems: macOS
+
+<!-- /dependencies -->
+
+Requires an Apple Silicon (`arm64`) Mac with Photos.app installed. No Intel (`x86_64`) build of the bundled native binary is provided.
+
+### Installation
+
+Pick the option that matches how you plan to use it.
+
+#### Library installation
+
+Add it to your project to import the TypeScript API. This also puts the `aphex` CLI on your project's path:
+
+```sh
+npm install @kitschpatrol/aphex
+```
 
 Full image processing functionality also requires a number of command-line tools available via [Homebrew](https://brew.sh):
+
+```sh
+brew install libavif mozjpeg imagemagick webp dssim ffmpeg guetzli oxipng
+```
 
 | Tool          | Used for                                                                  |
 | ------------- | ------------------------------------------------------------------------- |
@@ -64,28 +88,28 @@ Full image processing functionality also requires a number of command-line tools
 | `ffmpeg`      | Media probing used by some conversion paths                               |
 | `dssim`       | Perceptual similarity metrics (only needed if `logSimilarity` is enabled) |
 
-If you skip image processing (`processOptions: 'disabled'`) you can omit the Homebrew dependencies.
+If you skip image processing (`processOptions: 'disabled'`) you can omit these.
 
-### Installation
+#### CLI installation
 
-The easiest way to install the CLI tool is via Homebrew:
+Note that the Aphex CLI does _not_ expose all the functionality from the TypeScript library. It's a native bridge focused on querying your library for images and metadata, and also certain fast-path export strategies.
+
+Run it once without installing:
+
+```sh
+npx @kitschpatrol/aphex
+```
+
+Or install it globally with Homebrew:
 
 ```sh
 brew install kitschpatrol/tap/aphex
 ```
 
-If you're working in a Node project or prefer to install through npm, you will need some additional dependencies for the image processing functionality exposed through the library API.
-
-These are easiest to install via Homebrew:
+Or install it globally with npm:
 
 ```sh
-brew install libavif mozjpeg imagemagick webp dssim ffmpeg guetzli oxipng
-```
-
-Then, in your node project:
-
-```sh
-npm install @kitschpatrol/aphex
+npm install --global @kitschpatrol/aphex
 ```
 
 ### Permissions
@@ -207,7 +231,7 @@ setLogger(console)
 
 ##### Exporting a photo by filename
 
-Let's assume you have an album named "Trip" in your Photos.app library containing a photo with the filename "IMG\_1922.jpeg":
+Let's assume you have an album named "Trip" in your Photos.app library containing a photo with the filename "IMG_1922.jpeg":
 
 ```ts
 const result = await exportPhoto('Trip/IMG_1922.jpeg', '~/Desktop')

@@ -67,7 +67,9 @@ function scheduleProcessCleanup(): void {
 		}
 
 		cleanupScheduled = true
-		void endExiftool()
+		void endExiftool().catch((error: unknown) => {
+			log.warn(`Failed to end exiftool processes: ${String(error)}`)
+		})
 	})
 
 	// Clean up on explicit exit
@@ -84,7 +86,12 @@ function scheduleProcessCleanup(): void {
 	process.on('SIGINT', () => {
 		void (async () => {
 			log.debug('Received SIGINT, cleaning up exiftool...')
-			await endExiftool()
+			try {
+				await endExiftool()
+			} catch (error) {
+				log.warn(`Failed to end exiftool processes: ${String(error)}`)
+			}
+
 			process.exit(130)
 		})()
 	})
@@ -93,7 +100,12 @@ function scheduleProcessCleanup(): void {
 	process.on('SIGTERM', () => {
 		void (async () => {
 			log.debug('Received SIGTERM, cleaning up exiftool...')
-			await endExiftool()
+			try {
+				await endExiftool()
+			} catch (error) {
+				log.warn(`Failed to end exiftool processes: ${String(error)}`)
+			}
+
 			process.exit(143)
 		})()
 	})
