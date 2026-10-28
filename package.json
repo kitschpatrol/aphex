@@ -36,17 +36,16 @@
 		"aphex": "./dist/aphex-swift"
 	},
 	"files": [
-		"dist/*"
+		"dist"
 	],
 	"scripts": {
 		"build": "pnpm run --sequential /^build:/",
 		"build:1-lib": "tsdown",
 		"build:2-native": "cd native/aphex-swift && ./build.sh",
 		"build:3-publint": "publint",
-		"clean-deep": "git rm -f pnpm-lock.yaml && git clean -fdX -e !.claude/",
-		"fix": "ksc fix && mdat ./native/aphex-swift/readme.md",
-		"lint": "ksc lint",
-		"prepare": "skills experimental_sync -y -f",
+		"clean-deep": "shx rm -f pnpm-lock.yaml && git clean -fdX",
+		"fix": "pnpm build && ksc fix && mdat ./native/aphex-swift/readme.md",
+		"lint": "pnpm build && ksc lint && mdat check ./native/aphex-swift/readme.md",
 		"release": "bumpp --commit 'Release: %s' && pnpm build && pnpm publish --otp $(op item get npm --otp) && brewpub --tap kitschpatrol/tap",
 		"test": "vitest run",
 		"test:coverage": "vitest run --coverage"
@@ -69,7 +68,7 @@
 	"devDependencies": {
 		"@arethetypeswrong/core": "^0.18.5",
 		"@clack/prompts": "^1.8.1",
-		"@kitschpatrol/shared-config": "^8.13.1",
+		"@kitschpatrol/shared-config": "^8.14.0",
 		"@types/fs-extra": "^11.0.4",
 		"@types/node": "~24.13.6",
 		"@vitest/coverage-v8": "^5.0.3",
@@ -82,13 +81,13 @@
 		"pretty-bytes": "^7.2.0",
 		"pretty-ms": "^9.3.1",
 		"publint": "^0.3.25",
-		"skills": "^1.7.0",
+		"shx": "^0.4.0",
 		"tsdown": "^0.23.0",
 		"tsx": "^4.23.15",
 		"typescript": "~6.0.3",
 		"vitest": "^5.0.3"
 	},
-	"packageManager": "pnpm@12.9.1",
+	"packageManager": "pnpm@12.15.0",
 	"engines": {
 		"node": "^24.16.0 || >=26.3.0"
 	},

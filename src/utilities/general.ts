@@ -116,7 +116,7 @@ export function fitInside(
 export async function execaWithTempCleanup(
 	file: string | URL,
 	args?: readonly string[],
-): Promise<Result<Record<string, unknown>>> {
+): Promise<Result<{ env: Record<string, string> }>> {
 	const fileName = typeof file === 'string' ? file : path.basename(file.pathname)
 
 	const tempDirectory = await fse.mkdtemp(

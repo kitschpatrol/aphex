@@ -276,9 +276,9 @@ export async function convertToPng(
 			'--setProperty',
 			'format',
 			'png',
-			...(restoreColorProfile !== undefined && restoreColorProfile !== 'None'
-				? ['--setProperty', 'profile', getPathToColorProfile(restoreColorProfile)]
-				: []),
+			...(restoreColorProfile === undefined || restoreColorProfile === 'None'
+				? []
+				: ['--setProperty', 'profile', getPathToColorProfile(restoreColorProfile)]),
 			sourceImagePath,
 			'--out',
 			destinationImagePath,

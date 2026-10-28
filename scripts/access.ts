@@ -8,9 +8,5 @@ try {
 	const contents = readdirSync(photosPath)
 	console.log(`Photos library contains ${contents.length} items`)
 } catch (error) {
-	if (error instanceof Error) {
-		console.log('Permission error:', error.message)
-	} else {
-		console.log('Permission error:', error)
-	}
+	console.log('Permission error:', error instanceof Error ? error.message : error)
 }

@@ -23,10 +23,6 @@ export function mergeDefaults<T extends Record<string, unknown>, S extends T>(
 	options: PartialDeep<S> | undefined,
 	defaults: T,
 ): T {
-	if (options === undefined) {
-		return defaults
-	}
-
 	// Regrettable
-	return mergeDefaultsInternal(options, defaults) as T
+	return options === undefined ? defaults : (mergeDefaultsInternal(options, defaults) as T)
 }
