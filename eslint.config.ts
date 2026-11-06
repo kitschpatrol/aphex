@@ -1,6 +1,7 @@
 import { eslintConfig } from '@kitschpatrol/eslint-config'
 
 export default eslintConfig({
+	ignores: ['**/changelog.md'],
 	test: {
 		overrides: {
 			'test/no-standalone-expect': [

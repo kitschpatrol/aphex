@@ -48,7 +48,7 @@
 		"clean-deep": "shx rm -f pnpm-lock.yaml && git clean -fdX",
 		"fix": "pnpm build && ksc fix && mdat ./native/aphex-swift/readme.md",
 		"lint": "pnpm build && ksc lint && mdat check ./native/aphex-swift/readme.md",
-		"release": "bumpp --commit 'Release: %s' && pnpm build && pnpm publish --otp $(op item get npm --otp) && brewpub --tap kitschpatrol/tap",
+		"release": "bumpp --commit 'Release: %s' --all --execute 'chagent' && pnpm build && pnpm publish --otp $(op item get npm --otp) && brewpub --tap kitschpatrol/tap",
 		"test": "vitest run",
 		"test:coverage": "vitest run --coverage"
 	},
@@ -70,6 +70,7 @@
 	"devDependencies": {
 		"@arethetypeswrong/core": "^0.18.5",
 		"@clack/prompts": "^1.8.1",
+		"@kitschpatrol/chagent": "0.4.0",
 		"@kitschpatrol/shared-config": "^8.14.0",
 		"@types/fs-extra": "^11.0.4",
 		"@types/node": "~24.13.6",

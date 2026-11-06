@@ -1,5 +1,6 @@
 import { cspellConfig } from '@kitschpatrol/cspell-config'
 
 export default cspellConfig({
-	words: ['NOCMD', 'wordc', 'wordexp', 'wordfree', 'wordv', 'WRDE'],
+	ignorePaths: ['**/changelog.md'],
+	words: ['chagent', 'NOCMD', 'wordc', 'wordexp', 'wordfree', 'wordv', 'WRDE'],
 })
