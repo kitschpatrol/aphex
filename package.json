@@ -70,7 +70,7 @@
 	"devDependencies": {
 		"@arethetypeswrong/core": "^0.18.5",
 		"@clack/prompts": "^1.8.1",
-		"@kitschpatrol/chagent": "0.4.0",
+		"@kitschpatrol/chagent": "^0.5.0",
 		"@kitschpatrol/shared-config": "^8.14.0",
 		"@types/fs-extra": "^11.0.4",
 		"@types/node": "~24.13.6",
